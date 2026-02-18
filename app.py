@@ -8,12 +8,6 @@ from geopy.geocoders import Nominatim
 # 1. SETUP
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered")
-
-# Initialize Swisseph
-swe.set_ephe_path(None)
-swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v76")
-
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
@@ -27,6 +21,11 @@ st.markdown("""
     .center-box { grid-column: 2/4; grid-row: 2/4; background: #ffe0b2; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #b71c1c; font-weight: 900; text-align: center; font-size: 14px; }
     </style>
     """, unsafe_allow_html=True)
+
+# Initialize Swisseph
+swe.set_ephe_path(None)
+swe.set_sid_mode(swe.SIDM_LAHIRI)
+geolocator = Nominatim(user_agent="bharatheeyam_v77")
 
 # ==========================================
 # 2. CONSTANTS
@@ -62,13 +61,13 @@ def get_mandi(jd, lat, lon):
         lat = float(lat)
         lon = float(lon)
         
-        # 1. Sunrise/Sunset (Using 5 Arguments)
-        # Signature: swe.rise_trans(jd, body, lon, lat, flags)
-        res = swe.rise_trans(jd, swe.SUN, lon, lat, swe.CALC_RISE | swe.FLG_MOSEPH)
+        # 1. Sunrise/Sunset (Using exactly 6 arguments: jd, body, lon, lat, altitude=0, flags)
+        res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
         sr = res[1][0]
-        res_s = swe.rise_trans(jd, swe.SUN, lon, lat, swe.CALC_SET | swe.FLG_MOSEPH)
+        res_s = swe.rise_trans(jd, swe.SUN, lon, lat, 0, swe.CALC_SET | swe.FLG_MOSEPH)
         ss = res_s[1][0]
         
+        # Ensure weekday is integer
         wday = int(jd + 0.5 + 1.5) % 7
         is_day = (jd >= sr and jd < ss)
         
@@ -82,12 +81,14 @@ def get_mandi(jd, lat, lon):
         else:
             if jd >= ss: 
                 start_base = ss
-                res_next = swe.rise_trans(jd + 1.0, swe.SUN, lon, lat, swe.CALC_RISE | swe.FLG_MOSEPH)
+                # Next Sunrise
+                res_next = swe.rise_trans(jd + 1.0, swe.SUN, lon, lat, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
                 next_sr = res_next[1][0]
                 dur = next_sr - ss
                 factor = night_ghati[wday]
             else: 
-                res_prev = swe.rise_trans(jd - 1.0, swe.SUN, lon, lat, swe.CALC_SET | swe.FLG_MOSEPH)
+                # Prev Sunset
+                res_prev = swe.rise_trans(jd - 1.0, swe.SUN, lon, lat, 0, swe.CALC_SET | swe.FLG_MOSEPH)
                 start_base = res_prev[1][0]
                 dur = sr - start_base
                 prev_wday = (wday - 1) % 7
@@ -96,6 +97,7 @@ def get_mandi(jd, lat, lon):
             m_time = start_base + (dur * factor / 30.0)
 
         # 2. Ascendant at Mandi Time
+        # swe.houses(jd, lat, lon, method) -> method must be bytes b'P'
         res_h = swe.houses(m_time, lat, lon, b'P')
         asc_deg = res_h[0][0]
         
@@ -158,10 +160,10 @@ if st.session_state['show_chart']:
         pos[pnk] = res[0][0] % 360
     pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
     
-    # 2. Mandi (With Error Report)
+    # 2. Mandi (Error Catching)
     mandi_res = get_mandi(jd, u_lat, u_lon)
     if isinstance(mandi_res, str):
-        st.error(mandi_res) # Shows exact error if failed
+        st.error(mandi_res)
         pos["ಮಾಂದಿ"] = 0.0
     else:
         pos["ಮಾಂದಿ"] = mandi_res
@@ -205,49 +207,54 @@ if st.session_state['show_chart']:
         st.table(df)
 
     with t3:
-        # ROBUST ACCORDION DASHA
-        m_lon = pos.get("ಚಂದ್ರ", 0)
-        n_idx = int(m_lon / 13.333333333)
-        perc = (m_lon % 13.333333333) / 13.333333333
-        start_lord = n_idx % 9
-        
-        y, m, d, hv = swe.revjul(jd + 5.5/24.0)
-        birth_dt = datetime.datetime(y, m, d)
-        
-        st.info("ಕ್ಲಿಕ್ ಮಾಡಿ ವಿಸ್ತರಿಸಿ (3 ಹಂತಗಳು)")
-        
-        curr_md = birth_dt
-        for i in range(9):
-            md_idx = (start_lord + i) % 9
-            md_yrs = YEARS[md_idx] * ((1-perc) if i==0 else 1)
-            md_end = curr_md + datetime.timedelta(days=md_yrs*365.25)
+        # ACCORDION DASHA (Stable)
+        try:
+            m_lon = pos.get("ಚಂದ್ರ", 0)
+            n_idx = int(m_lon / 13.333333333)
+            perc = (m_lon % 13.333333333) / 13.333333333
+            start_lord = n_idx % 9
             
-            with st.expander(f"{LORDS[md_idx]} ಮಹಾದಶ ({curr_md.strftime('%Y')} - {md_end.strftime('%Y')})"):
-                curr_ad = curr_md
-                for j in range(9):
-                    ad_idx = (md_idx + j) % 9
-                    full_md = YEARS[md_idx]
-                    ad_yrs = (full_md * YEARS[ad_idx]) / 120.0
-                    ad_end = curr_ad + datetime.timedelta(days=ad_yrs*365.25)
-                    
-                    if ad_end > birth_dt:
-                        st.markdown(f"**{LORDS[ad_idx]} ಭುಕ್ತಿ:** {curr_ad.strftime('%d-%m-%Y')} - {ad_end.strftime('%d-%m-%Y')}")
+            y, m, d, hv = swe.revjul(jd + 5.5/24.0)
+            birth_dt = datetime.datetime(y, m, d)
+            
+            st.info("ಪ್ರತಿ ಮಹಾದಶವನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ (3 ಹಂತಗಳು)")
+            
+            curr_md = birth_dt
+            for i in range(9):
+                md_idx = (start_lord + i) % 9
+                md_yrs = YEARS[md_idx] * ((1-perc) if i==0 else 1)
+                md_end = curr_md + datetime.timedelta(days=md_yrs*365.25)
+                
+                with st.expander(f"{LORDS[md_idx]} ಮಹಾದಶ ({curr_md.strftime('%Y')} - {md_end.strftime('%Y')})"):
+                    curr_ad = curr_md
+                    for j in range(9):
+                        ad_idx = (md_idx + j) % 9
+                        # Fix: Ensure all inputs are float/int
+                        full_md = float(YEARS[md_idx])
+                        ad_yrs = (full_md * YEARS[ad_idx]) / 120.0
                         
-                        pd_txt = []
-                        curr_pd = curr_ad
-                        for k in range(9):
-                             pd_idx = (ad_idx + k) % 9
-                             # PD Duration
-                             full_ad = (YEARS[md_idx] * YEARS[ad_idx]) / 120.0
-                             pd_real = (full_ad * YEARS[pd_idx]) / 120.0
-                             
-                             pd_end = curr_pd + datetime.timedelta(days=pd_real*365.25)
-                             pd_txt.append(f"{LORDS[pd_idx]}: {pd_end.strftime('%d-%m')}")
-                             curr_pd = pd_end
-                        st.caption(" | ".join(pd_txt))
-                        st.divider()
-                    curr_ad = ad_end
-            curr_md = md_end
+                        ad_end = curr_ad + datetime.timedelta(days=ad_yrs*365.25)
+                        
+                        if ad_end > birth_dt:
+                            st.markdown(f"**{LORDS[ad_idx]} ಭುಕ್ತಿ:** {curr_ad.strftime('%d-%m-%Y')} - {ad_end.strftime('%d-%m-%Y')}")
+                            
+                            pd_txt = []
+                            curr_pd = curr_ad
+                            for k in range(9):
+                                 pd_idx = (ad_idx + k) % 9
+                                 # Proportion Calculation
+                                 full_ad = (float(YEARS[md_idx]) * float(YEARS[ad_idx])) / 120.0
+                                 pd_real = (full_ad * YEARS[pd_idx]) / 120.0
+                                 
+                                 pd_end = curr_pd + datetime.timedelta(days=pd_real*365.25)
+                                 pd_txt.append(f"{LORDS[pd_idx]}: {pd_end.strftime('%d-%m')}")
+                                 curr_pd = pd_end
+                            st.caption(" | ".join(pd_txt))
+                            st.divider()
+                        curr_ad = ad_end
+                curr_md = md_end
+        except Exception as e:
+            st.error(f"Dasha Error: {e}")
 
     with t4:
         # PANCHANGA
