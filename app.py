@@ -51,7 +51,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v95")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v96")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -80,23 +80,20 @@ def find_sunrise_set(jd_noon, lat, lon):
     for i in range(24):
         alt1 = get_altitude_manual(current, lat, lon)
         alt2 = get_altitude_manual(current + step, lat, lon)
-        
-        if alt1 < -0.833 and alt2 >= -0.833: # Sunrise
+        if alt1 < -0.833 and alt2 >= -0.833:
             l, h = current, current + step
             for _ in range(20): 
                 m = (l + h) / 2
                 if get_altitude_manual(m, lat, lon) < -0.833: l = m
                 else: h = m
             rise_time = h
-            
-        if alt1 > -0.833 and alt2 <= -0.833: # Sunset
+        if alt1 > -0.833 and alt2 <= -0.833:
             l, h = current, current + step
             for _ in range(20): 
                 m = (l + h) / 2
                 if get_altitude_manual(m, lat, lon) > -0.833: l = m
                 else: h = m
             set_time = h
-            
         current += step
     return rise_time, set_time
 
@@ -132,57 +129,56 @@ def get_full_calculations(jd, lat, lon):
     positions[KN_PLANETS["Lagna"]] = lagna
     
     # ----------------------------
-    # VEDIC DAY & MANDI (TIMEZONE FIX)
+    # VEDIC DAY & MANDI (PURE STANDARD LOGIC)
     # ----------------------------
     sr, ss = find_sunrise_set(jd, lat, lon)
     if sr == -1 or ss == -1: sr = jd - 0.25; ss = jd + 0.25 
     
-    # Calculate Local JD for Weekday (IST is +5.5h)
-    # This prevents UTC rollback error
+    # 1. Get Correct Weekday (Timezone Adjusted)
+    dt_obj = datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
+    # India is +5.5 UTC. If running on UTC server, we must shift.
+    # Actually simpler: Use jd + 0.5 + (5.5/24) for weekday
     jd_local = jd + (5.5/24.0)
-    # Standard JD to Weekday: (JD + 1.5) % 7. 
-    # Use Local JD to match the calendar date in India.
     cal_wday = int(jd_local + 0.5 + 1.5) % 7 
     
+    # 2. Check Vedic Day (Is it Pre-Sunrise?)
     if jd < sr:
-        # Pre-Sunrise (Night of Yesterday)
+        # It is early morning -> Vedic Day is Yesterday
         prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
         vedic_sunrise = prev_sr
         
-        # Vedic Weekday = Calendar Weekday - 1
-        w_idx = (cal_wday - 1) % 7 
-        is_night_birth = True
+        w_idx = (cal_wday - 1) % 7 # Use Yesterday's Weekday
+        is_night = True
         
+        # NIGHT LOGIC: Start from Yesterday's Sunset
         start_base = prev_ss
         dur = sr - prev_ss
     else:
-        # Post-Sunrise
+        # It is standard day -> Vedic Day is Today
         vedic_sunrise = sr
         w_idx = cal_wday 
         
         if jd >= ss:
-            # Evening Night
-            is_night_birth = True
+            # Evening -> Night of Today
+            is_night = True
             next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
+            
+            # NIGHT LOGIC: Start from Today's Sunset
             start_base = ss
             dur = next_sr - ss
         else:
             # Day
-            is_night_birth = False
+            is_night = False
+            
+            # DAY LOGIC: Start from Today's Sunrise
             start_base = sr
             dur = ss - sr
 
+    # 3. Apply Factors (Standard Table)
     day_ghati = [26, 22, 18, 14, 10, 6, 2]
     night_ghati = [10, 6, 2, 26, 22, 18, 14]
     
-    if is_night_birth:
-        # Use Night Factor & Anchor to Sunset
-        f_raw = night_ghati[w_idx] - 1.0 
-        factor = f_raw if f_raw >= 0 else (f_raw + 30) 
-    else:
-        # Use Day Factor & Anchor to Sunrise
-        f_raw = day_ghati[w_idx] - 1.0
-        factor = f_raw if f_raw >= 0 else (f_raw + 30)
+    factor = night_ghati[w_idx] if is_night else day_ghati[w_idx]
         
     mtime = start_base + (dur * factor / 30.0)
     mandi_deg = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
@@ -202,7 +198,7 @@ def get_full_calculations(jd, lat, lon):
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
-        "v": KN_VARA[w_idx], # Uses Corrected Vedic Weekday
+        "v": KN_VARA[w_idx], 
         "n": KN_NAK[n_idx % 27],
         "sr": vedic_sunrise, 
         "ss": ss, 
@@ -211,7 +207,7 @@ def get_full_calculations(jd, lat, lon):
         "parama": fmt_ghati((je - js) * 60), 
         "rem": fmt_ghati((je - jd) * 60),
         "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
-        "n_idx": n_idx, "perc": perc, "jd_birth": jd, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
+        "n_idx": n_idx, "perc": perc, "jd_birth": jd, "date_obj": dt_obj
     }
     return positions, pan
 
