@@ -25,11 +25,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CALCULATION ENGINE (FIXED ARGUMENTS)
+# 2. CALCULATION ENGINE
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v62")
+geolocator = Nominatim(user_agent="bharatheeyam_v63")
 
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
 PLANET_IDS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 10: "ರಾಹು"}
@@ -50,22 +50,16 @@ def get_varga_pos(deg, div):
 
 def get_mandi(jd, lat, lon):
     try:
-        # 1. Calculate Sunrise/Sunset
-        # Note: flags are combined with bitwise OR (|)
         res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
         sr = res[1][0]
         res_s = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_SET | swe.FLG_MOSEPH)
         ss = res_s[1][0]
-        
-        # 2. Mandi Time Math
         day_len = ss - sr
         part = day_len / 8.0
         wday = int(jd + 0.5 + 1.5) % 7
-        m_factors = [26, 22, 18, 14, 10, 6, 2] # Sun to Sat
+        m_factors = [26, 22, 18, 14, 10, 6, 2]
         m_time = sr + (part * m_factors[wday] / 30.0 * 3.75)
-        
-        # 3. Calculate Ascendant for Mandi Time
-        # FIXED ARGUMENT ORDER: jd, lat, lon, house_sys, flags
+        # Corrected byte string argument
         res_h = swe.houses_ex(m_time, lat, lon, b'P', swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
         return res_h[0][0] % 360
     except: return 0.0
@@ -100,7 +94,6 @@ if run:
         jd = swe.julday(u_dob.year, u_dob.month, u_dob.day, h_dec - 5.5)
         
         pos = {}
-        # Planet Loop
         for pid, pnk in PLANET_IDS.items():
             res = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
             pos[pnk] = res[0][0] % 360
@@ -108,8 +101,7 @@ if run:
         pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
         pos["ಮಾಂದಿ"] = get_mandi(jd, u_lat, u_lon)
         
-        # Lagna Calculation
-        # FIXED ARGUMENT ORDER: jd, lat, lon, house_sys, flags
+        # Corrected byte string argument
         res_lag = swe.houses_ex(jd, u_lat, u_lon, b'P', swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
         pos["ಲಗ್ನ"] = res_lag[0][0] % 360
         
@@ -117,18 +109,36 @@ if run:
         t1, t2, t3, t4 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಉಳಿಸಿ"])
         
         with t1:
-            v_choice = st.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
+            col1, col2 = st.columns(2)
+            v_choice = col1.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
+            # BHAVA SWITCH IS BACK
+            chart_mode = col2.radio("ವಿಧಾನ", ["Rashi", "Bhava"])
+            
             boxes = {i: "" for i in range(12)}
+            lag_deg = pos["ಲಗ್ನ"]
+            
             for p, d in pos.items():
-                idx = get_varga_pos(d, v_choice)
+                # Logic: If Bhava is selected AND we are in D1, use Bhava Math
+                if chart_mode == "Bhava" and v_choice == 1:
+                     # Bhava Logic: (Planet - Lagna + 15 + 360) / 30
+                     # This puts Lagna in the middle of the 1st house
+                     idx = int(((d - lag_deg + 15 + 360) % 360) / 30)
+                     # Adjust so 1st house is where Lagna Rashi is
+                     lag_rashi = int(lag_deg / 30)
+                     final_idx = (lag_rashi + idx) % 12
+                else:
+                     final_idx = get_varga_pos(d, v_choice)
+                
                 cls = "hi" if p in ["ಲಗ್ನ", "ಮಾಂದಿ"] else "pl-name"
-                boxes[idx] += f'<div class="{cls}">{p}</div>'
+                boxes[final_idx] += f'<div class="{cls}">{p}</div>'
             
             grid = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
             html = '<div class="grid-container">'
             for g in grid:
                 if g is None:
-                    if html.count('center-box') < 1: html += f'<div class="center-box">ಭಾರತೀಯಮ್<br>D{v_choice}</div>'
+                    label = f"ಭಾರತೀಯಮ್<br>D{v_choice}"
+                    if chart_mode == "Bhava": label += "<br>(Bhava)"
+                    if html.count('center-box') < 1: html += f'<div class="center-box">{label}</div>'
                 else: html += f'<div class="box"><span class="box-lbl">{KN_RASHI[g]}</span>{boxes[g]}</div>'
             st.markdown(html + '</div>', unsafe_allow_html=True)
             
@@ -137,17 +147,34 @@ if run:
             st.table(df)
             
         with t3:
+            # Dasha Logic Calculation
             m_lon = pos.get("ಚಂದ್ರ", 0)
-            n_idx = int(m_lon / 13.333333333)
+            # Nakshatra Index (0-26)
+            nak_idx = int(m_lon / 13.333333333)
+            # Percentage passed in Nakshatra
             perc = (m_lon % 13.333333333) / 13.333333333
-            start_l = n_idx % 9
+            
+            # Lord of that Nakshatra (0-8)
+            start_lord_idx = nak_idx % 9
+            
             y, m, d, hv = swe.revjul(jd + 5.5/24.0)
             dt = datetime.datetime(y, m, d)
+            
+            st.subheader(f"ಜನ್ಮ ನಕ್ಷತ್ರ: {start_lord_idx}") # Just for debug/info
+            
             for i in range(9):
-                l_idx = (start_l + i) % 9
-                dur = YEARS[l_idx] * ((1-perc) if i==0 else 1)
-                dt += datetime.timedelta(days=dur*365.25)
-                st.markdown(f"<div class='md-node'><span>{LORDS[l_idx]}</span> <span>{dt.strftime('%d-%m-%Y')} ವರೆಗೆ</span></div>", unsafe_allow_html=True)
+                # Calculate current lord in sequence
+                curr_lord_idx = (start_lord_idx + i) % 9
+                
+                # First dasha is only the remaining balance
+                if i == 0:
+                    balance_years = YEARS[curr_lord_idx] * (1 - perc)
+                    dur_days = balance_years * 365.25
+                else:
+                    dur_days = YEARS[curr_lord_idx] * 365.25
+                
+                dt += datetime.timedelta(days=dur_days)
+                st.markdown(f"<div class='md-node'><span>{LORDS[curr_lord_idx]}</span> <span>{dt.strftime('%d-%m-%Y')} ವರೆಗೆ</span></div>", unsafe_allow_html=True)
                 
         with t4:
             st.download_button("ಡೌನ್‌ಲೋಡ್ (CSV)", df.to_csv(index=False), f"{u_name}.csv")
