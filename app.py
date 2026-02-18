@@ -9,10 +9,9 @@ from geopy.geocoders import Nominatim
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered")
 
-# Initialize Swisseph
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v81")
+geolocator = Nominatim(user_agent="bharatheeyam_v82")
 
 st.markdown("""
     <style>
@@ -58,80 +57,65 @@ def get_varga_pos(deg, div):
     return int(deg/30)
 
 def safe_rise_set(jd, lat, lon):
-    """
-    Tries multiple ways to calculate Sunrise/Sunset to satisfy different library versions.
-    Returns: (sunrise_jd, sunset_jd)
-    """
     lat = float(lat)
     lon = float(lon)
-    # STRICT INT FLAGS
-    flags_rise = int(swe.CALC_RISE | swe.FLG_MOSEPH)
-    flags_set  = int(swe.CALC_SET | swe.FLG_MOSEPH)
+    rise_flags = int(swe.CALC_RISE | swe.FLG_MOSEPH)
+    set_flags = int(swe.CALC_SET | swe.FLG_MOSEPH)
     
-    # Attempt 1: Tuple Format (Standard)
+    # Try Tuple Method (Standard)
     try:
-        rr = swe.rise_trans(jd, swe.SUN, (lon, lat, 0.0), flags_rise)
-        rs = swe.rise_trans(jd, swe.SUN, (lon, lat, 0.0), flags_set)
+        rr = swe.rise_trans(jd, swe.SUN, (lon, lat, 0.0), rise_flags)
+        rs = swe.rise_trans(jd, swe.SUN, (lon, lat, 0.0), set_flags)
         return rr[1][0], rs[1][0]
     except:
-        pass
-
-    # Attempt 2: Expanded Format (No Tuple)
-    try:
-        rr = swe.rise_trans(jd, swe.SUN, lon, lat, 0, flags_rise)
-        rs = swe.rise_trans(jd, swe.SUN, lon, lat, 0, flags_set)
-        return rr[1][0], rs[1][0]
-    except:
-        pass
-        
-    # Attempt 3: Reduced Format (No Altitude)
-    try:
-        rr = swe.rise_trans(jd, swe.SUN, lon, lat, flags_rise)
-        rs = swe.rise_trans(jd, swe.SUN, lon, lat, flags_set)
-        return rr[1][0], rs[1][0]
-    except:
-        pass
-
-    # Fallback: Approximation (6 AM / 6 PM Local Mean Time) to prevent crash
-    # 0.25 JD = 6 hours. Local time adjustment = lon/360.
-    start_of_day = int(jd) + 0.5 - (lon/360.0)
-    return start_of_day + 0.25, start_of_day + 0.75
+        # Try expanded method
+        try:
+            rr = swe.rise_trans(jd, swe.SUN, lon, lat, 0, rise_flags)
+            rs = swe.rise_trans(jd, swe.SUN, lon, lat, 0, set_flags)
+            return rr[1][0], rs[1][0]
+        except:
+            # Try reduced method
+            rr = swe.rise_trans(jd, swe.SUN, lon, lat, rise_flags)
+            rs = swe.rise_trans(jd, swe.SUN, lon, lat, set_flags)
+            return rr[1][0], rs[1][0]
 
 def get_mandi(jd, lat, lon):
     try:
         lat = float(lat)
         lon = float(lon)
         
-        # 1. Get Sunrise/Sunset using the SAFE function
+        # 1. Get Sunrise/Sunset
         sr, ss = safe_rise_set(jd, lat, lon)
         
         # 2. Vedic Weekday
         wday = int(jd + 0.5 + 1.5) % 7
         
-        # 3. Mandi Logic
+        # 3. Mandi Logic with -1 Ghati Correction
         day_ghati = [26, 22, 18, 14, 10, 6, 2]
         night_ghati = [10, 6, 2, 26, 22, 18, 14]
         
         if jd >= sr and jd < ss:
             # DAY
             dur = ss - sr
-            factor = day_ghati[wday]
+            # Correction: Subtract 1.0 from factor to shift back ~24 mins (6 degrees)
+            factor = day_ghati[wday] - 1.0
+            if factor < 0: factor += 30 # Wrap if needed
             m_time = sr + (dur * factor / 30.0)
         else:
             # NIGHT
             if jd >= ss:
-                # Evening: Need Next Sunrise
                 sr_next, _ = safe_rise_set(jd + 1.0, lat, lon)
                 dur = sr_next - ss
                 start = ss
-                factor = night_ghati[wday]
+                factor = night_ghati[wday] - 1.0
+                if factor < 0: factor += 30
             else:
-                # Early Morning: Need Prev Sunset
                 _, ss_prev = safe_rise_set(jd - 1.0, lat, lon)
                 dur = sr - ss_prev
                 start = ss_prev
                 prev_wday = (wday - 1) % 7
-                factor = night_ghati[prev_wday]
+                factor = night_ghati[prev_wday] - 1.0
+                if factor < 0: factor += 30
             
             m_time = start + (dur * factor / 30.0)
 
@@ -189,14 +173,12 @@ if st.session_state['show_chart']:
     h_dec = u_tob.hour + u_tob.minute/60.0
     jd = swe.julday(u_dob.year, u_dob.month, u_dob.day, h_dec - 5.5)
     
-    # 1. Planets
     pos = {}
     for pid, pnk in PLANET_IDS.items():
         res = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
         pos[pnk] = res[0][0] % 360
     pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
     
-    # 2. Mandi (Safe Mode)
     mandi_res = get_mandi(jd, u_lat, u_lon)
     if isinstance(mandi_res, str):
         st.error(mandi_res)
@@ -204,7 +186,6 @@ if st.session_state['show_chart']:
     else:
         pos["ಮಾಂದಿ"] = mandi_res
     
-    # 3. Lagna
     res_lag = swe.houses(jd, float(u_lat), float(u_lon), b'P')
     ayan_now = swe.get_ayanamsa(jd)
     pos["ಲಗ್ನ"] = (res_lag[0][0] - ayan_now) % 360
@@ -243,50 +224,51 @@ if st.session_state['show_chart']:
         st.table(df)
 
     with t3:
-        # ACCORDION DASHA
-        m_lon = pos.get("ಚಂದ್ರ", 0)
-        n_idx = int(m_lon / 13.333333333)
-        perc = (m_lon % 13.333333333) / 13.333333333
-        start_lord = n_idx % 9
-        
-        y, m, d, hv = swe.revjul(jd + 5.5/24.0)
-        birth_dt = datetime.datetime(int(y), int(m), int(d))
-        
-        st.info("ಪ್ರತಿ ಮಹಾದಶವನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ (3 ಹಂತಗಳು)")
-        
-        curr_md = birth_dt
-        for i in range(9):
-            md_idx = (start_lord + i) % 9
-            md_yrs = YEARS[md_idx] * ((1-perc) if i==0 else 1)
-            md_end = curr_md + datetime.timedelta(days=md_yrs*365.25)
+        try:
+            m_lon = pos.get("ಚಂದ್ರ", 0)
+            n_idx = int(m_lon / 13.333333333)
+            perc = (m_lon % 13.333333333) / 13.333333333
+            start_lord = n_idx % 9
             
-            with st.expander(f"{LORDS[md_idx]} ಮಹಾದಶ ({curr_md.strftime('%Y')} - {md_end.strftime('%Y')})"):
-                curr_ad = curr_md
-                for j in range(9):
-                    ad_idx = (md_idx + j) % 9
-                    full_md = float(YEARS[md_idx])
-                    ad_yrs = (full_md * YEARS[ad_idx]) / 120.0
-                    ad_end = curr_ad + datetime.timedelta(days=ad_yrs*365.25)
-                    
-                    if ad_end > birth_dt:
-                        st.markdown(f"**{LORDS[ad_idx]} ಭುಕ್ತಿ:** {curr_ad.strftime('%d-%m-%Y')} - {ad_end.strftime('%d-%m-%Y')}")
+            y, m, d, hv = swe.revjul(jd + 5.5/24.0)
+            birth_dt = datetime.datetime(int(y), int(m), int(d))
+            
+            st.info("ಪ್ರತಿ ಮಹಾದಶವನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ (3 ಹಂತಗಳು)")
+            
+            curr_md = birth_dt
+            for i in range(9):
+                md_idx = (start_lord + i) % 9
+                md_yrs = YEARS[md_idx] * ((1-perc) if i==0 else 1)
+                md_end = curr_md + datetime.timedelta(days=md_yrs*365.25)
+                
+                with st.expander(f"{LORDS[md_idx]} ಮಹಾದಶ ({curr_md.strftime('%Y')} - {md_end.strftime('%Y')})"):
+                    curr_ad = curr_md
+                    for j in range(9):
+                        ad_idx = (md_idx + j) % 9
+                        full_md = float(YEARS[md_idx])
+                        ad_yrs = (full_md * YEARS[ad_idx]) / 120.0
+                        ad_end = curr_ad + datetime.timedelta(days=ad_yrs*365.25)
                         
-                        pd_txt = []
-                        curr_pd = curr_ad
-                        for k in range(9):
-                             pd_idx = (ad_idx + k) % 9
-                             full_ad = (float(YEARS[md_idx]) * float(YEARS[ad_idx])) / 120.0
-                             pd_real = (full_ad * YEARS[pd_idx]) / 120.0
-                             pd_end = curr_pd + datetime.timedelta(days=pd_real*365.25)
-                             pd_txt.append(f"{LORDS[pd_idx]}: {pd_end.strftime('%d-%m')}")
-                             curr_pd = pd_end
-                        st.caption(" | ".join(pd_txt))
-                        st.divider()
-                    curr_ad = ad_end
-            curr_md = md_end
+                        if ad_end > birth_dt:
+                            st.markdown(f"**{LORDS[ad_idx]} ಭುಕ್ತಿ:** {curr_ad.strftime('%d-%m-%Y')} - {ad_end.strftime('%d-%m-%Y')}")
+                            
+                            pd_txt = []
+                            curr_pd = curr_ad
+                            for k in range(9):
+                                 pd_idx = (ad_idx + k) % 9
+                                 full_ad = (float(YEARS[md_idx]) * float(YEARS[ad_idx])) / 120.0
+                                 pd_real = (full_ad * YEARS[pd_idx]) / 120.0
+                                 pd_end = curr_pd + datetime.timedelta(days=pd_real*365.25)
+                                 pd_txt.append(f"{LORDS[pd_idx]}: {pd_end.strftime('%d-%m')}")
+                                 curr_pd = pd_end
+                            st.caption(" | ".join(pd_txt))
+                            st.divider()
+                        curr_ad = ad_end
+                curr_md = md_end
+        except Exception as e:
+            st.error(f"Dasha Error: {e}")
 
     with t4:
-        # PANCHANGA
         tithi, nak, yoga, karana, vara = get_panchanga(jd, pos["ಚಂದ್ರ"], pos["ರವಿ"])
         st.markdown(f"**ವಾರ:** {vara}")
         st.markdown(f"**ತಿಥಿ:** {tithi}")
