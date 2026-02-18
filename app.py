@@ -32,19 +32,15 @@ swe.set_sid_mode(swe.SIDM_LAHIRI)
 geolocator = Nominatim(user_agent="bharatheeyam_v58")
 
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
-KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು"}
+KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು"}
 LORDS = ["ಕೇತು","ಶುಕ್ರ","ರವಿ","ಚಂದ್ರ","ಕುಜ","ರಾಹು","ಗುರು","ಶನಿ","ಬುಧ"]
 YEARS = [7, 20, 6, 10, 7, 18, 16, 19, 17]
 
 def get_varga_pos(deg, div):
     if div == 1: return int(deg/30)
-    # Navamsha D9
     if div == 9: return (([0,9,6,3][int(deg/30)%4]) + int((deg%30)/3.33333)) % 12
-    # Drekkana D3
     if div == 3: return (int(deg/30) + (int((deg%30)/10) * 4)) % 12
-    # Dwadashamsha D12
     if div == 12: return (int(deg/30) + int((deg%30)/2.5)) % 12
-    # Trimshamsha D30
     if div == 30:
         r = int(deg/30); dr = deg%30; is_odd = (r%2 == 0)
         if is_odd: return 0 if dr<5 else 10 if dr<10 else 8 if dr<18 else 2 if dr<25 else 6
@@ -52,17 +48,15 @@ def get_varga_pos(deg, div):
     return int(deg/30)
 
 def get_mandi(jd, lat, lon):
-    # Calculate sunrise
     res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_RISE)
     sunrise_jd = res[1][0]
     res_set = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_SET)
     sunset_jd = res_set[1][0]
-    
     day_dur = sunset_jd - sunrise_jd
     part = day_dur / 8.0
-    weekday = int(jd + 0.5 + 1.5) % 7 # 0=Sun
-    mandi_factors = [26, 22, 18, 14, 10, 6, 2] # Traditional Mandi parts
-    m_time = sunrise_jd + (part * mandi_factors[weekday] / 30.0 * 3.75) # Approximation
+    weekday = int(jd + 0.5 + 1.5) % 7
+    mandi_factors = [26, 22, 18, 14, 10, 6, 2]
+    m_time = sunrise_jd + (part * mandi_factors[weekday] / 30.0 * 3.75)
     ayan = swe.get_ayanamsa(m_time)
     m_deg = (swe.houses(m_time, lat, lon, b'P')[1][0] - ayan) % 360
     return m_deg
@@ -77,29 +71,25 @@ with st.sidebar:
     name = st.text_input("ಹೆಸರು", "ಬಳಕೆದಾರ")
     dob = st.date_input("ದಿನಾಂಕ", datetime.date(1997, 5, 24))
     tob = st.time_input("ಸಮಯ", datetime.time(14, 43))
-    lat = st.number_input("Lat", value=14.9800, format="%.4f")
-    lon = st.number_input("Lon", value=74.7300, format="%.4f")
+    lat_val = st.number_input("Lat", value=14.9800, format="%.4f")
+    lon_val = st.number_input("Lon", value=74.7300, format="%.4f")
     st.markdown("---")
-    
-    # CALCULATE BUTTON
-    if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
-        st.session_state.run = True
+    run_btn = st.button("ಜಾತಕ ರಚಿಸಿ", type="primary")
 
-if "run" in st.session_state:
+if run_btn:
     h_dec = tob.hour + tob.minute/60.0
     jd = swe.julday(dob.year, dob.month, dob.day, h_dec - 5.5)
     ayan = swe.get_ayanamsa(jd)
     
-    # 1. Calculate Planets
     pos = {}
     for pid, pnk in KN_PLANETS.items():
-        pos[pnk] = (swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
+        res_calc = swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)
+        pos[pnk] = res_calc[0][0] % 360
     
     pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
-    pos["ಲಗ್ನ"] = (swe.houses(jd, lat, lon, b'P')[1][0] - ayan) % 360
-    pos["ಮಾಂದಿ"] = get_mandi(jd, lat, lon)
+    pos["ಲಗ್ನ"] = (swe.houses(jd, lat_val, lon_val, b'P')[1][0] - ayan) % 360
+    pos["ಮಾಂದಿ"] = get_mandi(jd, lat_val, lon_val)
     
-    # 2. Tabs
     t1, t2, t3, t4 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಉಳಿಸಿ"])
     
     with t1:
@@ -120,18 +110,16 @@ if "run" in st.session_state:
         st.markdown(h_grid + '</div>', unsafe_allow_html=True)
 
     with t2:
-        res = [{"ಗ್ರಹ": k, "ರಾಶಿ": KN_RASHI[int(v/30)], "ಅಂಶ": f"{int(v%30)}° {int((v%30*60)%60)}'"} for k,v in pos.items()]
-        st.table(pd.DataFrame(res))
+        res_list = [{"ಗ್ರಹ": k, "ರಾಶಿ": KN_RASHI[int(v/30)], "ಅಂಶ": f"{int(v%30)}° {int((v%30*60)%60)}'"} for k,v in pos.items()]
+        st.table(pd.DataFrame(res_list))
 
     with t3:
         m_lon = pos["ಚಂದ್ರ"]
         n_idx = int(m_lon / 13.333333333)
         perc = (m_lon % 13.333333333) / 13.333333333
         start_lord = n_idx % 9
-        
-        y, m, d, h = swe.revjul(jd + 5.5/24.0)
+        y, m, d, h_val = swe.revjul(jd + 5.5/24.0)
         curr_dt = datetime.datetime(y,m,d)
-        
         st.subheader(f"ವಿಂಶೋತ್ತರಿ ದಶ ({LORDS[start_lord]} ಉಳಿಕೆ)")
         for i in range(9):
             idx = (start_lord + i) % 9
@@ -141,5 +129,5 @@ if "run" in st.session_state:
 
     with t4:
         st.success(f"{name} ಅವರ ಜಾತಕ ಸಿದ್ಧವಾಗಿದೆ.")
-        csv = pd.DataFrame(res).to_csv(index=False).encode('utf-8')
-        st.download_button("ಜಾತಕ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ (CSV)", csv, f"{name}_jathaka.csv", "text/csv")
+        csv_data = pd.DataFrame(res_list).to_csv(index=False).encode('utf-8')
+        st.download_button("ಜಾತಕ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ (CSV)", csv_data, f"{name}_jathaka.csv", "text/csv")
