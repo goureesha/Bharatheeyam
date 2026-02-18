@@ -6,20 +6,26 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. PAGE CONFIG & THEME
+# 1. PAGE CONFIG & THEME (Royal Vedic)
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", page_icon="🕉️", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
+    
+    /* THEME: Royal Vedic 2025 */
     .stApp { background-color: #FFFBF0 !important; font-family: 'Noto Sans Kannada', sans-serif; color: #1F1F1F !important; }
+    
+    /* HEADER */
     .header-box { background: linear-gradient(135deg, #6A040F, #9D0208); color: #FFFFFF !important; padding: 16px; text-align: center; font-weight: 900; font-size: 24px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); border-bottom: 4px solid #FAA307; }
+    
+    /* INPUTS */
     div[data-testid="stInput"] { background-color: white; border-radius: 8px; border: 1px solid #E0E0E0; }
     .stButton>button { width: 100%; border-radius: 10px; background-color: #9D0208 !important; color: white !important; font-weight: bold; border: none; padding: 12px; transition: all 0.3s ease; }
     .stButton>button:hover { background-color: #D00000 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     button[kind="secondary"] { background-color: #FFFFFF !important; color: #9D0208 !important; border: 2px solid #9D0208 !important; }
-    
+
     /* TABS */
     div[data-testid="stTabs"] button { background-color: transparent !important; }
     div[data-testid="stTabs"] button[aria-selected="false"] p { color: #5D4037 !important; font-weight: 700 !important; font-size: 14px !important; }
@@ -36,7 +42,7 @@ st.markdown("""
     
     /* CARDS */
     .card { background: #FFFFFF; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #F0F0F0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .key-val-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .key { color: #9D0208 !important; font-weight: 900; width: 40%; }
     .key-val-table td { border-bottom: 1px solid #f0f0f0; padding: 10px 4px; color: #333 !important; }
     
     /* DASHA */
@@ -59,7 +65,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v89")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v90")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -88,6 +94,8 @@ def find_sunrise_set(jd_noon, lat, lon):
     for i in range(24):
         alt1 = get_altitude_manual(current, lat, lon)
         alt2 = get_altitude_manual(current + step, lat, lon)
+        
+        # Sunrise 
         if alt1 < -0.833 and alt2 >= -0.833:
             l, h = current, current + step
             for _ in range(20): 
@@ -95,6 +103,8 @@ def find_sunrise_set(jd_noon, lat, lon):
                 if get_altitude_manual(m, lat, lon) < -0.833: l = m
                 else: h = m
             rise_time = h
+            
+        # Sunset
         if alt1 > -0.833 and alt2 <= -0.833:
             l, h = current, current + step
             for _ in range(20): 
@@ -102,6 +112,7 @@ def find_sunrise_set(jd_noon, lat, lon):
                 if get_altitude_manual(m, lat, lon) > -0.833: l = m
                 else: h = m
             set_time = h
+            
         current += step
     return rise_time, set_time
 
@@ -136,48 +147,58 @@ def get_full_calculations(jd, lat, lon):
     lagna = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     positions[KN_PLANETS["Lagna"]] = lagna
     
-    # --- MANDI LOGIC (FIXED FOR NIGHT BIRTH) ---
+    # ----------------------------
+    # VEDIC DAY & MANDI LOGIC (FIXED)
+    # ----------------------------
+    # 1. Get Civil Sunrise/Sunset for the actual calendar date of birth
     sr, ss = find_sunrise_set(jd, lat, lon)
     if sr == -1 or ss == -1: sr = jd - 0.25; ss = jd + 0.25 
     
-    day_ghati = [26, 22, 18, 14, 10, 6, 2]
-    night_ghati = [10, 6, 2, 26, 22, 18, 14]
-    
-    if jd >= sr and jd < ss:
-        # Day Birth
-        w_idx = int(sr + 0.5 + 1.5) % 7
-        dur = ss - sr
-        factor = day_ghati[w_idx]
-        mtime = sr + (dur * factor / 30.0)
-        day_sr = sr
+    # 2. Determine VEDIC Sunrise (for Panchanga & Udayadi)
+    # If born before sunrise, Vedic Day is Yesterday
+    if jd < sr:
+        prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
+        vedic_sunrise = prev_sr
+        # For Mandi Calculation - It is Night of Yesterday
+        w_idx = int(prev_sr + 0.5 + 1.5) % 7 # Weekday of Yesterday
+        is_night_birth = True
+        
+        # Duration for Mandi (Yesterday Sunset to Today Sunrise)
+        dur = sr - prev_ss
+        start_base = prev_ss
+        
     else:
-        # Night Birth
-        if jd >= ss: 
-            # Evening (After Sunset, Before Midnight/Next SR)
-            # Weekday is TODAY
-            w_idx = int(sr + 0.5 + 1.5) % 7
+        vedic_sunrise = sr
+        w_idx = int(sr + 0.5 + 1.5) % 7 # Weekday of Today
+        
+        if jd >= ss:
+            # Night of Today
+            is_night_birth = True
             next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
             dur = next_sr - ss
             start_base = ss
-            day_sr = sr
         else:
-            # Early Morning (Before Sunrise) - THE CRITICAL FIX
-            # Weekday is YESTERDAY
-            prev_ss = find_sunrise_set(jd - 1.0, lat, lon)[1] # Get yesterday's sunset
-            prev_sr = find_sunrise_set(jd - 1.0, lat, lon)[0] # Get yesterday's sunrise for weekday calc
-            
-            w_idx = int(prev_sr + 0.5 + 1.5) % 7 # This will return FRIDAY index for Sat early morning
-            
-            dur = sr - prev_ss
-            start_base = prev_ss
-            day_sr = sr # Display today's SR in panchanga
-            
-        factor = night_ghati[w_idx]
-        mtime = start_base + (dur * factor / 30.0)
+            # Day of Today
+            is_night_birth = False
+            dur = ss - sr
+            start_base = sr
 
+    # 3. Calculate Mandi Time
+    day_ghati = [26, 22, 18, 14, 10, 6, 2]
+    night_ghati = [10, 6, 2, 26, 22, 18, 14]
+    
+    if is_night_birth:
+        factor = night_ghati[w_idx]
+    else:
+        factor = day_ghati[w_idx]
+        
+    mtime = start_base + (dur * factor / 30.0)
     mandi_deg = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
     positions[KN_PLANETS["Ma"]] = mandi_deg
 
+    # ----------------------------
+    # PANCHANGA (USING VEDIC SUNRISE)
+    # ----------------------------
     moon_deg, sun_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
     t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12)
     n_idx = int(moon_deg / 13.333333333)
@@ -185,13 +206,19 @@ def get_full_calculations(jd, lat, lon):
     perc = (moon_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
     
-    # Panchanga Weekday (Calendar)
-    w_idx_cal = int(jd + 0.5 + 1.5) % 7
+    # Calculate Udayadi based on VEDIC Sunrise (Fixed)
+    udayadi_val = (jd - vedic_sunrise) * 60
     
     pan = {
-        "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx_cal], "n": KN_NAK[n_idx % 27],
-        "sr": day_sr, "ss": ss, "udayadi": fmt_ghati((jd - day_sr) * 60), 
-        "gata": fmt_ghati((jd - js) * 60), "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd) * 60),
+        "t": KN_TITHI[min(t_idx, 29)], 
+        "v": KN_VARA[w_idx], # Use Vedic Weekday
+        "n": KN_NAK[n_idx % 27],
+        "sr": vedic_sunrise, 
+        "ss": ss, 
+        "udayadi": fmt_ghati(udayadi_val), # Correct large value for night birth
+        "gata": fmt_ghati((jd - js) * 60), 
+        "parama": fmt_ghati((je - js) * 60), 
+        "rem": fmt_ghati((je - jd) * 60),
         "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
         "n_idx": n_idx, "perc": perc, "jd_birth": jd, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
     }
@@ -318,7 +345,18 @@ elif st.session_state.page == "dashboard":
         st.markdown(dh, unsafe_allow_html=True)
 
     with t4:
-        st.markdown(f"""<div class='card'><table class='key-val-table'><tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr><tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr><tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr><tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr><tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr><tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr></table></div>""", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class='card'>
+            <table class='key-val-table'>
+                <tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr>
+                <tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr>
+                <tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr>
+                <tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr>
+                <tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr>
+                <tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
 
     with t5:
         st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300)
