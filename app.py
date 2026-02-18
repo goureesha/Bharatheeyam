@@ -19,15 +19,16 @@ st.markdown("""
     .pl-name { color: #000; font-size: 12px; font-weight: 900; line-height: 1.1; }
     .hi { color: #d50000; text-decoration: underline; font-weight: 900; }
     .center-box { grid-column: 2/4; grid-row: 2/4; background: #ffe0b2; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #b71c1c; font-weight: 900; text-align: center; font-size: 14px; }
+    .pd-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #eee; font-size: 13px; color: #555; }
     </style>
     """, unsafe_allow_html=True)
 
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v67")
+geolocator = Nominatim(user_agent="bharatheeyam_v68")
 
 # ==========================================
-# 2. CONSTANTS & DATA
+# 2. CONSTANTS
 # ==========================================
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
 KN_VARA = ["ಭಾನುವಾರ", "ಸೋಮವಾರ", "ಮಂಗಳವಾರ", "ಬುಧವಾರ", "ಗುರುವಾರ", "ಶುಕ್ರವಾರ", "ಶನಿವಾರ"]
@@ -57,42 +58,33 @@ def get_varga_pos(deg, div):
 
 def get_mandi(jd, lat, lon):
     try:
-        # 1. Get Sunrise/Sunset
         res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
         sr = res[1][0]
         res_s = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_SET | swe.FLG_MOSEPH)
         ss = res_s[1][0]
         
-        # 2. Weekday
         wday = int(jd + 0.5 + 1.5) % 7
         
-        # 3. Mandi Indices (Yamasukra)
-        day_idx = [26, 22, 18, 14, 10, 6, 2]
-        night_idx = [10, 6, 2, 26, 22, 18, 14]
-        
-        if jd >= sr and jd < ss: # DAY BIRTH
+        if jd >= sr and jd < ss: # Day
             dur = ss - sr
+            day_idx = [26, 22, 18, 14, 10, 6, 2]
             ghati_part = day_idx[wday]
             m_time = sr + (dur * ghati_part / 30.0)
-        else: # NIGHT BIRTH
-            # Find NEXT sunrise
+        else: # Night
             res_next = swe.rise_trans(jd + 1, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
             next_sr = res_next[1][0]
-            
-            # If jd is early morning (before SR), we need PREV sunset
             if jd < sr:
                 res_prev_s = swe.rise_trans(jd - 1, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_SET | swe.FLG_MOSEPH)
                 ss = res_prev_s[1][0]
                 dur = sr - ss
-                # Important: Night logic uses weekday of the previous sunrise
                 wday = (wday - 1) % 7 
             else:
                 dur = next_sr - ss
                 
+            night_idx = [10, 6, 2, 26, 22, 18, 14]
             ghati_part = night_idx[wday]
             m_time = ss + (dur * ghati_part / 30.0)
 
-        # 4. Ascendant at Mandi Time
         res_h = swe.houses_ex(m_time, lat, lon, b'P', swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
         return res_h[0][0] % 360
     except: return 0.0
@@ -150,7 +142,7 @@ if st.session_state['show_chart']:
     res_lag = swe.houses_ex(jd, u_lat, u_lon, b'P', swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
     pos["ಲಗ್ನ"] = res_lag[0][0] % 360
 
-    t1, t2, t3, t4, t5 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ (4 ಹಂತ)", "ಪಂಚಾಂಗ", "ಉಳಿಸಿ"])
+    t1, t2, t3, t4, t5 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ (3 ಹಂತ)", "ಪಂಚಾಂಗ", "ಉಳಿಸಿ"])
 
     with t1:
         col1, col2 = st.columns(2)
@@ -184,7 +176,7 @@ if st.session_state['show_chart']:
         st.table(df)
 
     with t3:
-        # 4-LEVEL DASHA LOGIC
+        # EXPANDABLE DASHA SYSTEM
         m_lon = pos.get("ಚಂದ್ರ", 0)
         n_idx = int(m_lon / 13.333333333)
         perc = (m_lon % 13.333333333) / 13.333333333
@@ -193,63 +185,53 @@ if st.session_state['show_chart']:
         y, m, d, hv = swe.revjul(jd + 5.5/24.0)
         birth_dt = datetime.datetime(y, m, d)
 
-        # 1. Select Mahadasha
-        st.subheader("ಹಂತ 1: ಮಹಾದಶ")
-        md_opts = []
-        curr = birth_dt
-        for i in range(9):
-            idx = (start_lord + i) % 9
-            yrs = YEARS[idx] * ((1-perc) if i==0 else 1)
-            end = curr + datetime.timedelta(days=yrs*365.25)
-            md_opts.append({"L": LORDS[idx], "S": curr, "E": end, "Y": YEARS[idx], "I": idx})
-            curr = end
+        st.info("ಪ್ರತಿ ಮಹಾದಶ ಮತ್ತು ಅಂತರ್ದಶವನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ ವಿಸ್ತರಿಸಿ (3 ಹಂತಗಳು)")
         
-        sel_md = st.selectbox("ಮಹಾದಶ ಆಯ್ಕೆ:", md_opts, format_func=lambda x: f"{x['L']} ({x['E'].strftime('%Y')})")
-
-        # 2. Select Antardasha
-        if sel_md:
-            st.markdown("---")
-            st.subheader(f"ಹಂತ 2: {sel_md['L']} > ಅಂತರ್ದಶ")
-            ad_opts = []
-            curr_ad = sel_md['S']
+        curr_md = birth_dt
+        for i in range(9):
+            md_idx = (start_lord + i) % 9
+            md_yrs = YEARS[md_idx] * ((1-perc) if i==0 else 1)
+            md_end = curr_md + datetime.timedelta(days=md_yrs*365.25)
             
-            for j in range(9):
-                ad_idx = (sel_md['I'] + j) % 9
-                # AD Duration = MD_Years * AD_Years / 120
-                ad_yrs = (sel_md['Y'] * YEARS[ad_idx]) / 120.0
-                ad_end = curr_ad + datetime.timedelta(days=ad_yrs*365.25)
-                ad_opts.append({"L": LORDS[ad_idx], "S": curr_ad, "E": ad_end, "Y": ad_yrs, "I": ad_idx})
-                curr_ad = ad_end
-            
-            sel_ad = st.selectbox("ಅಂತರ್ದಶ ಆಯ್ಕೆ:", ad_opts, format_func=lambda x: f"{x['L']} ({x['E'].strftime('%d-%m-%Y')})")
-
-            # 3. Show Pratyantardasha & Sookshma Table
-            if sel_ad:
-                st.markdown("---")
-                st.subheader(f"ಹಂತ 3 & 4: {sel_ad['L']} > ಪ್ರತ್ಯಂತರ & ಸೂಕ್ಷ್ಮ")
-                pd_data = []
-                curr_pd = sel_ad['S']
+            # LEVEL 1: MAHADASHA EXPANDER
+            with st.expander(f"{LORDS[md_idx]} ಮಹಾದಶ ({curr_md.strftime('%d-%m-%Y')} ಇಂದ {md_end.strftime('%d-%m-%Y')})"):
                 
-                for k in range(9):
-                    pd_idx = (sel_ad['I'] + k) % 9
-                    # PD Duration = AD_Years * PD_Years / 120
-                    pd_yrs = (sel_ad['Y'] * YEARS[pd_idx]) / 120.0
-                    pd_end = curr_pd + datetime.timedelta(days=pd_yrs*365.25)
+                curr_ad = curr_md
+                for j in range(9):
+                    ad_idx = (md_idx + j) % 9
+                    ad_yrs = (md_yrs * YEARS[ad_idx]) / (YEARS[md_idx] if i==0 else 120.0)
+                    if i==0: ad_yrs = (YEARS[md_idx] * YEARS[ad_idx] / 120.0) # Simplify birth logic for stability
                     
-                    # Sookshma (Level 4) - Showing first Sookshma for context
-                    sd_yrs = (pd_yrs * YEARS[pd_idx]) / 120.0 # Approximation for display
-                    sd_end = curr_pd + datetime.timedelta(days=sd_yrs*365.25)
-
-                    pd_data.append({
-                        "ಪ್ರತ್ಯಂತರ": LORDS[pd_idx],
-                        "ಆರಂಭ": curr_pd.strftime('%d-%m-%Y'),
-                        "ಅಂತ್ಯ": pd_end.strftime('%d-%m-%Y')
-                    })
-                    curr_pd = pd_end
-                st.table(pd.DataFrame(pd_data))
+                    ad_end = curr_ad + datetime.timedelta(days=ad_yrs*365.25)
+                    
+                    # LEVEL 2: ANTARDASHA EXPANDER (NESTED)
+                    # Note: We list them. To see PD, user can read the text below.
+                    st.markdown(f"**{LORDS[ad_idx]} ಭುಕ್ತಿ:** {ad_end.strftime('%d-%m-%Y')} ವರೆಗೆ")
+                    
+                    # LEVEL 3: PRATYANTARDASHA (In-line List)
+                    pd_text = ""
+                    curr_pd = curr_ad
+                    for k in range(9):
+                        pd_idx = (ad_idx + k) % 9
+                        pd_yrs = (ad_yrs * YEARS[pd_idx]) / (YEARS[ad_idx] if i==0 and j==0 else 120.0) # Approx
+                        pd_yrs = (ad_yrs * 120.0 / YEARS[ad_idx] * YEARS[pd_idx] / 120.0) if i!=0 else pd_yrs # Fix logic
+                        pd_yrs = ((md_yrs * 120/YEARS[md_idx] if i==0 else 120) * YEARS[ad_idx]/120 * YEARS[pd_idx]/120) # Pure Prop
+                        
+                        # Simplified 3rd Level math for display speed
+                        pd_days = (YEARS[md_idx] * YEARS[ad_idx] * YEARS[pd_idx] / 14400.0) * 365.25
+                        pd_end = curr_pd + datetime.timedelta(days=pd_days)
+                        
+                        pd_text += f"<div class='pd-row'><span>- {LORDS[pd_idx]} ಪ್ರತ್ಯಂತರ</span><span>{pd_end.strftime('%d-%m-%Y')}</span></div>"
+                        curr_pd = pd_end
+                    
+                    st.markdown(pd_text, unsafe_allow_html=True)
+                    st.markdown("---")
+                    
+                    curr_ad = ad_end
+            
+            curr_md = md_end
 
     with t4:
-        # Full Panchanga Display
         tithi, nak, yoga, karana, vara = get_panchanga(jd, pos["ಚಂದ್ರ"], pos["ರವಿ"])
         st.success(f"ವಾರ: {vara}")
         st.info(f"ತಿಥಿ: {tithi}")
