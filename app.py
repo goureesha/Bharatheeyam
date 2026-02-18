@@ -13,19 +13,13 @@ st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", pag
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
-    
-    /* THEME: Royal Vedic 2025 */
     .stApp { background-color: #FFFBF0 !important; font-family: 'Noto Sans Kannada', sans-serif; color: #1F1F1F !important; }
-    
-    /* HEADER */
     .header-box { background: linear-gradient(135deg, #6A040F, #9D0208); color: #FFFFFF !important; padding: 16px; text-align: center; font-weight: 900; font-size: 24px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); border-bottom: 4px solid #FAA307; }
-    
-    /* INPUTS */
     div[data-testid="stInput"] { background-color: white; border-radius: 8px; border: 1px solid #E0E0E0; }
     .stButton>button { width: 100%; border-radius: 10px; background-color: #9D0208 !important; color: white !important; font-weight: bold; border: none; padding: 12px; transition: all 0.3s ease; }
     .stButton>button:hover { background-color: #D00000 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     button[kind="secondary"] { background-color: #FFFFFF !important; color: #9D0208 !important; border: 2px solid #9D0208 !important; }
-
+    
     /* TABS */
     div[data-testid="stTabs"] button { background-color: transparent !important; }
     div[data-testid="stTabs"] button[aria-selected="false"] p { color: #5D4037 !important; font-weight: 700 !important; font-size: 14px !important; }
@@ -65,7 +59,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v91")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v92")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -143,59 +137,51 @@ def get_full_calculations(jd, lat, lon):
     positions[KN_PLANETS["Lagna"]] = lagna
     
     # ----------------------------
-    # VEDIC DAY & MANDI LOGIC (FIXED)
+    # VEDIC DAY & MANDI (WITH -1 GHATI CORRECTION)
     # ----------------------------
-    # 1. Get Civil Sunrise/Sunset for the actual calendar date of birth
     sr, ss = find_sunrise_set(jd, lat, lon)
     if sr == -1 or ss == -1: sr = jd - 0.25; ss = jd + 0.25 
     
-    # 2. Determine VEDIC Sunrise (for Panchanga & Udayadi)
-    # If born before sunrise, Vedic Day is Yesterday
     if jd < sr:
+        # Pre-Sunrise (Night of Yesterday)
         prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
         vedic_sunrise = prev_sr
-        # For Mandi Calculation - It is Night of Yesterday
-        w_idx = int(prev_sr + 0.5 + 1.5) % 7 # Weekday of Yesterday
+        w_idx = int(prev_sr + 0.5 + 1.5) % 7 
         is_night_birth = True
-        
-        # Duration for Mandi (Yesterday Sunset to Today Sunrise)
         dur = sr - prev_ss
         start_base = prev_ss
-        
-        # BUG FIX: In v88, we calculated w_idx but the night loop logic 
-        # might have shifted it again. Here we force it.
-        
     else:
+        # Standard Day
         vedic_sunrise = sr
-        w_idx = int(sr + 0.5 + 1.5) % 7 # Weekday of Today
-        
+        w_idx = int(sr + 0.5 + 1.5) % 7 
         if jd >= ss:
-            # Night of Today
             is_night_birth = True
             next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
             dur = next_sr - ss
             start_base = ss
         else:
-            # Day of Today
             is_night_birth = False
             dur = ss - sr
             start_base = sr
 
-    # 3. Calculate Mandi Time
     day_ghati = [26, 22, 18, 14, 10, 6, 2]
     night_ghati = [10, 6, 2, 26, 22, 18, 14]
     
     if is_night_birth:
-        factor = night_ghati[w_idx]
+        # CORRECTION: Subtract 1.0 Ghati to align with Start of Period
+        f_raw = night_ghati[w_idx] - 1.0 
+        factor = f_raw if f_raw >= 0 else (f_raw + 30) # Handle wrap around (unlikely for night, but safe)
     else:
-        factor = day_ghati[w_idx]
+        # CORRECTION: Subtract 1.0 Ghati for Day as well
+        f_raw = day_ghati[w_idx] - 1.0
+        factor = f_raw if f_raw >= 0 else (f_raw + 30)
         
     mtime = start_base + (dur * factor / 30.0)
     mandi_deg = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
     positions[KN_PLANETS["Ma"]] = mandi_deg
 
     # ----------------------------
-    # PANCHANGA (USING VEDIC SUNRISE)
+    # PANCHANGA
     # ----------------------------
     moon_deg, sun_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
     t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12)
@@ -204,16 +190,15 @@ def get_full_calculations(jd, lat, lon):
     perc = (moon_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
     
-    # Calculate Udayadi based on VEDIC Sunrise (Fixed)
     udayadi_val = (jd - vedic_sunrise) * 60
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
-        "v": KN_VARA[w_idx], # Use Vedic Weekday
+        "v": KN_VARA[w_idx], 
         "n": KN_NAK[n_idx % 27],
         "sr": vedic_sunrise, 
         "ss": ss, 
-        "udayadi": fmt_ghati(udayadi_val), # Correct large value for night birth
+        "udayadi": fmt_ghati(udayadi_val), 
         "gata": fmt_ghati((jd - js) * 60), 
         "parama": fmt_ghati((je - js) * 60), 
         "rem": fmt_ghati((je - jd) * 60),
