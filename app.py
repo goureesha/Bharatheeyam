@@ -8,6 +8,12 @@ from geopy.geocoders import Nominatim
 # 1. SETUP
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered")
+
+# Initialize Swisseph
+swe.set_ephe_path(None)
+swe.set_sid_mode(swe.SIDM_LAHIRI)
+geolocator = Nominatim(user_agent="bharatheeyam_v80")
+
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
@@ -21,11 +27,6 @@ st.markdown("""
     .center-box { grid-column: 2/4; grid-row: 2/4; background: #ffe0b2; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #b71c1c; font-weight: 900; text-align: center; font-size: 14px; }
     </style>
     """, unsafe_allow_html=True)
-
-# Initialize Swisseph
-swe.set_ephe_path(None)
-swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v79")
 
 # ==========================================
 # 2. CONSTANTS
@@ -57,65 +58,85 @@ def get_varga_pos(deg, div):
     return int(deg/30)
 
 def get_mandi(jd, lat, lon):
+    # This function uses strict Vedic Day (Sunrise to Sunrise) logic
     try:
         lat = float(lat)
         lon = float(lon)
         
-        # 1. Sunrise/Sunset (Using TUPLE for coordinates to prevent float errors)
-        # Standard PySwisseph Signature: (jd, body, (lon, lat, alt), flags)
-        try:
-            res = swe.rise_trans(jd, swe.SUN, (lon, lat, 0.0), swe.CALC_RISE | swe.FLG_MOSEPH)
-            sr = res[1][0]
-            res_s = swe.rise_trans(jd, swe.SUN, (lon, lat, 0.0), swe.CALC_SET | swe.FLG_MOSEPH)
-            ss = res_s[1][0]
-        except:
-            # Fallback for different library versions: Flattened arguments
-            res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
-            sr = res[1][0]
-            res_s = swe.rise_trans(jd, swe.SUN, lon, lat, 0, swe.CALC_SET | swe.FLG_MOSEPH)
-            ss = res_s[1][0]
-
-        wday = int(jd + 0.5 + 1.5) % 7
-        is_day = (jd >= sr and jd < ss)
+        # 1. Get Sunrise/Sunset for the CURRENT calendar day
+        # swe.rise_trans(jd, body, lon, lat, flags) -> returns tuple
+        res_rise = swe.rise_trans(jd, swe.SUN, lon, lat, swe.CALC_RISE | swe.FLG_MOSEPH)
+        sr = res_rise[1][0]
+        res_set = swe.rise_trans(jd, swe.SUN, lon, lat, swe.CALC_SET | swe.FLG_MOSEPH)
+        ss = res_set[1][0]
         
+        # Standard Weekday (0=Sun...6=Sat)
+        cal_wday = int(jd + 0.5 + 1.5) % 7
+        
+        # Mandi Ghatis (Start of Gulika)
+        # Day: Sun=26, Mon=22, Tue=18, Wed=14, Thu=10, Fri=6, Sat=2
         day_ghati = [26, 22, 18, 14, 10, 6, 2]
+        # Night: Sun=10, Mon=6, Tue=2, Wed=26, Thu=22, Fri=18, Sat=14
         night_ghati = [10, 6, 2, 26, 22, 18, 14]
         
-        if is_day:
-            dur = ss - sr
-            factor = day_ghati[wday]
-            m_time = sr + (dur * factor / 30.0)
-        else:
-            if jd >= ss: 
-                start_base = ss
-                try:
-                    res_next = swe.rise_trans(jd + 1.0, swe.SUN, (lon, lat, 0.0), swe.CALC_RISE | swe.FLG_MOSEPH)
-                except:
-                    res_next = swe.rise_trans(jd + 1.0, swe.SUN, lon, lat, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
-                next_sr = res_next[1][0]
-                dur = next_sr - ss
-                factor = night_ghati[wday]
-            else: 
-                try:
-                    res_prev = swe.rise_trans(jd - 1.0, swe.SUN, (lon, lat, 0.0), swe.CALC_SET | swe.FLG_MOSEPH)
-                except:
-                    res_prev = swe.rise_trans(jd - 1.0, swe.SUN, lon, lat, 0, swe.CALC_SET | swe.FLG_MOSEPH)
-                start_base = res_prev[1][0]
-                dur = sr - start_base
-                prev_wday = (wday - 1) % 7
-                factor = night_ghati[prev_wday]
-            
-            m_time = start_base + (dur * factor / 30.0)
+        mandi_moment = 0.0
+        
+        # LOGIC:
+        # If JD < SR -> It is technically "Night" of the PREVIOUS Day.
+        # If SR <= JD < SS -> It is "Day" of CURRENT Day.
+        # If JD >= SS -> It is "Night" of CURRENT Day.
 
-        res_h = swe.houses(m_time, lat, lon, b'P')
-        asc_deg = res_h[0][0]
-        ayan = swe.get_ayanamsa(m_time)
-        return (asc_deg - ayan) % 360
+        if jd < sr:
+            # Case 1: Early Morning (Before Sunrise)
+            # Vedic Day is Yesterday
+            vedic_wday = (cal_wday - 1) % 7
+            
+            # We need Yesterday's Sunset and Today's Sunrise
+            res_prev_set = swe.rise_trans(jd - 1.0, swe.SUN, lon, lat, swe.CALC_SET | swe.FLG_MOSEPH)
+            prev_ss = res_prev_set[1][0]
+            
+            # Duration of night = Today's SR - Yesterday's SS
+            night_dur = sr - prev_ss
+            factor = night_ghati[vedic_wday]
+            
+            # Mandi Time = Prev Sunset + (Night Duration * Factor / 30)
+            mandi_moment = prev_ss + (night_dur * factor / 30.0)
+            
+        elif jd >= ss:
+            # Case 2: Evening (After Sunset)
+            # Vedic Day is Today
+            vedic_wday = cal_wday
+            
+            # We need Today's Sunset and Tomorrow's Sunrise
+            res_next_rise = swe.rise_trans(jd + 1.0, swe.SUN, lon, lat, swe.CALC_RISE | swe.FLG_MOSEPH)
+            next_sr = res_next_rise[1][0]
+            
+            night_dur = next_sr - ss
+            factor = night_ghati[vedic_wday]
+            
+            mandi_moment = ss + (night_dur * factor / 30.0)
+            
+        else:
+            # Case 3: Day Time
+            vedic_wday = cal_wday
+            day_dur = ss - sr
+            factor = day_ghati[vedic_wday]
+            
+            mandi_moment = sr + (day_dur * factor / 30.0)
+
+        # 3. Calculate Ascendant (Lagna) for Mandi Moment
+        # Using simple 'houses' (4 args) which returns tropical positions
+        res_h = swe.houses(mandi_moment, lat, lon, b'P')
+        asc_deg_trop = res_h[0][0]
+        
+        # 4. Sidereal Correction (Lahiri)
+        ayan = swe.get_ayanamsa(mandi_moment)
+        mandi_deg = (asc_deg_trop - ayan) % 360
+        
+        return mandi_deg
         
     except Exception as e:
-        # ABSOLUTE FALLBACK: If math fails, estimate Mandi based on Lagna+120 (Approx)
-        # This ensures the app never crashes or shows 0.
-        return (swe.houses(jd, lat, lon, b'P')[0][0] + 120) % 360
+        return f"Err: {str(e)}"
 
 def get_panchanga(jd, moon_deg, sun_deg):
     diff = (moon_deg - sun_deg + 360) % 360
@@ -169,8 +190,13 @@ if st.session_state['show_chart']:
         pos[pnk] = res[0][0] % 360
     pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
     
-    # 2. Mandi (Nuclear Fallback)
-    pos["ಮಾಂದಿ"] = get_mandi(jd, u_lat, u_lon)
+    # 2. Mandi (Exact)
+    mandi_res = get_mandi(jd, u_lat, u_lon)
+    if isinstance(mandi_res, str):
+        st.error(mandi_res)
+        pos["ಮಾಂದಿ"] = 0.0
+    else:
+        pos["ಮಾಂದಿ"] = mandi_res
     
     # 3. Lagna
     res_lag = swe.houses(jd, float(u_lat), float(u_lon), b'P')
@@ -219,7 +245,7 @@ if st.session_state['show_chart']:
             start_lord = n_idx % 9
             
             y, m, d, hv = swe.revjul(jd + 5.5/24.0)
-            birth_dt = datetime.datetime(int(y), int(m), int(d)) # STRICT INT
+            birth_dt = datetime.datetime(y, m, d)
             
             st.info("ಪ್ರತಿ ಮಹಾದಶವನ್ನು ಕ್ಲಿಕ್ ಮಾಡಿ (3 ಹಂತಗಳು)")
             
@@ -235,6 +261,7 @@ if st.session_state['show_chart']:
                         ad_idx = (md_idx + j) % 9
                         full_md = float(YEARS[md_idx])
                         ad_yrs = (full_md * YEARS[ad_idx]) / 120.0
+                        
                         ad_end = curr_ad + datetime.timedelta(days=ad_yrs*365.25)
                         
                         if ad_end > birth_dt:
@@ -260,15 +287,11 @@ if st.session_state['show_chart']:
     with t4:
         # PANCHANGA
         tithi, nak, yoga, karana, vara = get_panchanga(jd, pos["ಚಂದ್ರ"], pos["ರವಿ"])
-        st.markdown(f"""
-        | ವಿಭಾಗ | ವಿವರ |
-        | :--- | :--- |
-        | **ವಾರ** | {vara} |
-        | **ತಿಥಿ** | {tithi} |
-        | **ನಕ್ಷತ್ರ** | {nak} |
-        | **ಯೋಗ** | {yoga} |
-        | **ಕರಣ** | {karana} |
-        """, unsafe_allow_html=True)
+        st.markdown(f"**ವಾರ:** {vara}")
+        st.markdown(f"**ತಿಥಿ:** {tithi}")
+        st.markdown(f"**ನಕ್ಷತ್ರ:** {nak}")
+        st.markdown(f"**ಯೋಗ:** {yoga}")
+        st.markdown(f"**ಕರಣ:** {karana}")
 
     with t5:
         csv = df.to_csv(index=False).encode('utf-8')
