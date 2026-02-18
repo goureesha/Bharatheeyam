@@ -3,7 +3,6 @@ import swisseph as swe
 import datetime
 import math
 import pandas as pd
-from geopy.geocoders import Nominatim
 
 # ==========================================
 # 1. SERVER CONFIG & THEME
@@ -26,10 +25,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. PRECISION ENGINE
+# 2. PRECISION ENGINE (FIXED FOR SERVER)
 # ==========================================
+# Force the library to use internal math if files are missing
+swe.set_ephe_path(None) 
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v58")
 
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು"}
@@ -48,18 +48,21 @@ def get_varga_pos(deg, div):
     return int(deg/30)
 
 def get_mandi(jd, lat, lon):
-    res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_RISE)
-    sunrise_jd = res[1][0]
-    res_set = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_SET)
-    sunset_jd = res_set[1][0]
-    day_dur = sunset_jd - sunrise_jd
-    part = day_dur / 8.0
-    weekday = int(jd + 0.5 + 1.5) % 7
-    mandi_factors = [26, 22, 18, 14, 10, 6, 2]
-    m_time = sunrise_jd + (part * mandi_factors[weekday] / 30.0 * 3.75)
-    ayan = swe.get_ayanamsa(m_time)
-    m_deg = (swe.houses(m_time, lat, lon, b'P')[1][0] - ayan) % 360
-    return m_deg
+    try:
+        # Use Moshier flag to prevent path errors
+        res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
+        sunrise_jd = res[1][0]
+        res_set = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_SET | swe.FLG_MOSEPH)
+        sunset_jd = res_set[1][0]
+        day_dur = sunset_jd - sunrise_jd
+        part = day_dur / 8.0
+        weekday = int(jd + 0.5 + 1.5) % 7
+        mandi_factors = [26, 22, 18, 14, 10, 6, 2]
+        m_time = sunrise_jd + (part * mandi_factors[weekday] / 30.0 * 3.75)
+        ayan = swe.get_ayanamsa(m_time)
+        m_deg = (swe.houses(m_time, lat, lon, b'P')[1][0] - ayan) % 360
+        return m_deg
+    except: return 0
 
 # ==========================================
 # 3. UI LOGIC
@@ -83,7 +86,8 @@ if run_btn:
     
     pos = {}
     for pid, pnk in KN_PLANETS.items():
-        res_calc = swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)
+        # Added FLG_MOSEPH to ensure server stability
+        res_calc = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
         pos[pnk] = res_calc[0][0] % 360
     
     pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
