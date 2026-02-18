@@ -51,7 +51,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v127")
+geolocator = Nominatim(user_agent="bharatheeyam_v128")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -116,7 +116,7 @@ def get_full_calculations(jd, lat, lon):
     positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = node, (node + 180) % 360
     positions[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     
-    # Mandi Logic
+    # Mandi Logic Day/Night Parity
     sr, ss = find_sunrise_set(jd, lat, lon)
     jd_local = jd + (5.5/24.0); cal_wday = int(jd_local + 0.5 + 1.5) % 7
     if jd < sr:
@@ -142,7 +142,7 @@ def get_full_calculations(jd, lat, lon):
         "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx % 7], "n": KN_NAK[n_idx % 27],
         "sr": panch_sr, "udayadi": fmt_ghati((jd - panch_sr) * 60), 
         "gata": fmt_ghati((jd - js) * 60), "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd) * 60),
-        "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
+        "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ",
         "n_idx": n_idx, "perc": perc, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
     }
     return positions, pan
@@ -187,11 +187,11 @@ elif st.session_state.page == "dashboard":
     with t1:
         c_v, c_b = st.columns([2, 1])
         v_opt = c_v.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
-        bxs = {i: "" for i in range(12)}; ld = pos["ಲಗ್ನ"]
+        bxs = {i: "" for i in range(12)}
         for n, d in pos.items():
             if v_opt == 1: ri = int(d/30)
             elif v_opt == 30: 
-                dr = d%30; ri = (0 if dr<5 else 10 if dr<10 else 8 if dr<18 else 2 if dr<25 else 6) if (int(d/30) % 2 == 0) else (5 if dr<5 else 2 if dr<12 else 8 if dr<20 else 10 if dr<25 else 0)
+                dr = d%30; ri = (0 if dr<5 else 10 if dr<10 else 8 if dr<18 else 2 if dr<25 else 6) if (int(d/30)%2==0) else (5 if dr<5 else 2 if dr<12 else 8 if dr<20 else 10 if dr<25 else 0)
             else:
                 if v_opt == 9: ri = ([0, 9, 6, 3][int(d/30)%4] + int((d%30)/3.33333)) % 12
                 elif v_opt == 3: ri = (int(d/30) + (int((d%30)/10)*4)) % 12
@@ -207,7 +207,7 @@ elif st.session_state.page == "dashboard":
         st.markdown(html + '</div>', unsafe_allow_html=True)
     with t2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        tbl_h = "<table class='key-val-table'><tr><th style='text-align:left'>ಗ್ರಹ</th><th style='text-align:left'>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th></tr>"
+        tbl_h = "<table class='key-val-table'><tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th></tr>"
         for p, d in pos.items():
             tbl_h += f"<tr><td><b>{p}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{int(d%30)}° {int((d%30*60)%60)}'</td></tr>"
         st.markdown(tbl_h + "</table></div>", unsafe_allow_html=True)
