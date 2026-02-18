@@ -6,22 +6,32 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. PAGE CONFIG & MOBILE CSS
+# 1. PAGE CONFIG & HIGH-CONTRAST CSS
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", page_icon="🕉️", initial_sidebar_state="expanded")
 
-# MOBILE-FRIENDLY CSS
+# CSS OVERHAUL FOR VISIBILITY
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
     
-    /* Global Reset */
-    .stApp { background-color: #fff8e1; font-family: 'Noto Sans Kannada', sans-serif; color: #2c0e0e; }
+    /* 1. FORCE LIGHT THEME & TEXT COLOR */
+    /* This overrides system Dark Mode settings */
+    .stApp { 
+        background-color: #fff8e1 !important; 
+        font-family: 'Noto Sans Kannada', sans-serif; 
+        color: #2c0e0e !important; 
+    }
     
-    /* Header - Mobile Optimized */
+    /* Force all standard text to be dark */
+    p, label, h1, h2, h3, h4, h5, h6, li, span, div {
+        color: #2c0e0e !important;
+    }
+
+    /* 2. HEADER */
     .header-box { 
         background: #800000; 
-        color: #fffbe6; 
+        color: #fffbe6 !important; /* Force white text on maroon header */
         padding: 12px; 
         text-align: center; 
         font-weight: 900; 
@@ -31,103 +41,116 @@ st.markdown("""
         box-shadow: 0 4px 8px rgba(0,0,0,0.15); 
         border-bottom: 3px solid #d4af37;
     }
-    
-    /* RESPONSIVE KUNDALI GRID */
+    .header-box * { color: #fffbe6 !important; } /* Ensure children are white */
+
+    /* 3. TABS (The specific issue you faced) */
+    /* Tab Labels (Unselected) */
+    button[data-baseweb="tab"] div p {
+        color: #5d4037 !important;
+        font-weight: bold;
+    }
+    /* Tab Labels (Selected) */
+    button[data-baseweb="tab"][aria-selected="true"] div p {
+        color: #b71c1c !important;
+        font-weight: 900;
+    }
+    /* Tab Highlight Bar */
+    div[data-testid="stTabs"] span {
+        background-color: #b71c1c !important;
+    }
+
+    /* 4. INPUTS & TOGGLES (Bhava Button Fix) */
+    /* Radio/Checkbox Labels */
+    div[data-testid="stCheckbox"] label p {
+        color: #800000 !important;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    /* Dropdown/Selectbox Text */
+    div[data-baseweb="select"] div {
+        color: #2c0e0e !important;
+    }
+    /* Input Box Labels */
+    div[data-testid="stMarkdownContainer"] p {
+        color: #3e2723 !important;
+    }
+
+    /* 5. KUNDALI GRID (unchanged but robust) */
     .grid-container { 
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
         grid-template-rows: repeat(4, 1fr); 
-        width: 100%;            /* Full width of container */
-        max-width: 380px;       /* Cap width for desktops */
-        aspect-ratio: 1 / 1;    /* Force Square Shape */
-        margin: 0 auto;         /* Center it */
-        gap: 2px; 
+        width: 100%; max-width: 380px; 
+        aspect-ratio: 1 / 1; 
+        margin: 0 auto; gap: 2px; 
         background: #2c0e0e; 
         border: 4px solid #800000; 
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
     }
-    
     .box { 
         background: #fffcf5; 
         position: relative; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        justify-content: center; 
-        font-size: 11px;        /* Base font size */
-        font-weight: bold; 
-        padding: 2px; 
-        text-align: center; 
-        color: #3e2723;
-        overflow: hidden;       /* Prevent text spill */
+        display: flex; flex-direction: column; 
+        align-items: center; justify-content: center; 
+        font-size: 11px; font-weight: bold; 
+        padding: 2px; text-align: center; 
+        color: #3e2723 !important; 
     }
-    
-    /* Center Box (Brahmasthana) */
     .center-box { 
-        grid-column: 2/4; 
-        grid-row: 2/4; 
+        grid-column: 2/4; grid-row: 2/4; 
         background: #F7E7CE; 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        justify-content: center; 
-        color: #800000; 
-        font-weight: 900; 
-        text-align: center; 
-        border: 2px solid #d4af37; 
-        font-size: 12px;
+        display: flex; flex-direction: column; 
+        align-items: center; justify-content: center; 
+        color: #800000 !important; 
+        font-weight: 900; text-align: center; 
+        border: 2px solid #d4af37; font-size: 12px;
     }
-
-    /* Mobile Text Adjustments */
     @media only screen and (max-width: 450px) {
         .box { font-size: 9px; line-height: 1.1; }
         .lbl { font-size: 7px; top: 1px; left: 1px; }
         .header-box { font-size: 18px; padding: 10px; }
         .center-box { font-size: 10px; }
     }
-
-    .lbl { position: absolute; top: 2px; left: 3px; font-size: 9px; color: #8d6e63; font-weight: 900; text-transform: uppercase; }
-    .hi { color: #b71c1c; text-decoration: underline; font-weight: 900; }
-    .pl { color: #1a0000; font-weight: bold; }
+    .lbl { position: absolute; top: 2px; left: 3px; font-size: 9px; color: #8d6e63 !important; font-weight: 900; }
+    .hi { color: #b71c1c !important; text-decoration: underline; font-weight: 900; }
+    .pl { color: #1a0000 !important; font-weight: bold; }
     
-    /* Cards for Data */
-    .card { 
-        background: #fffcf5; 
-        border-radius: 8px; 
-        padding: 12px; 
-        margin-bottom: 8px; 
-        border: 1px solid #e6d5c3; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-    }
-    
+    /* 6. DATA TABLES */
+    .card { background: #fffcf5; border-radius: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid #e6d5c3; }
     .key-val-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .key-val-table td { border-bottom: 1px solid #eee; padding: 8px 4px; color: #3e2723; }
-    .key { color: #800000; font-weight: 900; width: 45%; }
+    .key-val-table td { border-bottom: 1px solid #eee; padding: 8px 4px; color: #3e2723 !important; }
+    .key { color: #800000 !important; font-weight: 900; width: 45%; }
     
-    /* Accordion / Dasha */
+    /* 7. ACCORDION (DASHA) */
     details { margin-bottom: 4px; border: 1px solid #e0c097; border-radius: 6px; overflow: hidden; background: white; }
-    summary { cursor: pointer; padding: 10px; font-size: 13px; list-style: none; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+    summary { cursor: pointer; padding: 10px; font-size: 13px; list-style: none; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; color: #000 !important; }
     
+    /* Explicit Colors for Dasha Levels */
     .md-node { background: #800000 !important; color: #fffbe6 !important; font-weight: 900; }
+    .md-node span { color: #fffbe6 !important; }
+    
     .ad-node { background: #FFF9C4 !important; color: #5d4037 !important; font-weight: 700; margin-left: 0px; border-left: 5px solid #FBC02D; }
+    .ad-node span { color: #5d4037 !important; }
+
     .pd-node { background: #E8F5E9 !important; color: #1B5E20 !important; font-weight: 700; margin-left: 5px; border-left: 4px solid #43A047; }
+    .pd-node span { color: #1B5E20 !important; }
+
     .sd-node { background: #E3F2FD !important; color: #0D47A1 !important; font-size: 11px; margin-left: 10px; border-left: 3px solid #1E88E5; padding: 6px; border-bottom: 1px solid #eee; }
+    .sd-node span { color: #0D47A1 !important; }
     
     .date-label { font-size: 10px; opacity: 0.85; text-align: right; }
 
-    /* Streamlit Widget Overrides */
+    /* 8. BUTTONS */
     .stButton>button { width: 100%; border-radius: 8px; background-color: #800000 !important; color: white !important; font-weight: bold; border: none; }
-    .stButton>button:active { transform: scale(0.98); }
-    div[data-testid="stInput"] { border-radius: 8px; }
+    div[data-testid="stInput"] { border-radius: 8px; border: 1px solid #800000; }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CORE MATH ENGINE (FIXED SYNTAX)
+# 2. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v84")
+geolocator = Nominatim(user_agent="bharatheeyam_v85")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -156,29 +179,20 @@ def find_sunrise_set(jd_noon, lat, lon):
     for i in range(24):
         alt1 = get_altitude_manual(current, lat, lon)
         alt2 = get_altitude_manual(current + step, lat, lon)
-        
-        # Sunrise Calculation (Fixed Syntax)
         if alt1 < -0.833 and alt2 >= -0.833:
             l, h = current, current + step
             for _ in range(20): 
                 m = (l + h) / 2
-                if get_altitude_manual(m, lat, lon) < -0.833:
-                    l = m
-                else:
-                    h = m
+                if get_altitude_manual(m, lat, lon) < -0.833: l = m
+                else: h = m
             rise_time = h
-            
-        # Sunset Calculation (Fixed Syntax)
         if alt1 > -0.833 and alt2 <= -0.833:
             l, h = current, current + step
             for _ in range(20): 
                 m = (l + h) / 2
-                if get_altitude_manual(m, lat, lon) > -0.833:
-                    l = m
-                else:
-                    h = m
+                if get_altitude_manual(m, lat, lon) > -0.833: l = m
+                else: h = m
             set_time = h
-            
         current += step
     return rise_time, set_time
 
@@ -260,10 +274,8 @@ if 'lon' not in st.session_state: st.session_state.lon = 74.73
 st.markdown('<div class="header-box">ಭಾರತೀಯಮ್</div>', unsafe_allow_html=True)
 
 if st.session_state.page == "input":
-    # --- MOBILE OPTIMIZED INPUT ---
     with st.container():
         st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
-        
         name = st.text_input("ಹೆಸರು (Name)", "ಬಳಕೆದಾರ")
         dob = st.date_input("ದಿನಾಂಕ (Date)", datetime.date(1997, 5, 24))
         
@@ -297,7 +309,6 @@ if st.session_state.page == "input":
             st.rerun()
 
 elif st.session_state.page == "dashboard":
-    # --- MOBILE OPTIMIZED DASHBOARD ---
     pos = st.session_state.data['pos']; pan = st.session_state.data['pan']
     
     if st.button("⬅️ ಹಿಂದಕ್ಕೆ (Back)", type="secondary"): st.session_state.page = "input"; st.rerun()
@@ -305,10 +316,9 @@ elif st.session_state.page == "dashboard":
     t1, t2, t3, t4, t5 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಟಿಪ್ಪಣಿ"])
     
     with t1:
-        # KUNDALI
         c_v, c_b = st.columns([2, 1])
         v_opt = c_v.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
-        b_opt = c_b.checkbox("ಭಾವ", value=False) # Switch to checkbox for mobile space
+        b_opt = c_b.checkbox("ಭಾವ (Bhava)", value=False)
         
         bxs = {i: "" for i in range(12)}; ld = pos["ಲಗ್ನ"]
         for n, d in pos.items():
@@ -333,10 +343,8 @@ elif st.session_state.page == "dashboard":
         st.markdown(html, unsafe_allow_html=True)
 
     with t2:
-        # SPHUTA TABLE
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        # Custom HTML Table for better mobile density control
-        tbl_html = "<table class='key-val-table'><tr><th style='text-align:left'>ಗ್ರಹ</th><th style='text-align:left'>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th></tr>"
+        tbl_html = "<table class='key-val-table'><tr><th style='text-align:left; color:#800000'>ಗ್ರಹ</th><th style='text-align:left; color:#800000'>ರಾಶಿ</th><th style='text-align:right; color:#800000'>ಅಂಶ</th></tr>"
         for p, d in pos.items():
             r_name = KN_RASHI[int(d/30)]
             deg_str = f"{int(d%30)}° {int((d%30*60)%60)}'"
@@ -345,7 +353,6 @@ elif st.session_state.page == "dashboard":
         st.markdown(tbl_html, unsafe_allow_html=True)
 
     with t3:
-        # DASHA TREE
         st.markdown(f"<div class='card' style='color:#800000; font-weight:bold'>ಶಿಷ್ಟ ದಶೆ: {pan['d_bal']}</div>", unsafe_allow_html=True)
         dh = ""; current_date = pan['date_obj']; si = pan['n_idx'] % 9
         for i in range(9):
@@ -360,31 +367,18 @@ elif st.session_state.page == "dashboard":
                 dh += f"<details><summary class='ad-node'><span>{LORDS[ia]}</span><span class='date-label'>{ae.strftime('%d-%m-%y')}</span></summary>"; cpd = cad
                 for k in range(9):
                     ip = (ia + k) % 9; pd_years = (ad_years * YEARS[ip] / 120.0); pe = cpd + datetime.timedelta(days=pd_years*365.25)
-                    dh += f"<details><summary class='pd-node'><span>{LORDS[ip]}</span><span class='date-label'>{pe.strftime('%d-%m-%Y')}</span></summary>"; csd = cpd
+                    dh += f"<details><summary class='pd-node'><span>{LORDS[ip]}</span><span class='date-label'>{pe.strftime('%d-%m-%y')}</span></summary>"; csd = cpd
                     for l in range(9):
                         iss = (ip + l) % 9; sd_years = (pd_years * YEARS[iss] / 120.0); se = csd + datetime.timedelta(days=sd_years*365.25)
-                        dh += f"<div class='sd-node'>{LORDS[iss]} <span style='float:right'>{se.strftime('%d-%m-%Y')}</span></div>"; csd = se
+                        dh += f"<div class='sd-node'>{LORDS[iss]} <span style='float:right'>{se.strftime('%d-%m-%y')}</span></div>"; csd = se
                     dh += "</details>"; cpd = pe
                 dh += "</details>"; cad = ae
             dh += "</details>"; current_date = md_end
         st.markdown(dh, unsafe_allow_html=True)
 
     with t4:
-        # PANCHANGA
-        st.markdown(f"""
-        <div class='card'>
-            <table class='key-val-table'>
-                <tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr>
-                <tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr>
-                <tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr>
-                <tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr>
-            </table>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class='card'><table class='key-val-table'><tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr><tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr><tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr><tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr><tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr><tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr></table></div>""", unsafe_allow_html=True)
 
     with t5:
-        # NOTES
         st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300)
         if st.button("ಉಳಿಸಿ (Save)"): st.success("Saved!")
