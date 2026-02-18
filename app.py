@@ -61,24 +61,20 @@ st.markdown("""
         border: 2px solid #9D0208 !important;
     }
 
-    /* 4. TAB VISIBILITY FIX (CRITICAL) */
-    /* Force tab labels to be visible */
+    /* 4. TAB VISIBILITY FIX */
     div[data-testid="stTabs"] button {
         background-color: transparent !important;
     }
-    /* Inactive Tab Text - Deep Brown */
     div[data-testid="stTabs"] button[aria-selected="false"] p {
         color: #5D4037 !important;
         font-weight: 700 !important;
         font-size: 14px !important;
     }
-    /* Active Tab Text - Bright Burgundy */
     div[data-testid="stTabs"] button[aria-selected="true"] p {
         color: #9D0208 !important;
         font-weight: 900 !important;
         font-size: 15px !important;
     }
-    /* Active Tab Underline */
     div[data-testid="stTabs"] button[aria-selected="true"] {
         border-bottom: 4px solid #9D0208 !important;
     }
@@ -150,11 +146,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CORE MATH ENGINE (NUCLEAR V84 - UNTOUCHED)
+# 2. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v87")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v88")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -183,8 +179,6 @@ def find_sunrise_set(jd_noon, lat, lon):
     for i in range(24):
         alt1 = get_altitude_manual(current, lat, lon)
         alt2 = get_altitude_manual(current + step, lat, lon)
-        
-        # Sunrise (Fixed Syntax)
         if alt1 < -0.833 and alt2 >= -0.833:
             l, h = current, current + step
             for _ in range(20): 
@@ -192,8 +186,6 @@ def find_sunrise_set(jd_noon, lat, lon):
                 if get_altitude_manual(m, lat, lon) < -0.833: l = m
                 else: h = m
             rise_time = h
-            
-        # Sunset (Fixed Syntax)
         if alt1 > -0.833 and alt2 <= -0.833:
             l, h = current, current + step
             for _ in range(20): 
@@ -201,7 +193,6 @@ def find_sunrise_set(jd_noon, lat, lon):
                 if get_altitude_manual(m, lat, lon) > -0.833: l = m
                 else: h = m
             set_time = h
-            
         current += step
     return rise_time, set_time
 
@@ -236,20 +227,50 @@ def get_full_calculations(jd, lat, lon):
     lagna = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     positions[KN_PLANETS["Lagna"]] = lagna
     
+    # ----------------------------
+    # FIXED MANDI LOGIC (Day/Night)
+    # ----------------------------
     sr, ss = find_sunrise_set(jd, lat, lon)
     if sr == -1 or ss == -1: sr = jd - 0.25; ss = jd + 0.25 
-    day_sr = sr if jd >= sr else find_sunrise_set(jd - 1.0, lat, lon)[0]
-    w_idx = int(day_sr + 0.5 + 1.5) % 7
-    yf_day = [26, 22, 18, 14, 10, 6, 2]; yf_night = [10, 6, 2, 26, 22, 18, 14]
     
-    if jd >= sr and jd < ss: 
-        dur = ss - sr; yf = yf_day[w_idx]; mtime = sr + (dur * yf / 30.0)
+    # Factors
+    yf_day = [26, 22, 18, 14, 10, 6, 2]
+    yf_night = [10, 6, 2, 26, 22, 18, 14]
+    
+    if jd >= sr and jd < ss:
+        # DAY TIME
+        # Weekday based on Sunrise
+        w_idx = int(sr + 0.5 + 1.5) % 7
+        dur = ss - sr
+        yf = yf_day[w_idx]
+        mtime = sr + (dur * yf / 30.0)
+        day_sr = sr # For Panchanga
+    elif jd >= ss:
+        # NIGHT TIME (Evening)
+        # Weekday is still today (based on Sunrise)
+        w_idx = int(sr + 0.5 + 1.5) % 7
+        next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
+        dur = next_sr - ss
+        yf = yf_night[w_idx]
+        mtime = ss + (dur * yf / 30.0)
+        day_sr = sr # For Panchanga
     else:
-        if jd >= ss: 
-            next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]; dur = next_sr - ss; yf = yf_night[w_idx]; mtime = ss + (dur * yf / 30.0)
-        else: 
-            prev_ss = find_sunrise_set(jd - 1.0, lat, lon)[1]; prev_w_idx = (w_idx - 1) % 7; dur = sr - prev_ss; yf = yf_night[prev_w_idx]; mtime = prev_ss + (dur * yf / 30.0)
-            
+        # NIGHT TIME (Early Morning / Pre-Sunrise)
+        # Weekday is YESTERDAY
+        prev_ss = find_sunrise_set(jd - 1.0, lat, lon)[1]
+        
+        # Calculate yesterday's SR just to get the weekday correct
+        prev_sr = find_sunrise_set(jd - 1.0, lat, lon)[0]
+        w_idx = int(prev_sr + 0.5 + 1.5) % 7
+        
+        dur = sr - prev_ss
+        yf = yf_night[w_idx]
+        mtime = prev_ss + (dur * yf / 30.0)
+        day_sr = sr # For Panchanga (Standard uses current SR for Udayadi?)
+        # Actually for Panchanga 'Udayadi', if born at 3 AM, Udayadi is from Yesterday's SR?
+        # Standard software shows Udayadi from TODAY'S SR (negative) or Prev SR (large positive).
+        # Let's keep Udayadi relative to the SR of the calendar day for simplicity.
+    
     mandi_deg = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
     positions[KN_PLANETS["Ma"]] = mandi_deg
 
@@ -259,8 +280,12 @@ def get_full_calculations(jd, lat, lon):
     js = find_nak_limit(jd, n_idx * 13.333333333); je = find_nak_limit(jd, (n_idx + 1) * 13.333333333)
     perc = (moon_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
+    
+    # Recalc w_idx for Panchanga display (Standard Calendar Day)
+    w_idx_pan = int(jd + 0.5 + 1.5) % 7
+    
     pan = {
-        "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx], "n": KN_NAK[n_idx % 27],
+        "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx_pan], "n": KN_NAK[n_idx % 27],
         "sr": day_sr, "ss": ss, "udayadi": fmt_ghati((jd - day_sr) * 60), 
         "gata": fmt_ghati((jd - js) * 60), "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd) * 60),
         "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
