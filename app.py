@@ -51,7 +51,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v106")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v107")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -61,41 +61,11 @@ KN_NAK = ["ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತ್ತಿಕಾ", "
 LORDS = ["ಕೇತು","ಶುಕ್ರ","ರವಿ","ಚಂದ್ರ","ಕುಜ","ರಾಹು","ಗುರು","ಶನಿ","ಬುಧ"]
 YEARS = [7, 20, 6, 10, 7, 18, 16, 19, 17]
 
-def get_altitude_manual(jd, lat, lon):
-    res = swe.calc_ut(jd, swe.SUN, swe.FLG_EQUATORIAL | swe.FLG_SWIEPH)
-    ra, dec = res[0][0], res[0][1]
-    gmst = swe.sidtime(jd)
-    lst = gmst + (lon / 15.0)
-    ha_deg = ((lst * 15.0) - ra + 360) % 360
-    if ha_deg > 180: ha_deg -= 360
-    lat_rad, dec_rad, ha_rad = math.radians(lat), math.radians(dec), math.radians(ha_deg)
-    sin_alt = (math.sin(lat_rad) * math.sin(dec_rad)) + (math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad))
-    return math.degrees(math.asin(sin_alt))
-
-def find_sunrise_set(jd_noon, lat, lon):
-    start_jd = jd_noon - 0.5
-    rise_time, set_time = -1, -1
-    step = 1/24.0
-    current = start_jd
-    for i in range(24):
-        alt1 = get_altitude_manual(current, lat, lon)
-        alt2 = get_altitude_manual(current + step, lat, lon)
-        if alt1 < -0.833 and alt2 >= -0.833:
-            l, h = current, current + step
-            for _ in range(20): 
-                m = (l + h) / 2
-                if get_altitude_manual(m, lat, lon) < -0.833: l = m
-                else: h = m
-            rise_time = h
-        if alt1 > -0.833 and alt2 <= -0.833:
-            l, h = current, current + step
-            for _ in range(20): 
-                m = (l + h) / 2
-                if get_altitude_manual(m, lat, lon) > -0.833: l = m
-                else: h = m
-            set_time = h
-        current += step
-    return rise_time, set_time
+def find_sunrise_set(jd, lat, lon):
+    # Standard SwissEph rise/set calculation
+    res_sr = swe.rise_trans(jd, swe.SUN, lon, lat, swe.CALC_RISE | swe.FLG_MOSEPH)
+    res_ss = swe.rise_trans(jd, swe.SUN, lon, lat, swe.CALC_SET | swe.FLG_MOSEPH)
+    return res_sr[1][0], res_ss[1][0]
 
 def find_nak_limit(jd, target_deg):
     low = jd - 1.2; high = jd + 1.2
@@ -110,8 +80,7 @@ def find_nak_limit(jd, target_deg):
 
 def fmt_ghati(decimal_val):
     g = int(decimal_val)
-    rem = decimal_val - g
-    v = int(round(rem * 60))
+    v = int(round((decimal_val - g) * 60))
     if v == 60: g += 1; v = 0
     return f"{g}.{v:02d}"
 
@@ -128,35 +97,38 @@ def get_full_calculations(jd, lat, lon):
     lagna = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     positions[KN_PLANETS["Lagna"]] = lagna
     
-    sr, ss = find_sunrise_set(jd, lat, lon)
-    if sr == -1 or ss == -1: sr = jd - 0.25; ss = jd + 0.25 
-    
+    # ----------------------------
+    # SURGICAL NIGHT MANDI FIX
+    # ----------------------------
+    sr_today, ss_today = find_sunrise_set(jd, lat, lon)
     jd_local = jd + (5.5/24.0)
     cal_wday = int(jd_local + 0.5 + 1.5) % 7 
     
-    if jd < sr:
-        prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
-        w_idx = (cal_wday - 1) % 7
-        is_night = True
-        start_base, dur, vedic_sunrise = prev_ss, (sr - prev_ss), prev_sr
+    if jd < sr_today:
+        # Pre-Sunrise (Night of Yesterday)
+        _, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
+        w_idx, is_night, start_base, dur, panch_sr = (cal_wday - 1) % 7, True, prev_ss, (sr_today - prev_ss), find_sunrise_set(jd - 1.0, lat, lon)[0]
     else:
-        vedic_sunrise = sr
-        if jd >= ss:
-            next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
-            w_idx, is_night = cal_wday, True
-            start_base, dur = ss, (next_sr - ss)
+        panch_sr = sr_today
+        if jd >= ss_today:
+            # Night of Today
+            next_sr, _ = find_sunrise_set(jd + 1.0, lat, lon)
+            w_idx, is_night, start_base, dur = cal_wday, True, ss_today, (next_sr - ss_today)
         else:
-            w_idx, is_night = cal_wday, False
-            start_base, dur = sr, (ss - sr)
+            # Day Birth
+            w_idx, is_night, start_base, dur = cal_wday, False, sr_today, (ss_today - sr_today)
 
-    day_ghati = [26, 22, 18, 14, 10, 6, 2]
     night_ghati = [10, 6, 2, 26, 22, 18, 14]
+    day_ghati = [26, 22, 18, 14, 10, 6, 2]
     factor = night_ghati[w_idx] if is_night else day_ghati[w_idx]
         
     mtime = start_base + (dur * factor / 30.0)
     mandi_deg = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
     positions[KN_PLANETS["Ma"]] = mandi_deg
 
+    # ----------------------------
+    # PANCHANGA & DASHA
+    # ----------------------------
     moon_deg, sun_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
     t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12)
     n_idx = int(moon_deg / 13.333333333)
@@ -166,7 +138,7 @@ def get_full_calculations(jd, lat, lon):
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx], "n": KN_NAK[n_idx % 27],
-        "sr": vedic_sunrise, "ss": ss, "udayadi": fmt_ghati((jd - vedic_sunrise) * 60), 
+        "sr": panch_sr, "ss": ss_today, "udayadi": fmt_ghati((jd - panch_sr) * 60), 
         "gata": fmt_ghati((jd - js) * 60), "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd) * 60),
         "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
         "n_idx": n_idx, "perc": perc, "jd_birth": jd, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
@@ -261,14 +233,12 @@ elif st.session_state.page == "dashboard":
         st.markdown(f"<div class='card' style='color:#6A040F; font-weight:bold; border-left:5px solid #FAA307'>ಶಿಷ್ಟ ದಶೆ: {pan['d_bal']}</div>", unsafe_allow_html=True)
         dh = ""; current_date = pan['date_obj']; si = pan['n_idx'] % 9
         for i in range(9):
-            im = (si + i) % 9; md_dur_yrs = YEARS[im] * ((1 - pan['perc']) if i==0 else 1)
-            md_end = current_date + datetime.timedelta(days=md_dur_yrs*365.25)
+            im = (si + i) % 9; md_dur_yrs = YEARS[im] * ((1 - pan['perc']) if i==0 else 1); md_end = current_date + datetime.timedelta(days=md_dur_yrs*365.25)
             dh += f"<details><summary class='md-node'><span>{LORDS[im]}</span><span class='date-label'>{md_end.strftime('%d-%m-%y')}</span></summary>"
             cad = current_date
             for j in range(9):
                 ia = (im + j) % 9; ad_years = (YEARS[im] * YEARS[ia] / 120.0)
-                if i==0:
-                    ad_years = ad_years * (1 - pan['perc'])
+                if i==0: ad_years = ad_years * (1 - pan['perc'])
                 ae = cad + datetime.timedelta(days=ad_years*365.25); dh += f"<details><summary class='ad-node'><span>{LORDS[ia]}</span><span class='date-label'>{ae.strftime('%d-%m-%y')}</span></summary>"; cpd = cad
                 for k in range(9):
                     ip = (ia + k) % 9; pd_years = (ad_years * YEARS[ip] / 120.0); pe = cpd + datetime.timedelta(days=pd_years*365.25)
