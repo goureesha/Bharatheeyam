@@ -64,11 +64,11 @@ def calculate_all(dob, tob, lat, lon):
     rahu = (swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
     pos[KN_PLANETS[101]], pos[KN_PLANETS[102]] = rahu, (rahu + 180) % 360
     pos[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
-    return pos, jd, ayan, dt_from_jd(jd)
-
-def dt_from_jd(jd):
+    
     y, m, d, h = swe.revjul(jd + 5.5/24.0)
-    return datetime.datetime(y, m, d, int(h), int((h % 1) * 60))
+    birth_dt = datetime.datetime(y, m, d, int(h), int((h % 1) * 60))
+    
+    return pos, jd, ayan, birth_dt
 
 # ==========================================
 # 3. WEB INTERFACE
@@ -120,7 +120,7 @@ if run:
             if idx is None:
                 if h_grid.count('center-box') < 1: h_grid += f'<div class="center-box">ಭಾರತೀಯಮ್<br>D{v_div}</div>'
             else:
-                h_grid += f f'<div class="box"><span class="box-lbl">{KN_RASHI[idx]}</span>{boxes[idx]}</div>'
+                h_grid += f'<div class="box"><span class="box-lbl">{KN_RASHI[idx]}</span>{boxes[idx]}</div>'
         st.markdown(h_grid + '</div>', unsafe_allow_html=True)
 
     with t2:
@@ -141,4 +141,4 @@ if run:
             curr_dt = end_dt
 
     with t5:
-        st.text_area("ನಿಮ್ಮ ಟಿಪ್ಪಣಿಗಳು", height=400)
+        st.text_area("ನಿಮ್ಮ ಟಪ್ಪಣಿಗಳು", height=400)
