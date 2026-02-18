@@ -6,7 +6,7 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. PAGE CONFIG & THEME (EXACT RESTORE)
+# 1. PAGE CONFIG & THEME
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", page_icon="🕉️", initial_sidebar_state="expanded")
 
@@ -51,7 +51,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v125")
+geolocator = Nominatim(user_agent="bharatheeyam_v126")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -66,9 +66,9 @@ def get_altitude_manual(jd, lat, lon):
     ra, dec = res[0][0], res[0][1]
     gmst = swe.sidtime(jd)
     lst = gmst + (lon / 15.0)
-    ha_deg = ((lst * 15.0) - ra + 360) % 360
+    ha_deg = ((lst * 15.0) - res[0][0] + 360) % 360
     if ha_deg > 180: ha_deg -= 360
-    lat_rad, dec_rad, ha_rad = math.radians(lat), math.radians(dec), math.radians(ha_deg)
+    lat_rad, dec_rad, ha_rad = math.radians(lat), math.radians(res[0][1]), math.radians(ha_deg)
     sin_alt = (math.sin(lat_rad) * math.sin(dec_rad)) + (math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad))
     return math.degrees(math.asin(sin_alt))
 
@@ -119,32 +119,30 @@ def get_full_calculations(jd, lat, lon):
     positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = rahu, (rahu + 180) % 360
     positions[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     
-    # MANDI FIX (DAY & NIGHT INTEGRATED)
-    sr, ss = find_sunrise_set(jd, lat, lon)
+    # --- UNIFIED MANDI FIX ---
+    sr_today, ss_today = find_sunrise_set(jd, lat, lon)
     jd_local = jd + (5.5/24.0)
     cal_wday = int(jd_local + 0.5 + 1.5) % 7
-    if jd < sr:
+    if jd < sr_today:
         prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
-        w_idx, is_night, start_base, dur, panch_sr = (cal_wday - 1) % 7, True, prev_ss, (sr - prev_ss), prev_sr
-    elif jd >= ss:
+        w_idx, is_night, start_base, dur, panch_sr = (cal_wday - 1) % 7, True, prev_ss, (sr_today - prev_ss), prev_sr
+    elif jd >= ss_today:
         next_sr, _ = find_sunrise_set(jd + 1.0, lat, lon)
-        w_idx, is_night, start_base, dur, panch_sr = cal_wday, True, ss, (next_sr - ss), sr
+        w_idx, is_night, start_base, dur, panch_sr = cal_wday, True, ss_today, (next_sr - ss_today), sr_today
     else:
-        w_idx, is_night, start_base, dur, panch_sr = cal_wday, False, sr, (ss - sr), sr
+        w_idx, is_night, start_base, dur, panch_sr = cal_wday, False, sr_today, (ss_today - sr_today), sr_today
 
-    day_factors = [26, 22, 18, 14, 10, 6, 2]
-    night_factors = [10, 6, 2, 26, 22, 18, 14]
-    f = night_factors[w_idx % 7] if is_night else day_factors[w_idx % 7]
-    mtime = start_base + (dur * f / 30.0)
+    df, nf = [26, 22, 18, 14, 10, 6, 2], [10, 6, 2, 26, 22, 18, 14]
+    factor = nf[w_idx % 7] if is_night else df[w_idx % 7]
+    mtime = start_base + (dur * factor / 30.0)
     positions[KN_PLANETS["Ma"]] = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
 
-    # Panchanga details
-    moon_deg, sun_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
-    t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12)
-    n_idx = int(moon_deg / 13.333333333)
-    js = find_nak_limit(jd, n_idx * 13.333333333); je = find_nak_limit(jd, (n_idx + 1) * 13.333333333)
-    perc = (moon_deg % 13.333333333) / 13.333333333
+    # --- PANCHANGA & DASHA ---
+    m_deg, s_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
+    t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
+    n_idx = int(m_deg / 13.333333333); perc = (m_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
+    js = find_nak_limit(jd, n_idx * 13.333333333); je = find_nak_limit(jd, (n_idx + 1) * 13.333333333)
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx % 7], "n": KN_NAK[n_idx % 27],
         "sr": panch_sr, "udayadi": fmt_ghati((jd - panch_sr) * 60), 
@@ -199,15 +197,14 @@ elif st.session_state.page == "dashboard":
         for n, d in pos.items():
             if v_opt == 1: ri = int(d/30) if not b_opt else (int(ld/30) + int(((d - ld + 360) % 360 + 15) / 30)) % 12
             elif v_opt == 30: 
-                r = int(d/30); dr = d%30; is_odd = (int(d/30) % 2 == 0)
+                dr = d%30; is_odd = (int(d/30) % 2 == 0)
                 ri = (0 if dr<5 else 10 if dr<10 else 8 if dr<18 else 2 if dr<25 else 6) if is_odd else (5 if dr<5 else 2 if dr<12 else 8 if dr<20 else 10 if dr<25 else 0)
             else:
-                if v_opt == 9: block = int(d/30)%4; start = [0, 9, 6, 3][block]; steps = int((d%30)/3.33333); ri = (start + steps) % 12
+                if v_opt == 9: ri = ([0, 9, 6, 3][int(d/30)%4] + int((d%30)/3.33333)) % 12
                 elif v_opt == 3: ri = (int(d/30) + (int((d%30)/10)*4)) % 12
                 elif v_opt == 12: ri = (int(d/30) + int((d%30)/2.5)) % 12
                 else: ri = int(d/30)
-            cls = "hi" if n in ["ಲಗ್ನ", "ಮಾಂದಿ"] else "pl"
-            bxs[ri] += f'<div class="{cls}">{n}</div>'
+            bxs[ri] += f'<div class="{"hi" if n in ["ಲಗ್ನ", "ಮಾಂದಿ"] else "pl"}">{n}</div>'
         grid_order = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
         html = '<div class="grid-container">'
         for idx in grid_order:
@@ -217,7 +214,7 @@ elif st.session_state.page == "dashboard":
         st.markdown(html + '</div>', unsafe_allow_html=True)
     with t2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        tbl_h = "<table class='key-val-table'><tr><th style='text-align:left'>ಗ್ರಹ</th><th style='text-align:left'>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th></tr>"
+        tbl_h = "<table class='key-val-table'><tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th></tr>"
         for p, d in pos.items():
             tbl_h += f"<tr><td><b>{p}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{int(d%30)}° {int((d%30*60)%60)}'</td></tr>"
         st.markdown(tbl_h + "</table></div>", unsafe_allow_html=True)
@@ -229,7 +226,9 @@ elif st.session_state.page == "dashboard":
             dh += f"<details><summary class='md-node'><span>{LORDS[im]}</span><span class='date-label'>{md_end.strftime('%d-%m-%y')}</span></summary>"
             cad = cur_d
             for j in range(9):
-                ia = (im + j) % 9; ad_y = (YEARS[im] * YEARS[ia] / 120.0); if i == 0: ad_y *= (1 - pan['perc'])
+                ia = (im + j) % 9; ad_y = (YEARS[im] * YEARS[ia] / 120.0)
+                if i == 0:
+                    ad_y *= (1 - pan['perc'])
                 ae = cad + datetime.timedelta(days=ad_y*365.25)
                 dh += f"<details><summary class='ad-node'><span>{LORDS[ia]}</span><span class='date-label'>{ae.strftime('%d-%m-%y')}</span></summary>"; cpd = cad
                 for k in range(9):
