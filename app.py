@@ -6,131 +6,42 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. PAGE CONFIG & VISIBILITY FIXES
+# 1. PAGE CONFIG & THEME
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", page_icon="🕉️", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
+    .stApp { background-color: #FFFBF0 !important; font-family: 'Noto Sans Kannada', sans-serif; color: #1F1F1F !important; }
+    .header-box { background: linear-gradient(135deg, #6A040F, #9D0208); color: #FFFFFF !important; padding: 16px; text-align: center; font-weight: 900; font-size: 24px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); border-bottom: 4px solid #FAA307; }
+    div[data-testid="stInput"] { background-color: white; border-radius: 8px; border: 1px solid #E0E0E0; }
+    .stButton>button { width: 100%; border-radius: 10px; background-color: #9D0208 !important; color: white !important; font-weight: bold; border: none; padding: 12px; transition: all 0.3s ease; }
+    .stButton>button:hover { background-color: #D00000 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    button[kind="secondary"] { background-color: #FFFFFF !important; color: #9D0208 !important; border: 2px solid #9D0208 !important; }
     
-    /* 1. THEME: Royal Vedic 2025 */
-    .stApp { 
-        background-color: #FFFBF0 !important; 
-        font-family: 'Noto Sans Kannada', sans-serif; 
-        color: #1F1F1F !important; 
-    }
-    
-    /* 2. HEADER */
-    .header-box { 
-        background: linear-gradient(135deg, #6A040F, #9D0208); 
-        color: #FFFFFF !important; 
-        padding: 16px; 
-        text-align: center; 
-        font-weight: 900; 
-        font-size: 24px; 
-        border-radius: 12px; 
-        margin-bottom: 20px; 
-        box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); 
-        border-bottom: 4px solid #FAA307; 
-    }
-    
-    /* 3. INPUTS & BUTTONS */
-    div[data-testid="stInput"] { 
-        background-color: white; 
-        border-radius: 8px; 
-        border: 1px solid #E0E0E0; 
-    }
-    .stButton>button { 
-        width: 100%; 
-        border-radius: 10px; 
-        background-color: #9D0208 !important; 
-        color: white !important; 
-        font-weight: bold; 
-        border: none; 
-        padding: 12px;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover { 
-        background-color: #D00000 !important; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-    button[kind="secondary"] {
-        background-color: #FFFFFF !important;
-        color: #9D0208 !important;
-        border: 2px solid #9D0208 !important;
-    }
+    /* TABS */
+    div[data-testid="stTabs"] button { background-color: transparent !important; }
+    div[data-testid="stTabs"] button[aria-selected="false"] p { color: #5D4037 !important; font-weight: 700 !important; font-size: 14px !important; }
+    div[data-testid="stTabs"] button[aria-selected="true"] p { color: #9D0208 !important; font-weight: 900 !important; font-size: 15px !important; }
+    div[data-testid="stTabs"] button[aria-selected="true"] { border-bottom: 4px solid #9D0208 !important; }
 
-    /* 4. TAB VISIBILITY FIX */
-    div[data-testid="stTabs"] button {
-        background-color: transparent !important;
-    }
-    div[data-testid="stTabs"] button[aria-selected="false"] p {
-        color: #5D4037 !important;
-        font-weight: 700 !important;
-        font-size: 14px !important;
-    }
-    div[data-testid="stTabs"] button[aria-selected="true"] p {
-        color: #9D0208 !important;
-        font-weight: 900 !important;
-        font-size: 15px !important;
-    }
-    div[data-testid="stTabs"] button[aria-selected="true"] {
-        border-bottom: 4px solid #9D0208 !important;
-    }
-
-    /* 5. KUNDALI GRID */
-    .grid-container { 
-        display: grid; 
-        grid-template-columns: repeat(4, 1fr); 
-        grid-template-rows: repeat(4, 1fr); 
-        width: 100%; max-width: 380px; 
-        aspect-ratio: 1 / 1; 
-        margin: 0 auto; gap: 2px; 
-        background: #370617; 
-        border: 4px solid #6A040F; 
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
-        border-radius: 4px;
-    }
-    .box { 
-        background: #FFFFFF; 
-        position: relative; 
-        display: flex; flex-direction: column; 
-        align-items: center; justify-content: center; 
-        font-size: 11px; font-weight: bold; 
-        padding: 2px; text-align: center; 
-        color: #000000 !important; 
-    }
-    .center-box { 
-        grid-column: 2/4; grid-row: 2/4; 
-        background: linear-gradient(135deg, #FFBA08, #FAA307);
-        display: flex; flex-direction: column; 
-        align-items: center; justify-content: center; 
-        color: #370617 !important; 
-        font-weight: 900; text-align: center; 
-        font-size: 13px;
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-    }
+    /* GRID */
+    .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); width: 100%; max-width: 380px; aspect-ratio: 1 / 1; margin: 0 auto; gap: 2px; background: #370617; border: 4px solid #6A040F; border-radius: 4px; }
+    .box { background: #FFFFFF; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; padding: 2px; text-align: center; color: #000000 !important; }
+    .center-box { grid-column: 2/4; grid-row: 2/4; background: linear-gradient(135deg, #FFBA08, #FAA307); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #370617 !important; font-weight: 900; text-align: center; font-size: 13px; }
     .lbl { position: absolute; top: 2px; left: 3px; font-size: 9px; color: #DC2F02 !important; font-weight: 900; }
     .hi { color: #D00000 !important; text-decoration: underline; font-weight: 900; }
     .pl { color: #03071E !important; font-weight: bold; }
     
-    /* 6. DATA CARDS */
-    .card { 
-        background: #FFFFFF; 
-        border-radius: 12px; 
-        padding: 15px; 
-        margin-bottom: 12px; 
-        border: 1px solid #F0F0F0; 
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-    }
-    .key { color: #9D0208 !important; font-weight: 900; width: 40%; }
+    /* CARDS */
+    .card { background: #FFFFFF; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #F0F0F0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .key-val-table { width: 100%; border-collapse: collapse; font-size: 14px; }
     .key-val-table td { border-bottom: 1px solid #f0f0f0; padding: 10px 4px; color: #333 !important; }
     
-    /* 7. DASHA TREE */
+    /* DASHA */
     details { margin-bottom: 6px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; }
     summary { padding: 12px; font-size: 14px; border-bottom: 1px solid #f5f5f5; color: #000 !important; }
-    
     .md-node { background: #6A040F !important; color: #FFFFFF !important; font-weight: 900; }
     .md-node span { color: white !important; }
     .ad-node { background: #FFEFD5 !important; color: #9D0208 !important; font-weight: 700; border-left: 6px solid #FAA307; }
@@ -139,9 +50,7 @@ st.markdown("""
     .pd-node span { color: #1B5E20 !important; }
     .sd-node { background: #F5F9FF !important; color: #0D47A1 !important; font-size: 11px; margin-left: 10px; border-left: 3px solid #2196F3; padding: 8px; }
     .sd-node span { color: #0D47A1 !important; }
-    
     .date-label { font-size: 11px; opacity: 0.9; float: right; font-weight: normal; }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -150,7 +59,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v88")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v89")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -227,50 +136,45 @@ def get_full_calculations(jd, lat, lon):
     lagna = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     positions[KN_PLANETS["Lagna"]] = lagna
     
-    # ----------------------------
-    # FIXED MANDI LOGIC (Day/Night)
-    # ----------------------------
+    # --- MANDI LOGIC (FIXED FOR NIGHT BIRTH) ---
     sr, ss = find_sunrise_set(jd, lat, lon)
     if sr == -1 or ss == -1: sr = jd - 0.25; ss = jd + 0.25 
     
-    # Factors
-    yf_day = [26, 22, 18, 14, 10, 6, 2]
-    yf_night = [10, 6, 2, 26, 22, 18, 14]
+    day_ghati = [26, 22, 18, 14, 10, 6, 2]
+    night_ghati = [10, 6, 2, 26, 22, 18, 14]
     
     if jd >= sr and jd < ss:
-        # DAY TIME
-        # Weekday based on Sunrise
+        # Day Birth
         w_idx = int(sr + 0.5 + 1.5) % 7
         dur = ss - sr
-        yf = yf_day[w_idx]
-        mtime = sr + (dur * yf / 30.0)
-        day_sr = sr # For Panchanga
-    elif jd >= ss:
-        # NIGHT TIME (Evening)
-        # Weekday is still today (based on Sunrise)
-        w_idx = int(sr + 0.5 + 1.5) % 7
-        next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
-        dur = next_sr - ss
-        yf = yf_night[w_idx]
-        mtime = ss + (dur * yf / 30.0)
-        day_sr = sr # For Panchanga
+        factor = day_ghati[w_idx]
+        mtime = sr + (dur * factor / 30.0)
+        day_sr = sr
     else:
-        # NIGHT TIME (Early Morning / Pre-Sunrise)
-        # Weekday is YESTERDAY
-        prev_ss = find_sunrise_set(jd - 1.0, lat, lon)[1]
-        
-        # Calculate yesterday's SR just to get the weekday correct
-        prev_sr = find_sunrise_set(jd - 1.0, lat, lon)[0]
-        w_idx = int(prev_sr + 0.5 + 1.5) % 7
-        
-        dur = sr - prev_ss
-        yf = yf_night[w_idx]
-        mtime = prev_ss + (dur * yf / 30.0)
-        day_sr = sr # For Panchanga (Standard uses current SR for Udayadi?)
-        # Actually for Panchanga 'Udayadi', if born at 3 AM, Udayadi is from Yesterday's SR?
-        # Standard software shows Udayadi from TODAY'S SR (negative) or Prev SR (large positive).
-        # Let's keep Udayadi relative to the SR of the calendar day for simplicity.
-    
+        # Night Birth
+        if jd >= ss: 
+            # Evening (After Sunset, Before Midnight/Next SR)
+            # Weekday is TODAY
+            w_idx = int(sr + 0.5 + 1.5) % 7
+            next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
+            dur = next_sr - ss
+            start_base = ss
+            day_sr = sr
+        else:
+            # Early Morning (Before Sunrise) - THE CRITICAL FIX
+            # Weekday is YESTERDAY
+            prev_ss = find_sunrise_set(jd - 1.0, lat, lon)[1] # Get yesterday's sunset
+            prev_sr = find_sunrise_set(jd - 1.0, lat, lon)[0] # Get yesterday's sunrise for weekday calc
+            
+            w_idx = int(prev_sr + 0.5 + 1.5) % 7 # This will return FRIDAY index for Sat early morning
+            
+            dur = sr - prev_ss
+            start_base = prev_ss
+            day_sr = sr # Display today's SR in panchanga
+            
+        factor = night_ghati[w_idx]
+        mtime = start_base + (dur * factor / 30.0)
+
     mandi_deg = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
     positions[KN_PLANETS["Ma"]] = mandi_deg
 
@@ -281,11 +185,11 @@ def get_full_calculations(jd, lat, lon):
     perc = (moon_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
     
-    # Recalc w_idx for Panchanga display (Standard Calendar Day)
-    w_idx_pan = int(jd + 0.5 + 1.5) % 7
+    # Panchanga Weekday (Calendar)
+    w_idx_cal = int(jd + 0.5 + 1.5) % 7
     
     pan = {
-        "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx_pan], "n": KN_NAK[n_idx % 27],
+        "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx_cal], "n": KN_NAK[n_idx % 27],
         "sr": day_sr, "ss": ss, "udayadi": fmt_ghati((jd - day_sr) * 60), 
         "gata": fmt_ghati((jd - js) * 60), "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd) * 60),
         "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
@@ -308,7 +212,6 @@ if 'lon' not in st.session_state: st.session_state.lon = 74.73
 st.markdown('<div class="header-box">ಭಾರತೀಯಮ್</div>', unsafe_allow_html=True)
 
 if st.session_state.page == "input":
-    # --- MOBILE OPTIMIZED INPUT ---
     with st.container():
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
@@ -347,7 +250,6 @@ if st.session_state.page == "input":
         st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.page == "dashboard":
-    # --- MOBILE OPTIMIZED DASHBOARD ---
     pos = st.session_state.data['pos']; pan = st.session_state.data['pan']
     
     if st.button("⬅️ ಹಿಂದಕ್ಕೆ (Back)", type="secondary"): st.session_state.page = "input"; st.rerun()
@@ -355,7 +257,6 @@ elif st.session_state.page == "dashboard":
     t1, t2, t3, t4, t5 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಟಿಪ್ಪಣಿ"])
     
     with t1:
-        # KUNDALI
         c_v, c_b = st.columns([2, 1])
         v_opt = c_v.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
         b_opt = c_b.checkbox("ಭಾವ", value=False)
@@ -383,7 +284,6 @@ elif st.session_state.page == "dashboard":
         st.markdown(html, unsafe_allow_html=True)
 
     with t2:
-        # SPHUTA TABLE
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         tbl_html = "<table class='key-val-table'><tr><th style='text-align:left'>ಗ್ರಹ</th><th style='text-align:left'>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th></tr>"
         for p, d in pos.items():
@@ -394,7 +294,6 @@ elif st.session_state.page == "dashboard":
         st.markdown(tbl_html, unsafe_allow_html=True)
 
     with t3:
-        # DASHA TREE
         st.markdown(f"<div class='card' style='color:#6A040F; font-weight:bold; border-left:5px solid #FAA307'>ಶಿಷ್ಟ ದಶೆ: {pan['d_bal']}</div>", unsafe_allow_html=True)
         dh = ""; current_date = pan['date_obj']; si = pan['n_idx'] % 9
         for i in range(9):
@@ -419,21 +318,8 @@ elif st.session_state.page == "dashboard":
         st.markdown(dh, unsafe_allow_html=True)
 
     with t4:
-        # PANCHANGA
-        st.markdown(f"""
-        <div class='card'>
-            <table class='key-val-table'>
-                <tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr>
-                <tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr>
-                <tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr>
-                <tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr>
-            </table>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class='card'><table class='key-val-table'><tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr><tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr><tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr><tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr><tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr><tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr></table></div>""", unsafe_allow_html=True)
 
     with t5:
-        # NOTES
         st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300)
         if st.button("ಉಳಿಸಿ (Save)"): st.success("Saved!")
