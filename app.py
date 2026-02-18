@@ -19,19 +19,27 @@ st.markdown("""
     .stButton>button { width: 100%; border-radius: 10px; background-color: #9D0208 !important; color: white !important; font-weight: bold; border: none; padding: 12px; transition: all 0.3s ease; }
     .stButton>button:hover { background-color: #D00000 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     button[kind="secondary"] { background-color: #FFFFFF !important; color: #9D0208 !important; border: 2px solid #9D0208 !important; }
+    
+    /* TABS */
     div[data-testid="stTabs"] button { background-color: transparent !important; }
     div[data-testid="stTabs"] button[aria-selected="false"] p { color: #5D4037 !important; font-weight: 700 !important; font-size: 14px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #9D0208 !important; font-weight: 900 !important; font-size: 15px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { border-bottom: 4px solid #9D0208 !important; }
+
+    /* GRID */
     .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); width: 100%; max-width: 380px; aspect-ratio: 1 / 1; margin: 0 auto; gap: 2px; background: #370617; border: 4px solid #6A040F; border-radius: 4px; }
     .box { background: #FFFFFF; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; padding: 2px; text-align: center; color: #000000 !important; }
     .center-box { grid-column: 2/4; grid-row: 2/4; background: linear-gradient(135deg, #FFBA08, #FAA307); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #370617 !important; font-weight: 900; text-align: center; font-size: 13px; }
     .lbl { position: absolute; top: 2px; left: 3px; font-size: 9px; color: #DC2F02 !important; font-weight: 900; }
     .hi { color: #D00000 !important; text-decoration: underline; font-weight: 900; }
     .pl { color: #03071E !important; font-weight: bold; }
+    
+    /* CARDS */
     .card { background: #FFFFFF; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #F0F0F0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .key { color: #9D0208 !important; font-weight: 900; width: 40%; }
     .key-val-table td { border-bottom: 1px solid #f0f0f0; padding: 10px 4px; color: #333 !important; }
+    
+    /* DASHA */
     details { margin-bottom: 6px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; }
     summary { padding: 12px; font-size: 14px; border-bottom: 1px solid #f5f5f5; color: #000 !important; }
     .md-node { background: #6A040F !important; color: #FFFFFF !important; font-weight: 900; }
@@ -51,7 +59,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v93")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v94")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -132,51 +140,53 @@ def get_full_calculations(jd, lat, lon):
     positions[KN_PLANETS["Lagna"]] = lagna
     
     # ----------------------------
-    # VEDIC DAY & MANDI (BULLETPROOF WEEKDAY)
+    # VEDIC DAY & MANDI (FIXED ANCHOR)
     # ----------------------------
     sr, ss = find_sunrise_set(jd, lat, lon)
     if sr == -1 or ss == -1: sr = jd - 0.25; ss = jd + 0.25 
     
-    # Get Date Object from JD for Absolute Weekday
+    # Absolute Weekday from Date
     dt_obj = datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
-    # Python Weekday: 0=Mon, 6=Sun. 
-    # Vedic Map: 0=Sun, 1=Mon... 6=Sat.
-    # Conversion: (py_wday + 1) % 7
     abs_wday = (dt_obj.weekday() + 1) % 7
     
     if jd < sr:
-        # Pre-Sunrise (Night of Yesterday)
+        # PRE-SUNRISE (EARLY MORNING) -> NIGHT of PREVIOUS DAY
         prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
         vedic_sunrise = prev_sr
-        # If it is Saturday morning (abs_wday=6), we want Friday (5).
-        w_idx = (abs_wday - 1) % 7
         
+        # Weekday is Yesterday
+        w_idx = (abs_wday - 1) % 7 
         is_night_birth = True
-        dur = sr - prev_ss
+        
+        # CRITICAL: For early morning, Mandi is calculated from YESTERDAY'S SUNSET
         start_base = prev_ss
+        dur = sr - prev_ss
     else:
-        # Standard Day (Today)
+        # POST-SUNRISE (STANDARD DAY)
         vedic_sunrise = sr
         w_idx = abs_wday 
         
         if jd >= ss:
+            # EVENING -> NIGHT of TODAY
             is_night_birth = True
             next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
-            dur = next_sr - ss
             start_base = ss
+            dur = next_sr - ss
         else:
+            # DAY
             is_night_birth = False
-            dur = ss - sr
             start_base = sr
+            dur = ss - sr
 
     day_ghati = [26, 22, 18, 14, 10, 6, 2]
     night_ghati = [10, 6, 2, 26, 22, 18, 14]
     
     if is_night_birth:
-        # Correction: -1.0 Ghati
+        # Use Night Factor & Anchor to Sunset
         f_raw = night_ghati[w_idx] - 1.0 
         factor = f_raw if f_raw >= 0 else (f_raw + 30) 
     else:
+        # Use Day Factor & Anchor to Sunrise
         f_raw = day_ghati[w_idx] - 1.0
         factor = f_raw if f_raw >= 0 else (f_raw + 30)
         
@@ -198,7 +208,7 @@ def get_full_calculations(jd, lat, lon):
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
-        "v": KN_VARA[w_idx], # Uses Vedic Weekday (e.g. Fri if Sat 2am)
+        "v": KN_VARA[w_idx], 
         "n": KN_NAK[n_idx % 27],
         "sr": vedic_sunrise, 
         "ss": ss, 
