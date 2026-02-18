@@ -1,12 +1,11 @@
 import streamlit as st
 import swisseph as swe
 import datetime
-import math
 import pandas as pd
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. SERVER CONFIG & THEME
+# 1. SERVER CONFIG
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered")
 
@@ -14,7 +13,7 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
     html, body, [class*="css"] { font-family: 'Noto Sans Kannada', sans-serif; background-color: #fff8e1; color: #000; }
-    .main-title { color: white; background-color: #b71c1c; padding: 15px; text-align: center; font-weight: 900; font-size: 26px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .main-title { color: white; background-color: #b71c1c; padding: 15px; text-align: center; font-weight: 900; font-size: 26px; border-radius: 10px; margin-bottom: 20px; }
     .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); width: 360px; height: 360px; margin: 15px auto; gap: 2px; background: #333; border: 3px solid #000; }
     .box { background: white; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; min-height: 85px; padding: 5px; text-align: center; }
     .box-lbl { position: absolute; top: 2px; left: 4px; font-size: 9px; color: #999; font-weight: 900; }
@@ -26,11 +25,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CALCULATION ENGINE (STABLE)
+# 2. CALCULATION ENGINE (FIXED ARGUMENTS)
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v61")
+geolocator = Nominatim(user_agent="bharatheeyam_v62")
 
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
 PLANET_IDS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 10: "ರಾಹು"}
@@ -51,61 +50,72 @@ def get_varga_pos(deg, div):
 
 def get_mandi(jd, lat, lon):
     try:
+        # 1. Calculate Sunrise/Sunset
+        # Note: flags are combined with bitwise OR (|)
         res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
         sr = res[1][0]
         res_s = swe.rise_trans(jd, swe.SUN, lon, lat, 0, 0, 0, swe.CALC_SET | swe.FLG_MOSEPH)
         ss = res_s[1][0]
-        part = (ss - sr) / 8.0
+        
+        # 2. Mandi Time Math
+        day_len = ss - sr
+        part = day_len / 8.0
         wday = int(jd + 0.5 + 1.5) % 7
-        m_factors = [26, 22, 18, 14, 10, 6, 2]
-        m_jd = sr + (part * m_factors[wday] / 30.0 * 3.75)
-        # FIXED: Corrected argument order for houses_ex
-        res_h = swe.houses_ex(m_jd, swe.FLG_SIDEREAL | swe.FLG_MOSEPH, lat, lon, b'P')
-        return (res_h[0][0]) % 360
+        m_factors = [26, 22, 18, 14, 10, 6, 2] # Sun to Sat
+        m_time = sr + (part * m_factors[wday] / 30.0 * 3.75)
+        
+        # 3. Calculate Ascendant for Mandi Time
+        # FIXED ARGUMENT ORDER: jd, lat, lon, house_sys, flags
+        res_h = swe.houses_ex(m_time, lat, lon, b'P', swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
+        return res_h[0][0] % 360
     except: return 0.0
 
 # ==========================================
-# 3. APP INTERFACE
+# 3. UI
 # ==========================================
 st.markdown('<div class="main-title">ಭಾರತೀಯಮ್</div>', unsafe_allow_html=True)
 
 with st.sidebar:
-    st.header("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ")
+    st.header("ವಿವರಗಳು")
     u_name = st.text_input("ಹೆಸರು", "ಬಳಕೆದಾರ")
     u_dob = st.date_input("ದಿನಾಂಕ", datetime.date(1997, 5, 24))
     u_tob = st.time_input("ಸಮಯ", datetime.time(14, 43))
     
-    loc_query = st.text_input("ಸ್ಥಳ (Place)", "Yellapur")
-    if st.button("ಸ್ಥಳ ಹುಡುಕಿ"):
+    loc_q = st.text_input("ಸ್ಥಳ", "Yellapur")
+    if st.button("ಹುಡುಕಿ"):
         try:
-            loc_data = geolocator.geocode(loc_query)
-            if loc_data:
-                st.session_state.lat, st.session_state.lon = loc_data.latitude, loc_data.longitude
-                st.success(f"ಸಿಕ್ಕಿದೆ!")
+            loc = geolocator.geocode(loc_q)
+            if loc:
+                st.session_state.lat, st.session_state.lon = loc.latitude, loc.longitude
+                st.success("ಸ್ಥಳ ಸಿಕ್ಕಿದೆ!")
         except: st.error("ದೋಷ")
-    
+        
     u_lat = st.number_input("Lat", value=st.session_state.get('lat', 14.9800), format="%.4f")
     u_lon = st.number_input("Lon", value=st.session_state.get('lon', 74.7300), format="%.4f")
-    run_main = st.button("ಜಾತಕ ರಚಿಸಿ", type="primary")
+    run = st.button("ಜಾತಕ ರಚಿಸಿ", type="primary")
 
-if run_main:
+if run:
     try:
         h_dec = u_tob.hour + u_tob.minute/60.0
         jd = swe.julday(u_dob.year, u_dob.month, u_dob.day, h_dec - 5.5)
         
         pos = {}
+        # Planet Loop
         for pid, pnk in PLANET_IDS.items():
             res = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
             pos[pnk] = res[0][0] % 360
-        
+            
         pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
         pos["ಮಾಂದಿ"] = get_mandi(jd, u_lat, u_lon)
-        # FIXED: Byte string b'P' passed for house system
-        res_h = swe.houses_ex(jd, swe.FLG_SIDEREAL | swe.FLG_MOSEPH, u_lat, u_lon, b'P')
-        pos["ಲಗ್ನ"] = res_h[0][0] % 360
-
+        
+        # Lagna Calculation
+        # FIXED ARGUMENT ORDER: jd, lat, lon, house_sys, flags
+        res_lag = swe.houses_ex(jd, u_lat, u_lon, b'P', swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
+        pos["ಲಗ್ನ"] = res_lag[0][0] % 360
+        
+        # Tabs
         t1, t2, t3, t4 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಉಳಿಸಿ"])
-
+        
         with t1:
             v_choice = st.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
             boxes = {i: "" for i in range(12)}
@@ -121,11 +131,11 @@ if run_main:
                     if html.count('center-box') < 1: html += f'<div class="center-box">ಭಾರತೀಯಮ್<br>D{v_choice}</div>'
                 else: html += f'<div class="box"><span class="box-lbl">{KN_RASHI[g]}</span>{boxes[g]}</div>'
             st.markdown(html + '</div>', unsafe_allow_html=True)
-
+            
         with t2:
             df = pd.DataFrame([{"ಗ್ರಹ": k, "ರಾಶಿ": KN_RASHI[int(v/30)], "ಅಂಶ": f"{int(v%30)}° {int((v%30*60)%60)}'"} for k,v in pos.items()])
             st.table(df)
-
+            
         with t3:
             m_lon = pos.get("ಚಂದ್ರ", 0)
             n_idx = int(m_lon / 13.333333333)
@@ -138,7 +148,7 @@ if run_main:
                 dur = YEARS[l_idx] * ((1-perc) if i==0 else 1)
                 dt += datetime.timedelta(days=dur*365.25)
                 st.markdown(f"<div class='md-node'><span>{LORDS[l_idx]}</span> <span>{dt.strftime('%d-%m-%Y')} ವರೆಗೆ</span></div>", unsafe_allow_html=True)
-
+                
         with t4:
             st.download_button("ಡೌನ್‌ಲೋಡ್ (CSV)", df.to_csv(index=False), f"{u_name}.csv")
 
