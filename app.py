@@ -6,7 +6,7 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. PAGE CONFIG & 2025 TRENDY CSS
+# 1. PAGE CONFIG & VISIBILITY FIXES
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", page_icon="🕉️", initial_sidebar_state="expanded")
 
@@ -16,14 +16,14 @@ st.markdown("""
     
     /* 1. THEME: Royal Vedic 2025 */
     .stApp { 
-        background-color: #FFFBF0 !important; /* Lighter Cosmic Cream */
+        background-color: #FFFBF0 !important; 
         font-family: 'Noto Sans Kannada', sans-serif; 
         color: #1F1F1F !important; 
     }
     
-    /* 2. HEADER - Modern Card Style */
+    /* 2. HEADER */
     .header-box { 
-        background: linear-gradient(135deg, #6A040F, #9D0208); /* Gradient Burgundy */
+        background: linear-gradient(135deg, #6A040F, #9D0208); 
         color: #FFFFFF !important; 
         padding: 16px; 
         text-align: center; 
@@ -32,18 +32,15 @@ st.markdown("""
         border-radius: 12px; 
         margin-bottom: 20px; 
         box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); 
-        border-bottom: 4px solid #FAA307; /* Saffron Accent */
+        border-bottom: 4px solid #FAA307; 
     }
     
     /* 3. INPUTS & BUTTONS */
-    /* Make inputs pop with white bg and crisp borders */
     div[data-testid="stInput"] { 
         background-color: white; 
         border-radius: 8px; 
         border: 1px solid #E0E0E0; 
     }
-    
-    /* Primary Action Button - 2025 Flat Design */
     .stButton>button { 
         width: 100%; 
         border-radius: 10px; 
@@ -58,15 +55,35 @@ st.markdown("""
         background-color: #D00000 !important; 
         box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
-    
-    /* Secondary Button (Back) */
     button[kind="secondary"] {
         background-color: #FFFFFF !important;
         color: #9D0208 !important;
         border: 2px solid #9D0208 !important;
     }
 
-    /* 4. KUNDALI GRID - High Contrast & Clean */
+    /* 4. TAB VISIBILITY FIX (CRITICAL) */
+    /* Force tab labels to be visible */
+    div[data-testid="stTabs"] button {
+        background-color: transparent !important;
+    }
+    /* Inactive Tab Text - Deep Brown */
+    div[data-testid="stTabs"] button[aria-selected="false"] p {
+        color: #5D4037 !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+    }
+    /* Active Tab Text - Bright Burgundy */
+    div[data-testid="stTabs"] button[aria-selected="true"] p {
+        color: #9D0208 !important;
+        font-weight: 900 !important;
+        font-size: 15px !important;
+    }
+    /* Active Tab Underline */
+    div[data-testid="stTabs"] button[aria-selected="true"] {
+        border-bottom: 4px solid #9D0208 !important;
+    }
+
+    /* 5. KUNDALI GRID */
     .grid-container { 
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
@@ -74,7 +91,7 @@ st.markdown("""
         width: 100%; max-width: 380px; 
         aspect-ratio: 1 / 1; 
         margin: 0 auto; gap: 2px; 
-        background: #370617; /* Dark Chocolate Border */
+        background: #370617; 
         border: 4px solid #6A040F; 
         box-shadow: 0 8px 20px rgba(0,0,0,0.15); 
         border-radius: 4px;
@@ -90,7 +107,6 @@ st.markdown("""
     }
     .center-box { 
         grid-column: 2/4; grid-row: 2/4; 
-        background: #FFBA08; /* Saffron Center */
         background: linear-gradient(135deg, #FFBA08, #FAA307);
         display: flex; flex-direction: column; 
         align-items: center; justify-content: center; 
@@ -103,7 +119,7 @@ st.markdown("""
     .hi { color: #D00000 !important; text-decoration: underline; font-weight: 900; }
     .pl { color: #03071E !important; font-weight: bold; }
     
-    /* 5. DATA CARDS */
+    /* 6. DATA CARDS */
     .card { 
         background: #FFFFFF; 
         border-radius: 12px; 
@@ -115,23 +131,16 @@ st.markdown("""
     .key { color: #9D0208 !important; font-weight: 900; width: 40%; }
     .key-val-table td { border-bottom: 1px solid #f0f0f0; padding: 10px 4px; color: #333 !important; }
     
-    /* 6. DASHA TREE - Color Coded Hierarchy */
+    /* 7. DASHA TREE */
     details { margin-bottom: 6px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; }
     summary { padding: 12px; font-size: 14px; border-bottom: 1px solid #f5f5f5; color: #000 !important; }
     
-    /* Level 1: Burgundy */
     .md-node { background: #6A040F !important; color: #FFFFFF !important; font-weight: 900; }
     .md-node span { color: white !important; }
-    
-    /* Level 2: Saffron */
     .ad-node { background: #FFEFD5 !important; color: #9D0208 !important; font-weight: 700; border-left: 6px solid #FAA307; }
     .ad-node span { color: #9D0208 !important; }
-
-    /* Level 3: Sage Green (Calming) */
     .pd-node { background: #F1F8E9 !important; color: #1B5E20 !important; font-weight: 700; border-left: 6px solid #558B2F; }
     .pd-node span { color: #1B5E20 !important; }
-
-    /* Level 4: Soft Blue */
     .sd-node { background: #F5F9FF !important; color: #0D47A1 !important; font-size: 11px; margin-left: 10px; border-left: 3px solid #2196F3; padding: 8px; }
     .sd-node span { color: #0D47A1 !important; }
     
@@ -145,7 +154,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v86")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v87")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
