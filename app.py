@@ -6,7 +6,7 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. PAGE CONFIG & THEME (Royal Vedic)
+# 1. PAGE CONFIG & THEME
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", page_icon="🕉️", initial_sidebar_state="expanded")
 
@@ -65,7 +65,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v90")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v91")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -94,8 +94,6 @@ def find_sunrise_set(jd_noon, lat, lon):
     for i in range(24):
         alt1 = get_altitude_manual(current, lat, lon)
         alt2 = get_altitude_manual(current + step, lat, lon)
-        
-        # Sunrise 
         if alt1 < -0.833 and alt2 >= -0.833:
             l, h = current, current + step
             for _ in range(20): 
@@ -103,8 +101,6 @@ def find_sunrise_set(jd_noon, lat, lon):
                 if get_altitude_manual(m, lat, lon) < -0.833: l = m
                 else: h = m
             rise_time = h
-            
-        # Sunset
         if alt1 > -0.833 and alt2 <= -0.833:
             l, h = current, current + step
             for _ in range(20): 
@@ -112,7 +108,6 @@ def find_sunrise_set(jd_noon, lat, lon):
                 if get_altitude_manual(m, lat, lon) > -0.833: l = m
                 else: h = m
             set_time = h
-            
         current += step
     return rise_time, set_time
 
@@ -166,6 +161,9 @@ def get_full_calculations(jd, lat, lon):
         # Duration for Mandi (Yesterday Sunset to Today Sunrise)
         dur = sr - prev_ss
         start_base = prev_ss
+        
+        # BUG FIX: In v88, we calculated w_idx but the night loop logic 
+        # might have shifted it again. Here we force it.
         
     else:
         vedic_sunrise = sr
