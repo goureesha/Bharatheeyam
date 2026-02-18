@@ -123,11 +123,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CORE MATH ENGINE (UNCHANGED)
+# 2. CORE MATH ENGINE (FIXED SYNTAX)
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v83")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v84")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -156,14 +156,29 @@ def find_sunrise_set(jd_noon, lat, lon):
     for i in range(24):
         alt1 = get_altitude_manual(current, lat, lon)
         alt2 = get_altitude_manual(current + step, lat, lon)
+        
+        # Sunrise Calculation (Fixed Syntax)
         if alt1 < -0.833 and alt2 >= -0.833:
             l, h = current, current + step
-            for _ in range(20): m = (l + h) / 2; (l if get_altitude_manual(m, lat, lon) < -0.833 else h) = m
+            for _ in range(20): 
+                m = (l + h) / 2
+                if get_altitude_manual(m, lat, lon) < -0.833:
+                    l = m
+                else:
+                    h = m
             rise_time = h
+            
+        # Sunset Calculation (Fixed Syntax)
         if alt1 > -0.833 and alt2 <= -0.833:
             l, h = current, current + step
-            for _ in range(20): m = (l + h) / 2; (l if get_altitude_manual(m, lat, lon) > -0.833 else h) = m
+            for _ in range(20): 
+                m = (l + h) / 2
+                if get_altitude_manual(m, lat, lon) > -0.833:
+                    l = m
+                else:
+                    h = m
             set_time = h
+            
         current += step
     return rise_time, set_time
 
@@ -345,10 +360,10 @@ elif st.session_state.page == "dashboard":
                 dh += f"<details><summary class='ad-node'><span>{LORDS[ia]}</span><span class='date-label'>{ae.strftime('%d-%m-%y')}</span></summary>"; cpd = cad
                 for k in range(9):
                     ip = (ia + k) % 9; pd_years = (ad_years * YEARS[ip] / 120.0); pe = cpd + datetime.timedelta(days=pd_years*365.25)
-                    dh += f"<details><summary class='pd-node'><span>{LORDS[ip]}</span><span class='date-label'>{pe.strftime('%d-%m-%y')}</span></summary>"; csd = cpd
+                    dh += f"<details><summary class='pd-node'><span>{LORDS[ip]}</span><span class='date-label'>{pe.strftime('%d-%m-%Y')}</span></summary>"; csd = cpd
                     for l in range(9):
                         iss = (ip + l) % 9; sd_years = (pd_years * YEARS[iss] / 120.0); se = csd + datetime.timedelta(days=sd_years*365.25)
-                        dh += f"<div class='sd-node'>{LORDS[iss]} <span style='float:right'>{se.strftime('%d-%m-%y')}</span></div>"; csd = se
+                        dh += f"<div class='sd-node'>{LORDS[iss]} <span style='float:right'>{se.strftime('%d-%m-%Y')}</span></div>"; csd = se
                     dh += "</details>"; cpd = pe
                 dh += "</details>"; cad = ae
             dh += "</details>"; current_date = md_end
