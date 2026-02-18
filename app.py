@@ -51,7 +51,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v128")
+geolocator = Nominatim(user_agent="bharatheeyam_v129")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -67,14 +67,14 @@ def get_altitude_manual(jd, lat, lon):
     gmst = swe.sidtime(jd)
     ha_deg = ((gmst + (lon / 15.0)) * 15.0 - ra + 360) % 360
     if ha_deg > 180: ha_deg -= 360
-    lat_r, dec_r, ha_r = math.radians(lat), math.radians(dec), math.radians(ha_deg)
-    sin_alt = (math.sin(lat_r) * math.sin(dec_r)) + (math.cos(lat_r) * math.cos(dec_r) * math.cos(ha_r))
+    lat_rad, dec_rad, ha_rad = math.radians(lat), math.radians(dec), math.radians(ha_deg)
+    sin_alt = (math.sin(lat_rad) * math.sin(dec_rad)) + (math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad))
     return math.degrees(math.asin(sin_alt))
 
 def find_sunrise_set(jd_noon, lat, lon):
-    start = jd_noon - 0.7; rise, sset = -1, -1; step = 1/24.0
+    start_jd = jd_noon - 0.7; rise_time, set_time = -1, -1; step = 1/24.0
     for i in range(36):
-        t1, t2 = start + i*step, start + (i+1)*step
+        t1, t2 = start_jd + i*step, start_jd + (i+1)*step
         a1, a2 = get_altitude_manual(t1, lat, lon), get_altitude_manual(t2, lat, lon)
         if a1 < -0.833 and a2 >= -0.833:
             l, r = t1, t2
@@ -82,22 +82,24 @@ def find_sunrise_set(jd_noon, lat, lon):
                 m = (l+r)/2
                 if get_altitude_manual(m, lat, lon) < -0.833: l = m
                 else: r = m
-            rise = r
+            rise_time = r
         if a1 > -0.833 and a2 <= -0.833:
             l, r = t1, t2
             for _ in range(15):
                 m = (l+r)/2
                 if get_altitude_manual(m, lat, lon) > -0.833: l = m
                 else: r = m
-            sset = r
-    return rise, sset
+            set_time = r
+    return rise_time, set_time
 
 def find_nak_limit(jd, target_deg):
-    low, high = jd - 1.2, jd + 1.2
+    low = jd - 1.2; high = jd + 1.2
     for _ in range(20):
         mid = (low + high) / 2
-        m_deg = (swe.calc_ut(mid, swe.MOON)[0][0] - swe.get_ayanamsa(mid)) % 360
-        if (m_deg - target_deg + 180) % 360 - 180 < 0: low = mid
+        ayan = swe.get_ayanamsa(mid)
+        m_deg = (swe.calc_ut(mid, swe.MOON)[0][0] - ayan) % 360
+        diff = (m_deg - target_deg + 180) % 360 - 180
+        if diff < 0: low = mid
         else: high = mid
     return mid
 
@@ -112,27 +114,26 @@ def get_full_calculations(jd, lat, lon):
     positions = {}
     for pid in [0, 1, 2, 3, 4, 5, 6]:
         positions[KN_PLANETS[pid]] = (swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
-    node = (swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
-    positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = node, (node + 180) % 360
+    rahu = (swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
+    positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = rahu, (rahu + 180) % 360
     positions[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     
-    # Mandi Logic Day/Night Parity
-    sr, ss = find_sunrise_set(jd, lat, lon)
+    # Unified Mandi Engine (Day/Night Fix)
+    sr_today, ss_today = find_sunrise_set(jd, lat, lon)
     jd_local = jd + (5.5/24.0); cal_wday = int(jd_local + 0.5 + 1.5) % 7
-    if jd < sr:
+    if jd < sr_today:
         prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
-        w_idx, is_night, start_base, dur, panch_sr = (cal_wday - 1) % 7, True, prev_ss, (sr - prev_ss), prev_sr
-    elif jd >= ss:
-        next_sr = find_sunrise_set(jd + 1.0, lat, lon)[0]
-        w_idx, is_night, start_base, dur, panch_sr = cal_wday, True, ss, (next_sr - ss), sr
+        w_idx, is_night, start_base, dur, panch_sr = (cal_wday - 1) % 7, True, prev_ss, (sr_today - prev_ss), prev_sr
+    elif jd >= ss_today:
+        next_sr, _ = find_sunrise_set(jd + 1.0, lat, lon)
+        w_idx, is_night, start_base, dur, panch_sr = cal_wday, True, ss_today, (next_sr - ss_today), sr_today
     else:
-        w_idx, is_night, start_base, dur, panch_sr = cal_wday, False, sr, (ss - sr), sr
+        w_idx, is_night, start_base, dur, panch_sr = cal_wday, False, sr_today, (ss_today - sr_today), sr_today
 
-    f = [10, 6, 2, 26, 22, 18, 14][w_idx % 7] if is_night else [26, 22, 18, 14, 10, 6, 2][w_idx % 7]
-    mtime = start_base + (dur * f / 30.0)
+    factor = [10, 6, 2, 26, 22, 18, 14][w_idx % 7] if is_night else [26, 22, 18, 14, 10, 6, 2][w_idx % 7]
+    mtime = start_base + (dur * factor / 30.0)
     positions[KN_PLANETS["Ma"]] = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
 
-    # Panchanga details
     moon_deg, sun_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
     t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12); n_idx = int(moon_deg / 13.333333333)
     js, je = find_nak_limit(jd, n_idx * 13.333333333), find_nak_limit(jd, (n_idx + 1) * 13.333333333)
@@ -142,13 +143,13 @@ def get_full_calculations(jd, lat, lon):
         "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx % 7], "n": KN_NAK[n_idx % 27],
         "sr": panch_sr, "udayadi": fmt_ghati((jd - panch_sr) * 60), 
         "gata": fmt_ghati((jd - js) * 60), "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd) * 60),
-        "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ",
+        "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
         "n_idx": n_idx, "perc": perc, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
     }
     return positions, pan
 
 # ==========================================
-# 3. UI
+# 3. INTERFACE
 # ==========================================
 if 'page' not in st.session_state: st.session_state.page = "input"
 if 'data' not in st.session_state: st.session_state.data = {}
@@ -165,7 +166,7 @@ if st.session_state.page == "input":
         dob = st.date_input("ದಿನಾಂಕ", datetime.date(1997, 5, 24))
         st.write("ಜನನ ಸಮಯ")
         c1, c2, c3 = st.columns(3)
-        h, m, ampm = c1.number_input("ಗಂಟೆ", 1, 12, 2), c2.number_input("ನಿಮಿಷ", 0, 59, 43), c3.selectbox("M", ["AM", "PM"], index=0)
+        h = c1.number_input("ಗಂಟೆ", 1, 12, 2); m = c2.number_input("ನಿಮಿಷ", 0, 59, 43); ampm = c3.selectbox("M", ["AM", "PM"], index=0)
         place_q = st.text_input("ಊರು ಹುಡುಕಿ", "Yellapur")
         if st.button("ಹುಡುಕಿ"):
             try:
@@ -187,11 +188,12 @@ elif st.session_state.page == "dashboard":
     with t1:
         c_v, c_b = st.columns([2, 1])
         v_opt = c_v.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
-        bxs = {i: "" for i in range(12)}
+        bxs = {i: "" for i in range(12)}; ld = pos["ಲಗ್ನ"]
         for n, d in pos.items():
             if v_opt == 1: ri = int(d/30)
             elif v_opt == 30: 
-                dr = d%30; ri = (0 if dr<5 else 10 if dr<10 else 8 if dr<18 else 2 if dr<25 else 6) if (int(d/30)%2==0) else (5 if dr<5 else 2 if dr<12 else 8 if dr<20 else 10 if dr<25 else 0)
+                dr = d%30; is_odd = (int(d/30) % 2 == 0)
+                ri = (0 if dr<5 else 10 if dr<10 else 8 if dr<18 else 2 if dr<25 else 6) if is_odd else (5 if dr<5 else 2 if dr<12 else 8 if dr<20 else 10 if dr<25 else 0)
             else:
                 if v_opt == 9: ri = ([0, 9, 6, 3][int(d/30)%4] + int((d%30)/3.33333)) % 12
                 elif v_opt == 3: ri = (int(d/30) + (int((d%30)/10)*4)) % 12
@@ -202,7 +204,7 @@ elif st.session_state.page == "dashboard":
         html = '<div class="grid-container">'
         for idx in grid:
             if idx is None:
-                if html.count("center-box") == 0: html += f'<div class="center-box">D{v_opt}</div>'
+                if html.count("center-box") == 0: html += f'<div class="center-box">ಭಾರತೀಯಮ್<br>D{v_opt}</div>'
             else: html += f'<div class="box"><span class="lbl">{KN_RASHI[idx]}</span>{bxs[idx]}</div>'
         st.markdown(html + '</div>', unsafe_allow_html=True)
     with t2:
@@ -212,21 +214,24 @@ elif st.session_state.page == "dashboard":
             tbl_h += f"<tr><td><b>{p}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{int(d%30)}° {int((d%30*60)%60)}'</td></tr>"
         st.markdown(tbl_h + "</table></div>", unsafe_allow_html=True)
     with t3:
-        st.markdown(f"<div class='card' style='color:#6A040F; font-weight:bold;'>ಶಿಷ್ಟ ದಶೆ: {pan['d_bal']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card' style='color:#6A040F; font-weight:bold; border-left:5px solid #FAA307'>ಶಿಷ್ಟ ದಶೆ: {pan['d_bal']}</div>", unsafe_allow_html=True)
         dh = ""; cur_d = pan['date_obj']; si = pan['n_idx'] % 9
         for i in range(9):
             im = (si + i) % 9; md_dur = YEARS[im] * ((1 - pan['perc']) if i==0 else 1); md_end = cur_d + datetime.timedelta(days=md_dur*365.25)
             dh += f"<details><summary class='md-node'><span>{LORDS[im]}</span><span class='date-label'>{md_end.strftime('%d-%m-%y')}</span></summary>"
             cad = cur_d
             for j in range(9):
-                ia = (im + j) % 9; ad_y = (YEARS[im] * YEARS[ia] / 120.0)
+                ia = (im + j) % 9
+                ad_y = (YEARS[im] * YEARS[ia] / 120.0)
                 if i == 0:
                     ad_y *= (1 - pan['perc'])
                 ae = cad + datetime.timedelta(days=ad_y*365.25)
                 dh += f"<details><summary class='ad-node'><span>{LORDS[ia]}</span><span class='date-label'>{ae.strftime('%d-%m-%y')}</span></summary>"
                 cpd = cad
                 for k in range(9):
-                    ip = (ia + k) % 9; pd_y = (ad_y * YEARS[ip] / 120.0); pe = cpd + datetime.timedelta(days=pd_y*365.25)
+                    ip = (ia + k) % 9
+                    pd_y = (ad_y * YEARS[ip] / 120.0)
+                    pe = cpd + datetime.timedelta(days=pd_y*365.25)
                     dh += f"<div class='pd-node' style='padding:10px 15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between'><span>{LORDS[ip]}</span><span>{pe.strftime('%d-%m-%y')}</span></div>"
                     cpd = pe
                 dh += "</details>"; cad = ae
@@ -234,9 +239,9 @@ elif st.session_state.page == "dashboard":
         st.markdown(dh, unsafe_allow_html=True)
     with t4:
         st.markdown(f"""<div class='card'><table class='key-val-table'>
-                <tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr><tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr>
-                <tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr><tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr><tr><td class='key'>ಪರಮ</td><td>{pan['parama']} ಘಟಿ</td></tr><tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr>
+                <tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr><tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr><tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr>
+                <tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr><tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr>
+                <tr><td class='key'>ಪರಮ</td><td>{pan['parama']} ಘಟಿ</td></tr><tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr>
             </table></div>""", unsafe_allow_html=True)
     with t5:
         st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300)
