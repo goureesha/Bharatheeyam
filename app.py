@@ -6,7 +6,7 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. PAGE CONFIG & THEME (Royal Vedic)
+# 1. PAGE CONFIG & THEME
 # ==========================================
 st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", page_icon="🕉️")
 
@@ -16,10 +16,12 @@ st.markdown("""
     .stApp { background-color: #FFFBF0 !important; font-family: 'Noto Sans Kannada', sans-serif; color: #1F1F1F !important; }
     .header-box { background: linear-gradient(135deg, #6A040F, #9D0208); color: #FFFFFF !important; padding: 16px; text-align: center; font-weight: 900; font-size: 24px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); border-bottom: 4px solid #FAA307; }
     
+    /* Tabs */
     div[data-testid="stTabs"] button[aria-selected="false"] p { color: #5D4037 !important; font-weight: 700 !important; font-size: 14px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #9D0208 !important; font-weight: 900 !important; font-size: 15px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { border-bottom: 4px solid #9D0208 !important; }
 
+    /* Kundali Grid */
     .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); width: 100%; max-width: 380px; aspect-ratio: 1 / 1; margin: 0 auto; gap: 2px; background: #370617; border: 4px solid #6A040F; border-radius: 4px; }
     .box { background: #FFFFFF; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; padding: 2px; text-align: center; color: #000 !important; }
     .center-box { grid-column: 2/4; grid-row: 2/4; background: linear-gradient(135deg, #FFBA08, #FAA307); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #370617 !important; font-weight: 900; text-align: center; font-size: 13px; }
@@ -44,7 +46,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v100")
+geolocator = Nominatim(user_agent="bharatheeyam_v101")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -107,7 +109,7 @@ def get_full_calculations(jd, lat, lon):
     positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = rahu, (rahu + 180) % 360
     positions[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     
-    # --- MANDI CALCULATION (UNCHANGED LOGIC) ---
+    # --- MANDI CALCULATION ---
     sr_today, ss_today = find_sunrise_set(jd, lat, lon)
     jd_local = jd + (5.5/24.0)
     cal_wday = int(jd_local + 0.5 + 1.5) % 7 
@@ -134,11 +136,17 @@ def get_full_calculations(jd, lat, lon):
     perc = (moon_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
     
+    # Create unified Panchanga dictionary
     pan = {
-        "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx], "n": KN_NAK[n_idx % 27],
-        "sr": panch_sr, "udayadi": fmt_ghati((jd - panch_sr) * 60), 
+        "t": KN_TITHI[min(t_idx, 29)], 
+        "v": KN_VARA[w_idx], 
+        "n": KN_NAK[n_idx % 27],
+        "sr": panch_sr, 
+        "udayadi": fmt_ghati((jd - panch_sr) * 60), 
         "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
-        "n_idx": n_idx, "perc": perc, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
+        "n_idx": n_idx, 
+        "perc": perc, 
+        "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
     }
     return positions, pan
 
@@ -166,8 +174,17 @@ if st.session_state.page == "input":
         st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.page == "dashboard":
+    # CRITICAL STABILITY CHECK
+    if 'data' not in st.session_state:
+        st.session_state.page = "input"
+        st.rerun()
+        
     pos, pan = st.session_state.data['pos'], st.session_state.data['pan']
-    if st.button("⬅️ ಹಿಂದಕ್ಕೆ"): st.session_state.page = "input"; st.rerun()
+    
+    if st.button("⬅️ ಹಿಂದಕ್ಕೆ"): 
+        st.session_state.page = "input"
+        st.rerun()
+        
     t1, t2, t3, t4, t5 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಟಿಪ್ಪಣಿ"])
     
     with t1:
@@ -189,13 +206,18 @@ elif st.session_state.page == "dashboard":
 
     with t2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        data = [{"ಗ್ರಹ": k, "ರಾಶಿ": KN_RASHI[int(v/30)], "ಅಂಶ": f"{int(v%30)}° {int((v%30*60)%60)}'"} for k,v in pos.items()]
-        st.table(pd.DataFrame(data)); st.markdown("</div>", unsafe_allow_html=True)
+        data_tbl = [{"ಗ್ರಹ": k, "ರಾಶಿ": KN_RASHI[int(v/30)], "ಅಂಶ": f"{int(v%30)}° {int((v%30*60)%60)}'"} for k,v in pos.items()]
+        st.table(pd.DataFrame(data_tbl)); st.markdown("</div>", unsafe_allow_html=True)
 
     with t3:
-        dh = ""; current_date = pan['date_obj']; si = pan['n_idx'] % 9
+        # Fixed Dasha section with existence check
+        birth_dt = pan.get('date_obj', datetime.datetime.now())
+        si = pan.get('n_idx', 0) % 9
+        perc = pan.get('perc', 0)
+        
+        dh = ""; current_date = birth_dt
         for i in range(9):
-            im = (si + i) % 9; md_dur = YEARS[im] * ((1 - pan['perc']) if i==0 else 1); me = current_date + datetime.timedelta(days=md_dur*365.25)
+            im = (si + i) % 9; md_dur = YEARS[im] * ((1 - perc) if i==0 else 1); me = current_date + datetime.timedelta(days=md_dur*365.25)
             dh += f"<details><summary class='md-node'><span>{LORDS[im]}</span><span>{me.strftime('%d-%m-%y')}</span></summary>"
             cad = current_date
             for j in range(9):
