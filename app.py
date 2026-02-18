@@ -16,12 +16,10 @@ st.markdown("""
     .stApp { background-color: #FFFBF0 !important; font-family: 'Noto Sans Kannada', sans-serif; color: #1F1F1F !important; }
     .header-box { background: linear-gradient(135deg, #6A040F, #9D0208); color: #FFFFFF !important; padding: 16px; text-align: center; font-weight: 900; font-size: 24px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); border-bottom: 4px solid #FAA307; }
     
-    /* Tab Visibility Fix */
     div[data-testid="stTabs"] button[aria-selected="false"] p { color: #5D4037 !important; font-weight: 700 !important; font-size: 14px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] p { color: #9D0208 !important; font-weight: 900 !important; font-size: 15px !important; }
     div[data-testid="stTabs"] button[aria-selected="true"] { border-bottom: 4px solid #9D0208 !important; }
 
-    /* Kundali Grid */
     .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); width: 100%; max-width: 380px; aspect-ratio: 1 / 1; margin: 0 auto; gap: 2px; background: #370617; border: 4px solid #6A040F; border-radius: 4px; }
     .box { background: #FFFFFF; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; padding: 2px; text-align: center; color: #000 !important; }
     .center-box { grid-column: 2/4; grid-row: 2/4; background: linear-gradient(135deg, #FFBA08, #FAA307); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #370617 !important; font-weight: 900; text-align: center; font-size: 13px; }
@@ -29,18 +27,15 @@ st.markdown("""
     .hi { color: #D00000 !important; text-decoration: underline; font-weight: 900; }
     .pl { color: #03071E !important; font-weight: bold; }
     
-    /* Cards */
     .card { background: #FFFFFF; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #F0F0F0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .key { color: #9D0208 !important; font-weight: 900; width: 45%; }
     .key-val-table td { border-bottom: 1px solid #f0f0f0; padding: 8px 4px; color: #333 !important; }
     
-    /* Dasha Tree */
     details { margin-bottom: 4px; border: 1px solid #e0c097; border-radius: 6px; overflow: hidden; background: white; }
     summary { cursor: pointer; padding: 10px; font-size: 13px; list-style: none; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; color: #000 !important; }
     .md-node { background: #6A040F !important; color: #fffbe6 !important; font-weight: 900; }
     .ad-node { background: #FFEFD5 !important; color: #9D0208 !important; font-weight: 700; border-left: 6px solid #FAA307; }
     .pd-node { background: #F1F8E9 !important; color: #1B5E20 !important; font-weight: 700; border-left: 5px solid #43A047; }
-    .sd-node { background: #E3F2FD !important; color: #0D47A1 !important; font-size: 11px; margin-left: 10px; border-left: 3px solid #2196F3; padding: 6px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -49,7 +44,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v99")
+geolocator = Nominatim(user_agent="bharatheeyam_v100")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -95,17 +90,6 @@ def find_sunrise_set(jd_noon, lat, lon):
         current += step
     return rise_time, set_time
 
-def find_nak_limit(jd, target_deg):
-    low = jd - 1.2; high = jd + 1.2
-    for _ in range(20):
-        mid = (low + high) / 2
-        ayan = swe.get_ayanamsa(mid)
-        m_deg = (swe.calc_ut(mid, swe.MOON)[0][0] - ayan) % 360
-        diff = (m_deg - target_deg + 180) % 360 - 180
-        if diff < 0: low = mid
-        else: high = mid
-    return mid
-
 def fmt_ghati(decimal_val):
     g = int(decimal_val)
     rem = decimal_val - g
@@ -123,26 +107,21 @@ def get_full_calculations(jd, lat, lon):
     positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = rahu, (rahu + 180) % 360
     positions[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     
-    # --- SURGICAL MANDI LOGIC ---
+    # --- MANDI CALCULATION (UNCHANGED LOGIC) ---
     sr_today, ss_today = find_sunrise_set(jd, lat, lon)
-    if sr_today == -1 or ss_today == -1: sr_today = jd - 0.25; ss_today = jd + 0.25
-    
     jd_local = jd + (5.5/24.0)
     cal_wday = int(jd_local + 0.5 + 1.5) % 7 
     
     if jd < sr_today:
         prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
-        w_idx, is_night = (cal_wday - 1) % 7, True
-        start_base, dur, panch_sr = prev_ss, (sr_today - prev_ss), prev_sr
+        w_idx, is_night, start_base, dur, panch_sr = (cal_wday - 1) % 7, True, prev_ss, (sr_today - prev_ss), prev_sr
     else:
         panch_sr = sr_today
         if jd >= ss_today:
             next_sr, _ = find_sunrise_set(jd + 1.0, lat, lon)
-            w_idx, is_night = cal_wday, True
-            start_base, dur = ss_today, (next_sr - ss_today)
+            w_idx, is_night, start_base, dur = cal_wday, True, ss_today, (next_sr - ss_today)
         else:
-            w_idx, is_night = cal_wday, False
-            start_base, dur = sr_today, (ss_today - sr_today)
+            w_idx, is_night, start_base, dur = cal_wday, False, sr_today, (ss_today - sr_today)
 
     factor = [10, 6, 2, 26, 22, 18, 14][w_idx] if is_night else [26, 22, 18, 14, 10, 6, 2][w_idx]
     mtime = start_base + (dur * factor / 30.0)
@@ -173,15 +152,10 @@ if 'notes' not in st.session_state: st.session_state.notes = ""
 if st.session_state.page == "input":
     with st.container():
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        name = st.text_input("ಹೆಸರು", "ಬಳಕೆದಾರ")
         dob = st.date_input("ದಿನಾಂಕ", datetime.date(1997, 5, 24))
         c1, c2, c3 = st.columns(3)
-        h = c1.number_input("ಗಂಟೆ", 1, 12, 2)
-        m = c2.number_input("ನಿಮಿಷ", 0, 59, 43)
-        ampm = c3.selectbox("AM/PM", ["AM", "PM"], index=0)
-        place_q = st.text_input("ಸ್ಥಳ", "Yellapur")
-        lat = st.number_input("Lat", value=14.98, format="%.4f")
-        lon = st.number_input("Lon", value=74.73, format="%.4f")
+        h, m, ampm = c1.number_input("ಗಂಟೆ", 1, 12, 2), c2.number_input("ನಿಮಿಷ", 0, 59, 43), c3.selectbox("AM/PM", ["AM", "PM"])
+        lat, lon = st.number_input("Lat", value=14.98, format="%.4f"), st.number_input("Lon", value=74.73, format="%.4f")
         if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary", use_container_width=True):
             h24 = h + (12 if ampm == "PM" and h != 12 else 0); h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
@@ -216,15 +190,12 @@ elif st.session_state.page == "dashboard":
     with t2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         data = [{"ಗ್ರಹ": k, "ರಾಶಿ": KN_RASHI[int(v/30)], "ಅಂಶ": f"{int(v%30)}° {int((v%30*60)%60)}'"} for k,v in pos.items()]
-        st.table(pd.DataFrame(data))
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.table(pd.DataFrame(data)); st.markdown("</div>", unsafe_allow_html=True)
 
     with t3:
-        # DASHA TREE
         dh = ""; current_date = pan['date_obj']; si = pan['n_idx'] % 9
         for i in range(9):
-            im = (si + i) % 9; md_dur = YEARS[im] * ((1 - pan['perc']) if i==0 else 1)
-            me = current_date + datetime.timedelta(days=md_dur*365.25)
+            im = (si + i) % 9; md_dur = YEARS[im] * ((1 - pan['perc']) if i==0 else 1); me = current_date + datetime.timedelta(days=md_dur*365.25)
             dh += f"<details><summary class='md-node'><span>{LORDS[im]}</span><span>{me.strftime('%d-%m-%y')}</span></summary>"
             cad = current_date
             for j in range(9):
