@@ -51,13 +51,13 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_mobile_v112")
+geolocator = Nominatim(user_agent="bharatheeyam_mobile_v113")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
 KN_VARA = ["ಭಾನುವಾರ", "ಸೋಮವಾರ", "ಮಂಗಳವಾರ", "ಬುಧವಾರ", "ಗುರುವಾರ", "ಶುಕ್ರವಾರ", "ಶನಿವಾರ"]
 KN_TITHI = ["ಶುಕ್ಲ ಪಾಡ್ಯಮಿ", "ಶುಕ್ಲ ದ್ವಿತೀಯ", "ಶುಕ್ಲ ತೃತೀಯ", "ಶುಕ್ಲ ಚತುರ್ಥಿ", "ಶುಕ್ಲ ಪಂಚಮಿ", "ಶುಕ್ಲ ಷಷ್ಠಿ", "ಶುಕ್ಲ ಸಪ್ತಮಿ", "ಶುಕ್ಲ ಅಷ್ಟಮಿ", "ಶುಕ್ಲ ನವಮಿ", "ಶುಕ್ಲ ದಶಮಿ", "ಶುಕ್ಲ ಏಕಾದಶಿ", "ಶುಕ್ಲ ದ್ವಾದಶಿ", "ಶುಕ್ಲ ತ್ರಯೋದಶಿ", "ಶುಕ್ಲ ಚತುರ್ದಶಿ", "ಹುಣ್ಣಿಮೆ", "ಕೃಷ್ಣ ಪಾಡ್ಯಮಿ", "ಕೃಷ್ಣ ದ್ವಿತೀಯ", "ಕೃಷ್ಣ ತೃತೀಯ", "ಕೃಷ್ಣ ಚತುರ್ಥಿ", "ಕೃಷ್ಣ ಪಂಚಮಿ", "ಕೃಷ್ಣ ಷಷ್ಠಿ", "ಕೃಷ್ಣ ಸಪ್ತಮಿ", "ಕೃಷ್ಣ ಅಷ್ಟಮಿ", "ಕೃಷ್ಣ ನವಮಿ", "ಕೃಷ್ಣ ದಶಮಿ", "ಕೃಷ್ಣ ಏಕಾದಶಿ", "ಕೃಷ್ಣ ದ್ವಾದಶಿ", "ಕೃಷ್ಣ ತ್ರಯೋದಶಿ", "ಕೃಷ್ಣ ಚತುರ್ದಶಿ", "ಅಮಾವಾಸ್ಯೆ"]
-KN_NAK = ["ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಘ", "ಪೂರ್ವ ಫಾಲ್ಗುಣಿ", "ಉತ್ತರ ಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖ", "ಅನುರಾಧ", "ಜ್ಯೇಷ್ಠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ", "ಶ್ರವಣ", "ಧನಿಷ್ಠ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರ", "ಉತ್ತರಾಭಾದ್ರ", "ರೇವತಿ"]
+KN_NAK = ["ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತ್ತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಖ", "ಪುಬ್ಬ", "ಉತ್ತರಾ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖ", "ಅನುರಾಧ", "ಜೇಷ್ಠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ", "ಶ್ರವಣ", "ಧನಿಷ್ಠ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರ", "ಉತ್ತರಾಭಾದ್ರ", "ರೇವತಿ"]
 LORDS = ["ಕೇತು","ಶುಕ್ರ","ರವಿ","ಚಂದ್ರ","ಕುಜ","ರಾಹು","ಗುರು","ಶನಿ","ಬುಧ"]
 YEARS = [7, 20, 6, 10, 7, 18, 16, 19, 17]
 
@@ -79,8 +79,7 @@ def find_nak_limit(jd, target_deg):
 
 def fmt_ghati(decimal_val):
     g = int(decimal_val)
-    rem = decimal_val - g
-    v = int(round(rem * 60))
+    v = int(round((decimal_val - g) * 60))
     if v == 60: g += 1; v = 0
     return f"{g}.{v:02d}"
 
@@ -89,51 +88,48 @@ def get_full_calculations(jd, lat, lon):
     ayan = swe.get_ayanamsa(jd)
     positions = {}
     for pid in [0, 1, 2, 3, 4, 5, 6]:
-        deg = (swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
-        positions[KN_PLANETS[pid]] = deg
+        positions[KN_PLANETS[pid]] = (swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
     rahu = (swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
-    positions[KN_PLANETS[101]] = rahu
-    positions[KN_PLANETS[102]] = (rahu + 180) % 360
-    lagna = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
-    positions[KN_PLANETS["Lagna"]] = lagna
+    positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = rahu, (rahu + 180) % 360
+    positions[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     
-    # --- FIXED MANDI CALCULATION ---
+    # --- MANDI CALCULATION (NIGHT ANCHOR FIXED) ---
     sr_today, ss_today = find_sunrise_set(jd, lat, lon)
     jd_local = jd + (5.5/24.0)
     cal_wday = int(jd_local + 0.5 + 1.5) % 7 
     
     if jd < sr_today:
-        # Pre-Sunrise (Vedic Night of Yesterday)
         prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
         w_idx, is_night, start_base, dur, panch_sr = (cal_wday - 1) % 7, True, prev_ss, (sr_today - prev_ss), prev_sr
     else:
         panch_sr = sr_today
         if jd >= ss_today:
-            # Evening (Night of Today)
             next_sr, _ = find_sunrise_set(jd + 1.0, lat, lon)
             w_idx, is_night, start_base, dur = cal_wday, True, ss_today, (next_sr - ss_today)
         else:
-            # Daytime
             w_idx, is_night, start_base, dur = cal_wday, False, sr_today, (ss_today - sr_today)
 
-    f = [10, 6, 2, 26, 22, 18, 14][w_idx % 7] if is_night else [26, 22, 18, 14, 10, 6, 2][w_idx % 7]
-    mtime = start_base + (dur * f / 30.0)
-    m_lagna = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
-    positions[KN_PLANETS["Ma"]] = m_lagna
+    night_ghati = [10, 6, 2, 26, 22, 18, 14]
+    day_ghati = [26, 22, 18, 14, 10, 6, 2]
+    factor = night_ghati[w_idx % 7] if is_night else day_ghati[w_idx % 7]
+        
+    mtime = start_base + (dur * factor / 30.0)
+    m_res = swe.houses(mtime, float(lat), float(lon), b'P')
+    positions[KN_PLANETS["Ma"]] = (m_res[1][0] - swe.get_ayanamsa(mtime)) % 360
 
     # --- PANCHANGA & DASHA ---
-    moon_deg, sun_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
-    t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12)
-    n_idx = int(moon_deg / 13.333333333)
+    m_deg, s_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
+    t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
+    n_idx = int(m_deg / 13.333333333)
     js = find_nak_limit(jd, n_idx * 13.333333333); je = find_nak_limit(jd, (n_idx + 1) * 13.333333333)
-    perc = (moon_deg % 13.333333333) / 13.333333333
+    perc = (m_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx % 7], "n": KN_NAK[n_idx % 27],
         "sr": panch_sr, "ss": ss_today, "udayadi": fmt_ghati((jd - panch_sr) * 60), 
         "gata": fmt_ghati((jd - js) * 60), "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd) * 60),
-        "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
+        "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ",
         "n_idx": n_idx, "perc": perc, "jd_birth": jd, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
     }
     return positions, pan
@@ -198,8 +194,11 @@ elif st.session_state.page == "dashboard":
             dh += f"<details><summary class='md-node'><span>{LORDS[im]}</span><span class='date-label'>{md_end.strftime('%d-%m-%y')}</span></summary>"
             cad = current_date
             for j in range(9):
-                ia = (im + j) % 9; ad_years = (YEARS[im] * YEARS[ia] / 120.0); if i==0: ad_years = ad_years * (1 - pan['perc'])
-                ae = cad + datetime.timedelta(days=ad_years*365.25); dh += f"<div style='padding:8px 15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between'><span>{LORDS[ia]}</span><span>{ae.strftime('%d-%m-%y')}</span></div>"; cad = ae
+                ia = (im + j) % 9; ad_years = (YEARS[im] * YEARS[ia] / 120.0)
+                if i==0:
+                    ad_years = ad_years * (1 - pan['perc'])
+                ae = cad + datetime.timedelta(days=ad_years*365.25)
+                dh += f"<div style='padding:8px 15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between'><span>{LORDS[ia]}</span><span>{ae.strftime('%d-%m-%y')}</span></div>"; cad = ae
             dh += "</details>"; current_date = md_end
         st.markdown(dh, unsafe_allow_html=True)
     with t4:
