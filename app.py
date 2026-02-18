@@ -30,7 +30,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v60")
+geolocator = Nominatim(user_agent="bharatheeyam_v61")
 
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
 PLANET_IDS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 10: "ರಾಹು"}
@@ -59,7 +59,9 @@ def get_mandi(jd, lat, lon):
         wday = int(jd + 0.5 + 1.5) % 7
         m_factors = [26, 22, 18, 14, 10, 6, 2]
         m_jd = sr + (part * m_factors[wday] / 30.0 * 3.75)
-        return (swe.houses_ex(m_jd, swe.FLG_SIDEREAL | swe.FLG_MOSEPH, lat, lon, b'P')[0][0]) % 360
+        # FIXED: Corrected argument order for houses_ex
+        res_h = swe.houses_ex(m_jd, swe.FLG_SIDEREAL | swe.FLG_MOSEPH, lat, lon, b'P')
+        return (res_h[0][0]) % 360
     except: return 0.0
 
 # ==========================================
@@ -73,20 +75,17 @@ with st.sidebar:
     u_dob = st.date_input("ದಿನಾಂಕ", datetime.date(1997, 5, 24))
     u_tob = st.time_input("ಸಮಯ", datetime.time(14, 43))
     
-    # Location Search Feature
     loc_query = st.text_input("ಸ್ಥಳ (Place)", "Yellapur")
     if st.button("ಸ್ಥಳ ಹುಡುಕಿ"):
         try:
             loc_data = geolocator.geocode(loc_query)
             if loc_data:
                 st.session_state.lat, st.session_state.lon = loc_data.latitude, loc_data.longitude
-                st.success(f"ಸಿಕ್ಕಿದೆ: {loc_data.address[:30]}...")
-        except: st.error("ಸಂಪರ್ಕ ದೋಷ")
+                st.success(f"ಸಿಕ್ಕಿದೆ!")
+        except: st.error("ದೋಷ")
     
     u_lat = st.number_input("Lat", value=st.session_state.get('lat', 14.9800), format="%.4f")
     u_lon = st.number_input("Lon", value=st.session_state.get('lon', 74.7300), format="%.4f")
-    
-    st.markdown("---")
     run_main = st.button("ಜಾತಕ ರಚಿಸಿ", type="primary")
 
 if run_main:
@@ -94,7 +93,6 @@ if run_main:
         h_dec = u_tob.hour + u_tob.minute/60.0
         jd = swe.julday(u_dob.year, u_dob.month, u_dob.day, h_dec - 5.5)
         
-        # Calculate Data
         pos = {}
         for pid, pnk in PLANET_IDS.items():
             res = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
@@ -102,13 +100,14 @@ if run_main:
         
         pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
         pos["ಮಾಂದಿ"] = get_mandi(jd, u_lat, u_lon)
+        # FIXED: Byte string b'P' passed for house system
         res_h = swe.houses_ex(jd, swe.FLG_SIDEREAL | swe.FLG_MOSEPH, u_lat, u_lon, b'P')
         pos["ಲಗ್ನ"] = res_h[0][0] % 360
 
         t1, t2, t3, t4 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಉಳಿಸಿ"])
 
         with t1:
-            v_choice = st.selectbox("ವರ್ಗ ಆಯ್ಕೆ ಮಾಡಿ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x} ವರ್ಗ")
+            v_choice = st.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
             boxes = {i: "" for i in range(12)}
             for p, d in pos.items():
                 idx = get_varga_pos(d, v_choice)
@@ -124,7 +123,6 @@ if run_main:
             st.markdown(html + '</div>', unsafe_allow_html=True)
 
         with t2:
-            st.subheader("ಗ್ರಹ ಸ್ಫುಟ ವಿವರ")
             df = pd.DataFrame([{"ಗ್ರಹ": k, "ರಾಶಿ": KN_RASHI[int(v/30)], "ಅಂಶ": f"{int(v%30)}° {int((v%30*60)%60)}'"} for k,v in pos.items()])
             st.table(df)
 
@@ -135,16 +133,14 @@ if run_main:
             start_l = n_idx % 9
             y, m, d, hv = swe.revjul(jd + 5.5/24.0)
             dt = datetime.datetime(y, m, d)
-            st.subheader(f"ವಿಂಶೋತ್ತರಿ ದಶ")
             for i in range(9):
                 l_idx = (start_l + i) % 9
                 dur = YEARS[l_idx] * ((1-perc) if i==0 else 1)
                 dt += datetime.timedelta(days=dur*365.25)
-                st.markdown(f"<div class='md-node'><span>{LORDS[l_idx]}</span> <span>{dt.strftime('%d-%m-%Y')} ರವರೆಗೆ</span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='md-node'><span>{LORDS[l_idx]}</span> <span>{dt.strftime('%d-%m-%Y')} ವರೆಗೆ</span></div>", unsafe_allow_html=True)
 
         with t4:
-            st.success("ಜಾತಕ ಮಾಹಿತಿಯನ್ನು ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು.")
             st.download_button("ಡೌನ್‌ಲೋಡ್ (CSV)", df.to_csv(index=False), f"{u_name}.csv")
 
     except Exception as e:
-        st.error("Error: " + str(e))
+        st.error(f"Error: {e}")
