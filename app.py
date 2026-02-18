@@ -25,7 +25,7 @@ st.markdown("""
 # Initialize Swisseph
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v77")
+geolocator = Nominatim(user_agent="bharatheeyam_v78")
 
 # ==========================================
 # 2. CONSTANTS
@@ -61,13 +61,14 @@ def get_mandi(jd, lat, lon):
         lat = float(lat)
         lon = float(lon)
         
-        # 1. Sunrise/Sunset (Using exactly 6 arguments: jd, body, lon, lat, altitude=0, flags)
-        res = swe.rise_trans(jd, swe.SUN, lon, lat, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
+        # 1. Sunrise/Sunset (FIXED: Using 5 arguments)
+        # Signature: swe.rise_trans(jd, body, lon, lat, flags)
+        # We removed the '0' altitude argument which was confusing the server
+        res = swe.rise_trans(jd, swe.SUN, lon, lat, swe.CALC_RISE | swe.FLG_MOSEPH)
         sr = res[1][0]
-        res_s = swe.rise_trans(jd, swe.SUN, lon, lat, 0, swe.CALC_SET | swe.FLG_MOSEPH)
+        res_s = swe.rise_trans(jd, swe.SUN, lon, lat, swe.CALC_SET | swe.FLG_MOSEPH)
         ss = res_s[1][0]
         
-        # Ensure weekday is integer
         wday = int(jd + 0.5 + 1.5) % 7
         is_day = (jd >= sr and jd < ss)
         
@@ -80,28 +81,23 @@ def get_mandi(jd, lat, lon):
             m_time = sr + (dur * factor / 30.0)
         else:
             if jd >= ss: 
-                start_base = ss
-                # Next Sunrise
-                res_next = swe.rise_trans(jd + 1.0, swe.SUN, lon, lat, 0, swe.CALC_RISE | swe.FLG_MOSEPH)
+                res_next = swe.rise_trans(jd + 1.0, swe.SUN, lon, lat, swe.CALC_RISE | swe.FLG_MOSEPH)
                 next_sr = res_next[1][0]
                 dur = next_sr - ss
+                start = ss
                 factor = night_ghati[wday]
             else: 
-                # Prev Sunset
-                res_prev = swe.rise_trans(jd - 1.0, swe.SUN, lon, lat, 0, swe.CALC_SET | swe.FLG_MOSEPH)
-                start_base = res_prev[1][0]
-                dur = sr - start_base
+                res_prev = swe.rise_trans(jd - 1.0, swe.SUN, lon, lat, swe.CALC_SET | swe.FLG_MOSEPH)
+                start = res_prev[1][0]
+                dur = sr - start
                 prev_wday = (wday - 1) % 7
                 factor = night_ghati[prev_wday]
             
-            m_time = start_base + (dur * factor / 30.0)
+            m_time = start + (dur * factor / 30.0)
 
         # 2. Ascendant at Mandi Time
-        # swe.houses(jd, lat, lon, method) -> method must be bytes b'P'
         res_h = swe.houses(m_time, lat, lon, b'P')
         asc_deg = res_h[0][0]
-        
-        # 3. Sidereal Correction
         ayan = swe.get_ayanamsa(m_time)
         return (asc_deg - ayan) % 360
         
@@ -207,7 +203,7 @@ if st.session_state['show_chart']:
         st.table(df)
 
     with t3:
-        # ACCORDION DASHA (Stable)
+        # ROBUST ACCORDION DASHA
         try:
             m_lon = pos.get("ಚಂದ್ರ", 0)
             n_idx = int(m_lon / 13.333333333)
@@ -229,7 +225,7 @@ if st.session_state['show_chart']:
                     curr_ad = curr_md
                     for j in range(9):
                         ad_idx = (md_idx + j) % 9
-                        # Fix: Ensure all inputs are float/int
+                        # Explicit float conversion for safety
                         full_md = float(YEARS[md_idx])
                         ad_yrs = (full_md * YEARS[ad_idx]) / 120.0
                         
