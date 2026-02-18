@@ -29,7 +29,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v63")
+geolocator = Nominatim(user_agent="bharatheeyam_v64")
 
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
 PLANET_IDS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 10: "ರಾಹು"}
@@ -59,15 +59,18 @@ def get_mandi(jd, lat, lon):
         wday = int(jd + 0.5 + 1.5) % 7
         m_factors = [26, 22, 18, 14, 10, 6, 2]
         m_time = sr + (part * m_factors[wday] / 30.0 * 3.75)
-        # Corrected byte string argument
         res_h = swe.houses_ex(m_time, lat, lon, b'P', swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
         return res_h[0][0] % 360
     except: return 0.0
 
 # ==========================================
-# 3. UI
+# 3. UI LOGIC WITH SESSION STATE
 # ==========================================
 st.markdown('<div class="main-title">ಭಾರತೀಯಮ್</div>', unsafe_allow_html=True)
+
+# Initialize Session State (This fixes the disappearing chart bug)
+if 'show_chart' not in st.session_state:
+    st.session_state['show_chart'] = False
 
 with st.sidebar:
     st.header("ವಿವರಗಳು")
@@ -80,15 +83,24 @@ with st.sidebar:
         try:
             loc = geolocator.geocode(loc_q)
             if loc:
-                st.session_state.lat, st.session_state.lon = loc.latitude, loc.longitude
+                st.session_state.lat = loc.latitude
+                st.session_state.lon = loc.longitude
                 st.success("ಸ್ಥಳ ಸಿಕ್ಕಿದೆ!")
         except: st.error("ದೋಷ")
-        
-    u_lat = st.number_input("Lat", value=st.session_state.get('lat', 14.9800), format="%.4f")
-    u_lon = st.number_input("Lon", value=st.session_state.get('lon', 74.7300), format="%.4f")
-    run = st.button("ಜಾತಕ ರಚಿಸಿ", type="primary")
+    
+    # Use session state for Lat/Lon to prevent reset
+    if 'lat' not in st.session_state: st.session_state.lat = 14.9800
+    if 'lon' not in st.session_state: st.session_state.lon = 74.7300
+    
+    u_lat = st.number_input("Lat", value=st.session_state.lat, format="%.4f")
+    u_lon = st.number_input("Lon", value=st.session_state.lon, format="%.4f")
+    
+    # Clicking this button sets the "show_chart" memory to True
+    if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
+        st.session_state['show_chart'] = True
 
-if run:
+# CHECK SESSION STATE INSTEAD OF BUTTON
+if st.session_state['show_chart']:
     try:
         h_dec = u_tob.hour + u_tob.minute/60.0
         jd = swe.julday(u_dob.year, u_dob.month, u_dob.day, h_dec - 5.5)
@@ -101,29 +113,25 @@ if run:
         pos["ಕೇತು"] = (pos["ರಾಹು"] + 180) % 360
         pos["ಮಾಂದಿ"] = get_mandi(jd, u_lat, u_lon)
         
-        # Corrected byte string argument
         res_lag = swe.houses_ex(jd, u_lat, u_lon, b'P', swe.FLG_SIDEREAL | swe.FLG_MOSEPH)
         pos["ಲಗ್ನ"] = res_lag[0][0] % 360
         
-        # Tabs
         t1, t2, t3, t4 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಉಳಿಸಿ"])
         
         with t1:
             col1, col2 = st.columns(2)
             v_choice = col1.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
-            # BHAVA SWITCH IS BACK
-            chart_mode = col2.radio("ವಿಧಾನ", ["Rashi", "Bhava"])
+            chart_mode = col2.radio("ವಿಧಾನ", ["Rashi", "Bhava"], horizontal=True)
             
             boxes = {i: "" for i in range(12)}
             lag_deg = pos["ಲಗ್ನ"]
             
             for p, d in pos.items():
-                # Logic: If Bhava is selected AND we are in D1, use Bhava Math
+                # D1 + Bhava Mode Logic
                 if chart_mode == "Bhava" and v_choice == 1:
-                     # Bhava Logic: (Planet - Lagna + 15 + 360) / 30
-                     # This puts Lagna in the middle of the 1st house
+                     # Calculate relative to Lagna (Lagna becomes center of 1st house)
                      idx = int(((d - lag_deg + 15 + 360) % 360) / 30)
-                     # Adjust so 1st house is where Lagna Rashi is
+                     # Rotate so 1st house is at Lagna's Rashi position
                      lag_rashi = int(lag_deg / 30)
                      final_idx = (lag_rashi + idx) % 12
                 else:
@@ -147,34 +155,18 @@ if run:
             st.table(df)
             
         with t3:
-            # Dasha Logic Calculation
             m_lon = pos.get("ಚಂದ್ರ", 0)
-            # Nakshatra Index (0-26)
-            nak_idx = int(m_lon / 13.333333333)
-            # Percentage passed in Nakshatra
+            n_idx = int(m_lon / 13.333333333)
             perc = (m_lon % 13.333333333) / 13.333333333
-            
-            # Lord of that Nakshatra (0-8)
-            start_lord_idx = nak_idx % 9
-            
+            start_l = n_idx % 9
             y, m, d, hv = swe.revjul(jd + 5.5/24.0)
             dt = datetime.datetime(y, m, d)
             
-            st.subheader(f"ಜನ್ಮ ನಕ್ಷತ್ರ: {start_lord_idx}") # Just for debug/info
-            
             for i in range(9):
-                # Calculate current lord in sequence
-                curr_lord_idx = (start_lord_idx + i) % 9
-                
-                # First dasha is only the remaining balance
-                if i == 0:
-                    balance_years = YEARS[curr_lord_idx] * (1 - perc)
-                    dur_days = balance_years * 365.25
-                else:
-                    dur_days = YEARS[curr_lord_idx] * 365.25
-                
-                dt += datetime.timedelta(days=dur_days)
-                st.markdown(f"<div class='md-node'><span>{LORDS[curr_lord_idx]}</span> <span>{dt.strftime('%d-%m-%Y')} ವರೆಗೆ</span></div>", unsafe_allow_html=True)
+                l_idx = (start_l + i) % 9
+                dur = YEARS[l_idx] * ((1-perc) if i==0 else 1)
+                dt += datetime.timedelta(days=dur*365.25)
+                st.markdown(f"<div class='md-node'><span>{LORDS[l_idx]}</span> <span>{dt.strftime('%d-%m-%Y')} ವರೆಗೆ</span></div>", unsafe_allow_html=True)
                 
         with t4:
             st.download_button("ಡೌನ್‌ಲೋಡ್ (CSV)", df.to_csv(index=False), f"{u_name}.csv")
