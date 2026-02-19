@@ -38,12 +38,11 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;800&display=swap');
     
     .stApp { 
-        background-color: #FFFDF7 !important; /* Soft warm cream */
+        background-color: #FFFDF7 !important; 
         font-family: 'Noto Sans Kannada', sans-serif; 
         color: #2D3748 !important; 
     }
     
-    /* VIBRANT VIOLET HEADER */
     .header-box { 
         background: linear-gradient(135deg, #8E2DE2, #4A00E0); 
         color: #FFFFFF !important; 
@@ -63,7 +62,6 @@ st.markdown("""
         border-radius: 10px; 
     }
     
-    /* PRIMARY BUTTONS (SAFFRON/ORANGE) */
     .stButton>button[kind="primary"] { 
         background: linear-gradient(135deg, #DD6B20, #C05621) !important;
         color: white !important; 
@@ -74,7 +72,6 @@ st.markdown("""
         box-shadow: 0 4px 10px rgba(221, 107, 32, 0.3);
     }
     
-    /* SECONDARY BUTTONS (TEAL) */
     .stButton>button[kind="secondary"] { 
         background-color: #E6FFFA !important; 
         color: #319795 !important; 
@@ -83,26 +80,26 @@ st.markdown("""
         border-radius: 12px; 
     }
     
-    /* MULTI-COLOR TABS */
     div[data-testid="stTabs"] button[aria-selected="false"] p { 
         color: #718096 !important; 
         font-weight: 600 !important; 
     }
     div[data-testid="stTabs"] button[aria-selected="true"] p { 
-        color: #047857 !important; /* Emerald Green */
+        color: #047857 !important; 
         font-weight: 800 !important; 
     }
     div[data-testid="stTabs"] button[aria-selected="true"] { 
         border-bottom: 3px solid #047857 !important; 
     }
     
-    /* RASHI / BHAVA RADIO SWITCH STYLING */
-    div[data-testid="stRadio"] > label > p {
+    /* PROMINENT TOGGLE SWITCH TEXT */
+    div[data-testid="stToggle"] label p {
         font-weight: 800 !important;
         color: #2B6CB0 !important;
+        font-size: 16px !important;
+        margin-top: 4px;
     }
     
-    /* VIBRANT KUNDALI GRID */
     .grid-container { 
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
@@ -130,7 +127,6 @@ st.markdown("""
         box-shadow: inset 0 0 5px rgba(0,0,0,0.02);
     }
     
-    /* GOLDEN CENTER BOX */
     .center-box { 
         grid-column: 2/4; 
         grid-row: 2/4; 
@@ -147,14 +143,13 @@ st.markdown("""
         border: 2px solid #FFFFFF;
     }
     
-    /* MULTI-COLOR TEXT IN CHART */
     .lbl { 
         position: absolute; top: 3px; left: 5px; 
-        font-size: 10px; color: #2F855A !important; /* Forest Green numbers */
+        font-size: 10px; color: #2F855A !important; 
         font-weight: 900; 
     }
-    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; } /* Crimson Red Lagna/Mandi */
-    .pl { color: #2B6CB0 !important; font-weight: 800; } /* Royal Blue Planets */
+    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; } 
+    .pl { color: #2B6CB0 !important; font-weight: 800; } 
     
     .card { 
         background: #FFFFFF; border-radius: 16px; padding: 20px; 
@@ -176,13 +171,19 @@ st.markdown("""
         border-bottom: 1px solid #EDF2F7; color: #2D3748 !important; 
         cursor: pointer;
     }
-    .md-node { background: #4A00E0 !important; color: #FFFFFF !important; font-weight: 800; }
+    
+    /* GRADIENT SAFFRON DASHA DESIGN */
+    .md-node { 
+        background: linear-gradient(135deg, #FF9933, #DD6B20) !important; 
+        color: #FFFFFF !important; 
+        font-weight: 800; 
+    }
     .md-node span { color: white !important; }
     .ad-node { 
-        background: #FFFDF7 !important; color: #DD6B20 !important; 
-        font-weight: 800; border-left: 4px solid #F6D365; 
+        background: #FFFDF7 !important; color: #C05621 !important; 
+        font-weight: 800; border-left: 4px solid #FF9933; 
     }
-    .ad-node span { color: #DD6B20 !important; }
+    .ad-node span { color: #C05621 !important; }
     .pd-node { 
         background: #FFFFFF !important; color: #319795 !important; 
         font-weight: 700; border-left: 4px solid #81E6D9; 
@@ -197,7 +198,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v23_multicolor")
+geolocator = Nominatim(user_agent="bharatheeyam_v24_saffron")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -655,10 +656,8 @@ elif st.session_state.page == "dashboard":
         opts = [1, 3, 9, 12, 30]
         v_opt = c_v.selectbox("ವರ್ಗ (Divisional)", opts, format_func=lambda x: "D" + str(x))
         
-        # UPGRADED RASHI / BHAVA SWITCH (RADIO BUTTONS)
-        mode_opts = ["ರಾಶಿ (Rashi)", "ಭಾವ (Bhava)"]
-        c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ (Chart Mode)", mode_opts, horizontal=True)
-        b_opt = (c_mode == "ಭಾವ (Bhava)")
+        # RESTORED AND STYLED TOGGLE SWITCH
+        b_opt = c_b.toggle("ರಾಶಿ / ಭಾವ (Rashi/Bhava)", value=False)
         
         bxs = {i: "" for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
@@ -751,7 +750,9 @@ elif st.session_state.page == "dashboard":
         
     with t3:
         bal_txt = "ಶಿಷ್ಟ ದಶೆ: " + pan['lord_bal'] + " ಉಳಿಕೆ: " + pan['d_bal']
-        ht = "<div class='card' style='color:#8E2DE2; font-weight:900;'>"
+        
+        # COLORED TO MATCH SAFFRON THEME
+        ht = "<div class='card' style='color:#DD6B20; font-weight:900;'>"
         ht += bal_txt + "</div>"
         st.markdown(ht, unsafe_allow_html=True)
         
