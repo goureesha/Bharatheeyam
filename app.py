@@ -164,7 +164,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v10_final")
+geolocator = Nominatim(user_agent="bharatheeyam_v11_clean")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -280,10 +280,6 @@ def fmt_ghati(decimal_val):
         g += 1
         v = 0
     return str(g) + "." + str(v).zfill(2)
-
-def jd_to_time_str(jd):
-    dt = datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
-    return dt.strftime("%I:%M %p")
 
 # ==========================================
 # 3. CALCULATIONS
@@ -414,7 +410,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "pada": pada
     }
 
-    # Advanced Panchanga (Without Sunrise/Sunset Times)
+    # Panchanga details
     m_deg = positions["ಚಂದ್ರ"]
     s_deg = positions["ರವಿ"]
     t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
@@ -440,10 +436,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     r_idx = int(m_deg / 30)
     rasi_name = KN_RASHI[r_idx]
     
-    a_deg = int(ayan)
-    a_min = int((ayan - a_deg) * 60)
-    ayan_str = str(a_deg) + "° " + str(a_min) + "'"
-    
     js = find_nak_limit(jd_birth, n_idx * 13.333333333)
     je = find_nak_limit(jd_birth, (n_idx + 1) * 13.333333333)
     
@@ -458,7 +450,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "y": yoga_name,
         "k": k_name,
         "r": rasi_name,
-        "ayan": ayan_str,
         "sr": panch_sr, 
         "udayadi": fmt_ghati((jd_birth - panch_sr) * 60), 
         "gata": fmt_ghati((jd_birth - js) * 60), 
@@ -468,9 +459,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "n_idx": n_idx, 
         "perc": perc, 
         "date_obj": dt_birth,
-        "m_period": "Night" if is_night else "Day",
-        "m_time": jd_to_time_str(mandi_time_jd),
-        "m_base": jd_to_time_str(debug_base),
         "lord_bal": LORDS[n_idx%9]
     }
     return positions, pan, extra_details, bhava_sphutas
@@ -705,10 +693,7 @@ elif st.session_state.page == "dashboard":
             ("ಉದಯಾದಿ", str(pan['udayadi']) + " ಘಟಿ"),
             ("ಗತ", str(pan['gata']) + " ಘಟಿ"),
             ("ಪರಮ", str(pan['parama']) + " ಘಟಿ"),
-            ("ಶೇಷ", str(pan['rem']) + " ಘಟಿ"),
-            ("ಮಾಂದಿ ಕಾಲ", str(pan['m_period']) + " (" + str(pan['m_time']) + ")"),
-            ("ಆಧಾರ ಸಮಯ", str(pan['m_base'])),
-            ("ಅಯನಾಂಶ (ಲಾಹಿರಿ)", str(pan['ayan']))
+            ("ಶೇಷ", str(pan['rem']) + " ಘಟಿ")
         ]
         
         for k, v in arr:
@@ -721,7 +706,7 @@ elif st.session_state.page == "dashboard":
     with t5:
         blines = []
         blines.append("<div class='card'><table class='key-val-table'>")
-        blines.append("<tr><th>ಭಾವ</th><th>ಆರಂಭ (Sphuta)</th>")
+        blines.append("<tr><th>ಭಾವ</th><th>ಮಧ್ಯ (Sphuta)</th>")
         blines.append("<th>ರಾಶಿ</th></tr>")
         
         for i, deg in enumerate(bhavas):
