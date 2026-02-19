@@ -50,7 +50,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v2_stable")
+geolocator = Nominatim(user_agent="bharatheeyam_v3_fixed")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -72,13 +72,13 @@ def get_altitude_manual(jd, lat, lon):
     return math.degrees(math.asin(sin_alt))
 
 def find_sunrise_set_for_date(year, month, day, lat, lon):
-    # Start scanning from midnight of that day
+    # Precise Date-Locked Search
     jd_start = swe.julday(year, month, day, 0.0) 
     rise_time, set_time = -1, -1
     step = 1/24.0
     current = jd_start - 0.3 
     
-    # Scan 30 hours
+    # 30-hour scan to guarantee hitting the events for THIS date
     for i in range(30): 
         alt1 = get_altitude_manual(current, lat, lon)
         alt2 = get_altitude_manual(current + step, lat, lon)
@@ -122,9 +122,10 @@ def jd_to_time_str(jd):
     return dt.strftime("%I:%M:%S %p")
 
 # ==========================================
-# 3. CALCULATIONS
+# 3. CALCULATIONS (Mandi Logic Fixed)
 # ==========================================
 def calculate_mandi(jd_birth, lat, lon, dob_obj):
+    # Find SR/SS for the birth date specifically
     sr_civil, ss_civil = find_sunrise_set_for_date(dob_obj.year, dob_obj.month, dob_obj.day, lat, lon)
     py_weekday = dob_obj.weekday()
     civil_weekday_idx = (py_weekday + 1) % 7 
@@ -148,7 +149,10 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
             vedic_wday = (civil_weekday_idx - 1) % 7
             prev_date = dob_obj - datetime.timedelta(days=1)
             prev_sr, prev_ss = find_sunrise_set_for_date(prev_date.year, prev_date.month, prev_date.day, lat, lon)
+            
+            # Mandi starts from YESTERDAY'S SUNSET
             start_base = prev_ss
+            # Duration is Yesterday Sunset -> Today Sunrise
             duration = sr_civil - prev_ss
             panch_sr = prev_sr
         else:
@@ -156,7 +160,10 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
             vedic_wday = civil_weekday_idx
             next_date = dob_obj + datetime.timedelta(days=1)
             next_sr, _ = find_sunrise_set_for_date(next_date.year, next_date.month, next_date.day, lat, lon)
+            
+            # Mandi starts from TODAY'S SUNSET
             start_base = ss_civil
+            # Duration is Today Sunset -> Tomorrow Sunrise
             duration = next_sr - ss_civil
             panch_sr = sr_civil
 
@@ -269,7 +276,6 @@ if st.session_state.page == "input":
         if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
             h24 = h + (12 if ampm == "PM" and h != 12 else 0); h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
-            # Retrieve Extended Data
             pos, pan, details, bhavas = get_full_calculations(jd, lat, lon, dob)
             st.session_state.data = {"pos": pos, "pan": pan, "details": details, "bhavas": bhavas}; st.session_state.page = "dashboard"; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -281,7 +287,7 @@ elif st.session_state.page == "dashboard":
     bhavas = st.session_state.data['bhavas']   
     
     if st.button("⬅️ ಹಿಂದಕ್ಕೆ"): st.session_state.page = "input"; st.rerun()
-    t1, t2, t3, t4, t5, t6 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಟಿಪ್ಪಣಿ", "ಭಾವ"])
+    t1, t2, t3, t4, t5, t6 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಟಿಪ್ಪಣಿ"])
     
     with t1:
         c_v, c_b = st.columns([2, 1])
@@ -311,8 +317,7 @@ elif st.session_state.page == "dashboard":
     
     with t2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        tbl = """<table class='key-val-table'>
-        <tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th><th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>"""
+        tbl = "<table class='key-val-table'><tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th><th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>"
         for p, d in pos.items():
             r_name = KN_RASHI[int(d/30)]
             deg_fmt = f"{int(d%30)}° {int((d%30*60)%60)}'"
@@ -341,14 +346,11 @@ elif st.session_state.page == "dashboard":
         st.markdown(dh, unsafe_allow_html=True)
     
     with t4:
-        # Use safe variable for HTML
-        panch_html = f"""<div class='card'><table class='key-val-table'>
-                <tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr>
-                <tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr>
-                <tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr>
-                <tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಪರಮ</td><td>{pan['parama']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr>
-                <tr><td class='key' style='color:blue'>ಮಾಂದಿ ಕಾಲ</td><td>{pan['m_period']} ({pan['m_time']})</td></tr>
-                <tr><td class='key' style='color:blue'>ಆಧಾರ ಸಮಯ (Base)</td><td>{pan['m_base']}</td>
+        # Build HTML line by line to avoid syntax errors
+        p_html = "<div class='card'><table class='key-val-table'>"
+        p_html += f"<tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr>"
+        p_html += f"<tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr>"
+        p_html += f"<tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr>"
+        p_html += f"<tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr>"
+        p_html += f"<tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr>"
+        p_html += f"<tr><td class='key'>
