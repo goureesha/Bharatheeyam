@@ -209,7 +209,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v40_adv_sphutas")
+geolocator = Nominatim(user_agent="bharatheeyam_v41_fixed_sphutas")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -580,15 +580,16 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     
     sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
-    # --- CALCULATE ADVANCED SPHUTAS ---
+    # --- CORRECTED ADVANCED SPHUTAS (PRASHNA MARGA) ---
     L = positions["ಲಗ್ನ"]
     M = positions["ಚಂದ್ರ"]
     S = positions["ರವಿ"]
     Ma = positions["ಮಾಂದಿ"]
     R = positions["ರಾಹು"]
     
-    tri = (L + M + Ma) % 360
-    chatu = (tri + S) % 360
+    # Fixed Trisphuta: Lagna + Moon + Sun
+    tri = (L + M + S) % 360
+    chatu = (tri + Ma) % 360
     pancha = (chatu + R) % 360
     
     prana = ((L * 5) + Ma) % 360
@@ -596,6 +597,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     mrityu = ((Ma * 7) + S) % 360
     sootra = (prana + deha + mrityu) % 360
     
+    # Aprakasha Grahas
     dhooma = (S + 133.333333) % 360
     vyatipata = (360 - dhooma) % 360
     parivesha = (vyatipata + 180) % 360
@@ -1026,7 +1028,6 @@ elif st.session_state.page == "dashboard":
                 show_planet_popup(p_n, pos[p_n], speeds.get(p_n, 0), pos["ರವಿ"])
     
     with t2:
-        # ADVANCED SPHUTAS TAB REPLACEMENT
         slines = []
         slines.append("<div class='card'><table class='key-val-table'>")
         slines.append("<tr><th>ವಿಶೇಷ ಸ್ಫುಟ</th><th>ರಾಶಿ</th>")
@@ -1175,7 +1176,7 @@ elif st.session_state.page == "dashboard":
         slines.append("</div>")
         st.markdown("".join(slines), unsafe_allow_html=True)
         
-        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>📝 ಬಿನ್ನಾಷ್ಟಕವರ್ಗ (BAV Detail)</h4>", unsafe_allow_html=True)
+        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>📝 ಬಿನ್ನಾಷ್ಟಕವರ್ಗ (BAV)</h4>", unsafe_allow_html=True)
         
         t_arr = []
         t_arr.append("<div class='card' style='overflow-x:auto;'>")
