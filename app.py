@@ -208,7 +208,7 @@ st.markdown("""
 # 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
-geolocator = Nominatim(user_agent="bharatheeyam_v43_adv_settings")
+geolocator = Nominatim(user_agent="bharatheeyam_v44_kp_fix")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -465,7 +465,7 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
 
 def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
     
-    # APPLY DYNAMIC AYANAMSA SETTING
+    # DYNAMIC AYANAMSA FIX
     swe.set_sid_mode(ayan_mode)
     swe.set_topo(float(lon), float(lat), 0)
     ayan = swe.get_ayanamsa(jd_birth)
@@ -489,7 +489,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
             "pada": pada
         }
 
-    # APPLY DYNAMIC NODE SETTING (True vs Mean)
+    # DYNAMIC RAHU SETTING
     node_flag = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
     rahu_res = swe.calc_ut(jd_birth, node_mode, node_flag)
     rahu_deg = rahu_res[0][0] % 360
@@ -584,7 +584,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
     
     sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
-    # --- PRASHNA SPHUTAS ---
+    # --- CORRECTED ADVANCED SPHUTAS (PRASHNA MARGA) ---
     L = positions["ಲಗ್ನ"]
     M = positions["ಚಂದ್ರ"]
     S = positions["ರವಿ"]
@@ -858,7 +858,6 @@ if st.session_state.page == "input":
         lat = st.number_input("Latitude", key="lat", format="%.4f")
         lon = st.number_input("Longitude", key="lon", format="%.4f")
         
-        # --- NEW ADVANCED SETTINGS FOR AYANAMSA & RAHU ---
         with st.expander("⚙️ ಸುಧಾರಿತ ಆಯ್ಕೆಗಳು (Advanced Settings)"):
             ca, cn = st.columns(2)
             ayan_opts = ["ಲಾಹಿರಿ (Lahiri)", "ರಾಮನ್ (Raman)", "ಕೆ.ಪಿ (KP)"]
@@ -877,7 +876,7 @@ if st.session_state.page == "input":
             ayan_map = {
                 "ಲಾಹಿರಿ (Lahiri)": swe.SIDM_LAHIRI, 
                 "ರಾಮನ್ (Raman)": swe.SIDM_RAMAN, 
-                "ಕೆ.ಪಿ (KP)": swe.SIDM_KP
+                "ಕೆ.ಪಿ (KP)": swe.SIDM_KRISHNAMURTI
             }
             ayan_mode = ayan_map[ayan_sel]
             
