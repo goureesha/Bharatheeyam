@@ -1,248 +1,112 @@
-import streamlit as st
-import swisseph as swe
 import datetime
-import math
-import pandas as pd
-from geopy.geocoders import Nominatim
 
-# ==========================================
-# 1. PAGE CONFIG & THEME
-# ==========================================
-st.set_page_config(page_title="ಭಾರತೀಯಮ್", layout="centered", page_icon="🕉️", initial_sidebar_state="expanded")
-
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
-    .stApp { background-color: #FFFBF0 !important; font-family: 'Noto Sans Kannada', sans-serif; color: #1F1F1F !important; }
-    .header-box { background: linear-gradient(135deg, #6A040F, #9D0208); color: #FFFFFF !important; padding: 16px; text-align: center; font-weight: 900; font-size: 24px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); border-bottom: 4px solid #FAA307; }
-    div[data-testid="stInput"] { background-color: white; border-radius: 8px; border: 1px solid #E0E0E0; }
-    .stButton>button { width: 100%; border-radius: 10px; background-color: #9D0208 !important; color: white !important; font-weight: bold; border: none; padding: 12px; transition: all 0.3s ease; }
-    .stButton>button:hover { background-color: #D00000 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    button[kind="secondary"] { background-color: #FFFFFF !important; color: #9D0208 !important; border: 2px solid #9D0208 !important; }
-    div[data-testid="stTabs"] button { background-color: transparent !important; }
-    div[data-testid="stTabs"] button[aria-selected="false"] p { color: #5D4037 !important; font-weight: 700 !important; font-size: 14px !important; }
-    div[data-testid="stTabs"] button[aria-selected="true"] p { color: #9D0208 !important; font-weight: 900 !important; font-size: 15px !important; }
-    div[data-testid="stTabs"] button[aria-selected="true"] { border-bottom: 4px solid #9D0208 !important; }
-    .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); width: 100%; max-width: 380px; aspect-ratio: 1 / 1; margin: 0 auto; gap: 2px; background: #370617; border: 4px solid #6A040F; border-radius: 4px; }
-    .box { background: #FFFFFF; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; padding: 2px; text-align: center; color: #000000 !important; }
-    .center-box { grid-column: 2/4; grid-row: 2/4; background: linear-gradient(135deg, #FFBA08, #FAA307); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #370617 !important; font-weight: 900; text-align: center; font-size: 13px; }
-    .lbl { position: absolute; top: 2px; left: 3px; font-size: 9px; color: #DC2F02 !important; font-weight: 900; }
-    .hi { color: #D00000 !important; text-decoration: underline; font-weight: 900; }
-    .pl { color: #03071E !important; font-weight: bold; }
-    .card { background: #FFFFFF; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #F0F0F0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .key { color: #9D0208 !important; font-weight: 900; width: 40%; }
-    .key-val-table td { border-bottom: 1px solid #f0f0f0; padding: 10px 4px; color: #333 !important; }
-    details { margin-bottom: 6px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; background: white; }
-    summary { padding: 12px; font-size: 14px; border-bottom: 1px solid #f5f5f5; color: #000 !important; }
-    .md-node { background: #6A040F !important; color: #FFFFFF !important; font-weight: 900; }
-    .md-node span { color: white !important; }
-    .ad-node { background: #FFEFD5 !important; color: #9D0208 !important; font-weight: 700; border-left: 6px solid #FAA307; }
-    .ad-node span { color: #9D0208 !important; }
-    .pd-node { background: #F1F8E9 !important; color: #1B5E20 !important; font-weight: 700; border-left: 6px solid #558B2F; }
-    .pd-node span { color: #1B5E20 !important; }
-    .sd-node { background: #F5F9FF !important; color: #0D47A1 !important; font-size: 11px; margin-left: 10px; border-left: 3px solid #2196F3; padding: 8px; }
-    .sd-node span { color: #0D47A1 !important; }
-    .date-label { font-size: 11px; opacity: 0.9; float: right; font-weight: normal; }
-</style>
-""", unsafe_allow_html=True)
-
-# ==========================================
-# 2. CORE MATH ENGINE
-# ==========================================
-swe.set_ephe_path(None)
-swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v129")
-
-KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
-KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
-KN_VARA = ["ಭಾನುವಾರ", "ಸೋಮವಾರ", "ಮಂಗಳವಾರ", "ಬುಧವಾರ", "ಗುರುವಾರ", "ಶುಕ್ರವಾರ", "ಶನಿವಾರ"]
-KN_TITHI = ["ಶುಕ್ಲ ಪಾಡ್ಯಮಿ", "ಶುಕ್ಲ ದ್ವಿತೀಯ", "ಶುಕ್ಲ ತೃತೀಯ", "ಶುಕ್ಲ ಚತುರ್ಥಿ", "ಶುಕ್ಲ ಪಂಚಮಿ", "ಶುಕ್ಲ ಷಷ್ಠಿ", "ಶುಕ್ಲ ಸಪ್ತಮಿ", "ಶುಕ್ಲ ಅಷ್ಟಮಿ", "ಶುಕ್ಲ ನವಮಿ", "ಶುಕ್ಲ ದಶಮಿ", "ಶುಕ್ಲ ಏಕಾದಶಿ", "ಶುಕ್ಲ ದ್ವಾದಶಿ", "ಶುಕ್ಲ ತ್ರಯೋದಶಿ", "ಶುಕ್ಲ ಚತುರ್ದಶಿ", "ಹುಣ್ಣಿಮೆ", "ಕೃಷ್ಣ ಪಾಡ್ಯಮಿ", "ಕೃಷ್ಣ ದ್ವಿತೀಯ", "ಕೃಷ್ಣ ತೃತೀಯ", "ಕೃಷ್ಣ ಚತುರ್ಥಿ", "ಕೃಷ್ಣ ಪಂಚಮಿ", "ಕೃಷ್ಣ ಷಷ್ಠಿ", "ಕೃಷ್ಣ ಸಪ್ತಮಿ", "ಕೃಷ್ಣ ಅಷ್ಟಮಿ", "ಕೃಷ್ಣ ನವಮಿ", "ಕೃಷ್ಣ ದಶಮಿ", "ಕೃಷ್ಣ ಏಕಾದಶಿ", "ಕೃಷ್ಣ ದ್ವಾದಶಿ", "ಕೃಷ್ಣ ತ್ರಯೋದಶಿ", "ಕೃಷ್ಣ ಚತುರ್ದಶಿ", "ಅಮಾವಾಸ್ಯೆ"]
-KN_NAK = ["ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತ್ತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಖ", "ಪುಬ್ಬ", "ಉತ್ತರಾ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖ", "ಅನುರಾಧ", "ಜೇಷ್ಠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ", "ಶ್ರವಣ", "ಧನಿಷ್ಠ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರ", "ಉತ್ತರಾಭಾದ್ರ", "ರೇವತಿ"]
-LORDS = ["ಕೇತು","ಶುಕ್ರ","ರವಿ","ಚಂದ್ರ","ಕುಜ","ರಾಹು","ಗುರು","ಶನಿ","ಬುಧ"]
-YEARS = [7, 20, 6, 10, 7, 18, 16, 19, 17]
-
-def get_altitude_manual(jd, lat, lon):
-    res = swe.calc_ut(jd, swe.SUN, swe.FLG_EQUATORIAL | swe.FLG_SWIEPH)
-    ra, dec = res[0][0], res[0][1]
-    gmst = swe.sidtime(jd)
-    ha_deg = ((gmst + (lon / 15.0)) * 15.0 - ra + 360) % 360
-    if ha_deg > 180: ha_deg -= 360
-    lat_rad, dec_rad, ha_rad = math.radians(lat), math.radians(dec), math.radians(ha_deg)
-    sin_alt = (math.sin(lat_rad) * math.sin(dec_rad)) + (math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad))
-    return math.degrees(math.asin(sin_alt))
-
-def find_sunrise_set(jd_noon, lat, lon):
-    start_jd = jd_noon - 0.7; rise_time, set_time = -1, -1; step = 1/24.0
-    for i in range(36):
-        t1, t2 = start_jd + i*step, start_jd + (i+1)*step
-        a1, a2 = get_altitude_manual(t1, lat, lon), get_altitude_manual(t2, lat, lon)
-        if a1 < -0.833 and a2 >= -0.833:
-            l, r = t1, t2
-            for _ in range(15):
-                m = (l+r)/2
-                if get_altitude_manual(m, lat, lon) < -0.833: l = m
-                else: r = m
-            rise_time = r
-        if a1 > -0.833 and a2 <= -0.833:
-            l, r = t1, t2
-            for _ in range(15):
-                m = (l+r)/2
-                if get_altitude_manual(m, lat, lon) > -0.833: l = m
-                else: r = m
-            set_time = r
-    return rise_time, set_time
-
-def find_nak_limit(jd, target_deg):
-    low = jd - 1.2; high = jd + 1.2
-    for _ in range(20):
-        mid = (low + high) / 2
-        ayan = swe.get_ayanamsa(mid)
-        m_deg = (swe.calc_ut(mid, swe.MOON)[0][0] - ayan) % 360
-        diff = (m_deg - target_deg + 180) % 360 - 180
-        if diff < 0: low = mid
-        else: high = mid
-    return mid
-
-def fmt_ghati(decimal_val):
-    g = int(decimal_val); v = int(round((decimal_val - g) * 60))
-    if v == 60: g += 1; v = 0
-    return f"{g}.{v:02d}"
-
-def get_full_calculations(jd, lat, lon):
-    swe.set_topo(float(lon), float(lat), 0)
-    ayan = swe.get_ayanamsa(jd)
-    positions = {}
-    for pid in [0, 1, 2, 3, 4, 5, 6]:
-        positions[KN_PLANETS[pid]] = (swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
-    rahu = (swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
-    positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = rahu, (rahu + 180) % 360
-    positions[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
+def calculate_mandi(birth_datetime, sunrise_time, sunset_time, next_sunrise_time):
+    """
+    Calculates the exact time Mandi rises based on birth time, handling
+    Day vs Night logic automatically.
+    """
     
-    # Unified Mandi Engine (Day/Night Fix)
-    sr_today, ss_today = find_sunrise_set(jd, lat, lon)
-    jd_local = jd + (5.5/24.0); cal_wday = int(jd_local + 0.5 + 1.5) % 7
-    if jd < sr_today:
-        prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
-        w_idx, is_night, start_base, dur, panch_sr = (cal_wday - 1) % 7, True, prev_ss, (sr_today - prev_ss), prev_sr
-    elif jd >= ss_today:
-        next_sr, _ = find_sunrise_set(jd + 1.0, lat, lon)
-        w_idx, is_night, start_base, dur, panch_sr = cal_wday, True, ss_today, (next_sr - ss_today), sr_today
+    # 1. Determine Weekday (0=Mon, 6=Sun)
+    # CRITICAL: If birth is between 00:00 and Sunrise, it belongs to the PREVIOUS astrological day.
+    # We use the sunrise date to determine the astrological weekday.
+    
+    # Convert input times to full datetime objects for comparison
+    # Assuming sunrise/sunset are passed as time objects, we attach them to the birth date
+    birth_date = birth_datetime.date()
+    
+    sunrise_dt = datetime.datetime.combine(birth_date, sunrise_time)
+    sunset_dt = datetime.datetime.combine(birth_date, sunset_time)
+    next_sunrise_dt = datetime.datetime.combine(birth_date + datetime.timedelta(days=1), next_sunrise_time)
+
+    # Handle post-midnight birth (before sunrise)
+    # If birth is 2 AM on Tuesday, astrologically it is still Monday night.
+    if birth_datetime < sunrise_dt:
+        # Shift back to previous day for logic
+        astrological_weekday_idx = (birth_datetime.weekday() - 1) % 7
+        is_day_birth = False
+        
+        # We need the previous day's sunset for calculation
+        # For simplicity in this standalone snippet, we assume sunset/sunrise don't change drastically 
+        # over 24h, but ideally you'd pass the specific previous sunset.
+        # Here we approximate previous sunset as 24h before today's sunset
+        current_period_start = sunset_dt - datetime.timedelta(days=1)
+        current_period_end = sunrise_dt
+        
+    elif birth_datetime >= sunrise_dt and birth_datetime < sunset_dt:
+        # Day Birth
+        astrological_weekday_idx = birth_datetime.weekday()
+        is_day_birth = True
+        current_period_start = sunrise_dt
+        current_period_end = sunset_dt
+        
     else:
-        w_idx, is_night, start_base, dur, panch_sr = cal_wday, False, sr_today, (ss_today - sr_today), sr_today
+        # Night Birth (After sunset, before midnight)
+        astrological_weekday_idx = birth_datetime.weekday()
+        is_day_birth = False
+        current_period_start = sunset_dt
+        current_period_end = next_sunrise_dt
 
-    factor = [10, 6, 2, 26, 22, 18, 14][w_idx % 7] if is_night else [26, 22, 18, 14, 10, 6, 2][w_idx % 7]
-    mtime = start_base + (dur * factor / 30.0)
-    positions[KN_PLANETS["Ma"]] = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
+    # 2. Weekday Names for Display
+    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    astro_day_name = weekdays[astrological_weekday_idx]
 
-    moon_deg, sun_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
-    t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12); n_idx = int(moon_deg / 13.333333333)
-    js, je = find_nak_limit(jd, n_idx * 13.333333333), find_nak_limit(jd, (n_idx + 1) * 13.333333333)
-    perc = (moon_deg % 13.333333333) / 13.333333333
-    bal = YEARS[n_idx % 9] * (1 - perc)
-    pan = {
-        "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx % 7], "n": KN_NAK[n_idx % 27],
-        "sr": panch_sr, "udayadi": fmt_ghati((jd - panch_sr) * 60), 
-        "gata": fmt_ghati((jd - js) * 60), "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd) * 60),
-        "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ {int((bal*12%1)*30)}ದಿ",
-        "n_idx": n_idx, "perc": perc, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
+    # 3. Define Mandi Ratios (The "Magic Numbers")
+    # These represent the *End* of the Saturn portion in a 30-Ghati day.
+    # Format: {Weekday_Index: (Day_Value, Night_Value)}
+    # Monday=0, ... Sunday=6
+    mandi_lookup = {
+        6: (26, 10), # Sunday
+        0: (22, 6),  # Monday
+        1: (18, 2),  # Tuesday
+        2: (14, 26), # Wednesday
+        3: (10, 22), # Thursday
+        4: (6, 18),  # Friday
+        5: (2, 14)   # Saturday
     }
-    return positions, pan
+
+    # Get the specific value (Ghatis out of 30)
+    day_val, night_val = mandi_lookup[astrological_weekday_idx]
+    target_ghati = day_val if is_day_birth else night_val
+
+    # 4. Calculate Duration of Day or Night
+    total_duration = current_period_end - current_period_start
+    total_seconds = total_duration.total_seconds()
+
+    # 5. Apply the Formula
+    # Formula: (Target_Ghati / 30) * Duration_in_Seconds
+    mandi_seconds_from_start = (target_ghati / 30.0) * total_seconds
+    
+    # 6. Add offset to the Start Time (Sunrise for Day, Sunset for Night)
+    mandi_rise_time = current_period_start + datetime.timedelta(seconds=mandi_seconds_from_start)
+
+    # Output
+    period_type = "Day" if is_day_birth else "Night"
+    return {
+        "Astrological Day": astro_day_name,
+        "Birth Period": period_type,
+        "Period Duration": str(total_duration),
+        "Mandi Rise Time": mandi_rise_time.strftime('%Y-%m-%d %H:%M:%S')
+    }
 
 # ==========================================
-# 3. INTERFACE
+# TEST CASE: USER SETTINGS
 # ==========================================
-if 'page' not in st.session_state: st.session_state.page = "input"
-if 'data' not in st.session_state: st.session_state.data = {}
-if 'notes' not in st.session_state: st.session_state.notes = ""
-if 'lat' not in st.session_state: st.session_state.lat, st.session_state.lon = 14.98, 74.73
 
-st.markdown('<div class="header-box">ಭಾರತೀಯಮ್</div>', unsafe_allow_html=True)
+# Example: A birth on Wednesday Night (Technically Thursday morning 2 AM)
+# Date: 2025-11-20, Time: 02:00:00 (AM)
+# Sunrise: 06:30, Sunset: 17:30 (5:30 PM)
 
-if st.session_state.page == "input":
-    with st.container():
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
-        name = st.text_input("ಹೆಸರು", "ಬಳಕೆದಾರ")
-        dob = st.date_input("ದಿನಾಂಕ", datetime.date(1997, 5, 24))
-        st.write("ಜನನ ಸಮಯ")
-        c1, c2, c3 = st.columns(3)
-        h = c1.number_input("ಗಂಟೆ", 1, 12, 2); m = c2.number_input("ನಿಮಿಷ", 0, 59, 43); ampm = c3.selectbox("M", ["AM", "PM"], index=0)
-        place_q = st.text_input("ಊರು ಹುಡುಕಿ", "Yellapur")
-        if st.button("ಹುಡುಕಿ"):
-            try:
-                loc = geolocator.geocode(place_q)
-                if loc: st.session_state.lat, st.session_state.lon = loc.latitude, loc.longitude; st.success(f"📍 {loc.address}")
-            except: st.error("Error")
-        lat = st.number_input("Lat", value=st.session_state.lat, format="%.4f"); lon = st.number_input("Lon", value=st.session_state.lon, format="%.4f")
-        if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
-            h24 = h + (12 if ampm == "PM" and h != 12 else 0); h24 = 0 if ampm == "AM" and h == 12 else h24
-            jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
-            pos, pan = get_full_calculations(jd, lat, lon)
-            st.session_state.data = {"pos": pos, "pan": pan}; st.session_state.page = "dashboard"; st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+b_date = datetime.date(2025, 11, 20)
+b_time = datetime.time(2, 0, 0) # 2 AM
+birth_dt = datetime.combine(b_date, b_time)
 
-elif st.session_state.page == "dashboard":
-    pos, pan = st.session_state.data['pos'], st.session_state.data['pan']
-    if st.button("⬅️ ಹಿಂದಕ್ಕೆ"): st.session_state.page = "input"; st.rerun()
-    t1, t2, t3, t4, t5 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಟಿಪ್ಪಣಿ"])
-    with t1:
-        c_v, c_b = st.columns([2, 1])
-        v_opt = c_v.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
-        bxs = {i: "" for i in range(12)}; ld = pos["ಲಗ್ನ"]
-        for n, d in pos.items():
-            if v_opt == 1: ri = int(d/30)
-            elif v_opt == 30: 
-                dr = d%30; is_odd = (int(d/30) % 2 == 0)
-                ri = (0 if dr<5 else 10 if dr<10 else 8 if dr<18 else 2 if dr<25 else 6) if is_odd else (5 if dr<5 else 2 if dr<12 else 8 if dr<20 else 10 if dr<25 else 0)
-            else:
-                if v_opt == 9: ri = ([0, 9, 6, 3][int(d/30)%4] + int((d%30)/3.33333)) % 12
-                elif v_opt == 3: ri = (int(d/30) + (int((d%30)/10)*4)) % 12
-                elif v_opt == 12: ri = (int(d/30) + int((d%30)/2.5)) % 12
-                else: ri = int(d/30)
-            bxs[ri] += f'<div class="{"hi" if n in ["ಲಗ್ನ", "ಮಾಂದಿ"] else "pl"}">{n}</div>'
-        grid = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
-        html = '<div class="grid-container">'
-        for idx in grid:
-            if idx is None:
-                if html.count("center-box") == 0: html += f'<div class="center-box">ಭಾರತೀಯಮ್<br>D{v_opt}</div>'
-            else: html += f'<div class="box"><span class="lbl">{KN_RASHI[idx]}</span>{bxs[idx]}</div>'
-        st.markdown(html + '</div>', unsafe_allow_html=True)
-    with t2:
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-        tbl_h = "<table class='key-val-table'><tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th></tr>"
-        for p, d in pos.items():
-            tbl_h += f"<tr><td><b>{p}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{int(d%30)}° {int((d%30*60)%60)}'</td></tr>"
-        st.markdown(tbl_h + "</table></div>", unsafe_allow_html=True)
-    with t3:
-        st.markdown(f"<div class='card' style='color:#6A040F; font-weight:bold; border-left:5px solid #FAA307'>ಶಿಷ್ಟ ದಶೆ: {pan['d_bal']}</div>", unsafe_allow_html=True)
-        dh = ""; cur_d = pan['date_obj']; si = pan['n_idx'] % 9
-        for i in range(9):
-            im = (si + i) % 9; md_dur = YEARS[im] * ((1 - pan['perc']) if i==0 else 1); md_end = cur_d + datetime.timedelta(days=md_dur*365.25)
-            dh += f"<details><summary class='md-node'><span>{LORDS[im]}</span><span class='date-label'>{md_end.strftime('%d-%m-%y')}</span></summary>"
-            cad = cur_d
-            for j in range(9):
-                ia = (im + j) % 9
-                ad_y = (YEARS[im] * YEARS[ia] / 120.0)
-                if i == 0:
-                    ad_y *= (1 - pan['perc'])
-                ae = cad + datetime.timedelta(days=ad_y*365.25)
-                dh += f"<details><summary class='ad-node'><span>{LORDS[ia]}</span><span class='date-label'>{ae.strftime('%d-%m-%y')}</span></summary>"
-                cpd = cad
-                for k in range(9):
-                    ip = (ia + k) % 9
-                    pd_y = (ad_y * YEARS[ip] / 120.0)
-                    pe = cpd + datetime.timedelta(days=pd_y*365.25)
-                    dh += f"<div class='pd-node' style='padding:10px 15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between'><span>{LORDS[ip]}</span><span>{pe.strftime('%d-%m-%y')}</span></div>"
-                    cpd = pe
-                dh += "</details>"; cad = ae
-            dh += "</details>"; cur_d = md_end
-        st.markdown(dh, unsafe_allow_html=True)
-    with t4:
-        st.markdown(f"""<div class='card'><table class='key-val-table'>
-                <tr><td class='key'>ವಾರ</td><td>{pan['v']}</td></tr><tr><td class='key'>ತಿಥಿ</td><td>{pan['t']}</td></tr><tr><td class='key'>ನಕ್ಷತ್ರ</td><td>{pan['n']}</td></tr>
-                <tr><td class='key'>ಉದಯಾದಿ</td><td>{pan['udayadi']} ಘಟಿ</td></tr><tr><td class='key'>ಗತ</td><td>{pan['gata']} ಘಟಿ</td></tr>
-                <tr><td class='key'>ಪರಮ</td><td>{pan['parama']} ಘಟಿ</td></tr><tr><td class='key'>ಶೇಷ</td><td>{pan['rem']} ಘಟಿ</td></tr>
-            </table></div>""", unsafe_allow_html=True)
-    with t5:
-        st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300)
-        if st.button("ಉಳಿಸಿ"): st.success("Saved!")
+# Define Sunrise/Sunset for the location
+sr = datetime.time(6, 30, 0) 
+ss = datetime.time(17, 30, 0)
+
+# Run Calculation
+result = calculate_mandi(birth_dt, sr, ss, sr)
+
+print("--- Mandi Calculation Result ---")
+for k, v in result.items():
+    print(f"{k}: {v}")
