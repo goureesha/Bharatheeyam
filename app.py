@@ -50,7 +50,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v4_robust")
+geolocator = Nominatim(user_agent="bharatheeyam_v5_final")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -72,13 +72,11 @@ def get_altitude_manual(jd, lat, lon):
     return math.degrees(math.asin(sin_alt))
 
 def find_sunrise_set_for_date(year, month, day, lat, lon):
-    # Precise Date-Locked Search from Midnight
     jd_start = swe.julday(year, month, day, 0.0) 
     rise_time, set_time = -1, -1
     step = 1/24.0
     current = jd_start - 0.3 
     
-    # 30-hour scan to guarantee hitting the events for THIS date
     for i in range(30): 
         alt1 = get_altitude_manual(current, lat, lon)
         alt2 = get_altitude_manual(current + step, lat, lon)
@@ -122,7 +120,7 @@ def jd_to_time_str(jd):
     return dt.strftime("%I:%M:%S %p")
 
 # ==========================================
-# 3. CALCULATIONS
+# 3. CALCULATIONS (Locked & Stable)
 # ==========================================
 def calculate_mandi(jd_birth, lat, lon, dob_obj):
     sr_civil, ss_civil = find_sunrise_set_for_date(dob_obj.year, dob_obj.month, dob_obj.day, lat, lon)
@@ -136,15 +134,12 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
     start_base = 0.0; duration = 0.0; vedic_wday = 0; panch_sr = 0.0
     
     if not is_night:
-        # DAYTIME
         vedic_wday = civil_weekday_idx
         panch_sr = sr_civil
         start_base = sr_civil
         duration = ss_civil - sr_civil
     else:
-        # NIGHTTIME
         if jd_birth < sr_civil:
-            # Pre-Sunrise (Yesterday Night)
             vedic_wday = (civil_weekday_idx - 1) % 7
             prev_date = dob_obj - datetime.timedelta(days=1)
             prev_sr, prev_ss = find_sunrise_set_for_date(prev_date.year, prev_date.month, prev_date.day, lat, lon)
@@ -152,7 +147,6 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
             duration = sr_civil - prev_ss
             panch_sr = prev_sr
         else:
-            # Post-Sunset (Today Night)
             vedic_wday = civil_weekday_idx
             next_date = dob_obj + datetime.timedelta(days=1)
             next_sr, _ = find_sunrise_set_for_date(next_date.year, next_date.month, next_date.day, lat, lon)
@@ -162,7 +156,6 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
 
     if not is_night: factors = [26, 22, 18, 14, 10, 6, 2] 
     else: factors = [10, 6, 2, 26, 22, 18, 14] 
-    
     factor = factors[vedic_wday]
     mandi_jd = start_base + (duration * factor / 30.0)
     
@@ -190,7 +183,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         pada = int((d % 13.333333333) / 3.333333333) + 1
         extra_details[p] = {"nak": KN_NAK[nak_idx % 27], "pada": pada}
 
-    # Houses (Bhava Sphuta)
+    # Houses
     houses_res = swe.houses(jd_birth, float(lat), float(lon), b'P')
     cusps = houses_res[0]
     asc_deg = (cusps[1] - ayan) % 360
@@ -211,7 +204,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     mandi_deg = (swe.houses(mandi_time_jd, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mandi_time_jd)) % 360
     positions[KN_PLANETS["Ma"]] = mandi_deg
     
-    # Mandi Details
     nak_idx = int(mandi_deg / 13.333333333)
     pada = int((mandi_deg % 13.333333333) / 3.333333333) + 1
     extra_details[KN_PLANETS["Ma"]] = {"nak": KN_NAK[nak_idx % 27], "pada": pada}
@@ -269,7 +261,6 @@ if st.session_state.page == "input":
         if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
             h24 = h + (12 if ampm == "PM" and h != 12 else 0); h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
-            # Retrieve Extended Data
             pos, pan, details, bhavas = get_full_calculations(jd, lat, lon, dob)
             st.session_state.data = {"pos": pos, "pan": pan, "details": details, "bhavas": bhavas}; st.session_state.page = "dashboard"; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -309,21 +300,18 @@ elif st.session_state.page == "dashboard":
             else: html += f'<div class="box"><span class="lbl">{KN_RASHI[idx]}</span>{bxs[idx]}</div>'
         st.markdown(html + '</div>', unsafe_allow_html=True)
     
-    # --- UPDATED SPHUTA TAB (Detailed Table) ---
     with t2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        # Helper for rows
-        def sphuta_row(p, r, d, n):
-            return f"<tr><td><b>{p}</b></td><td>{r}</td><td style='text-align:right'>{d}</td><td style='text-align:right'>{n}</td></tr>"
-            
-        tbl = "<table class='key-val-table'><tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th><th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>"
+        # Safe HTML construction
+        rows = ""
         for p, d in pos.items():
             r_name = KN_RASHI[int(d/30)]
             deg_fmt = f"{int(d%30)}° {int((d%30*60)%60)}'"
             nak_name = details[p]["nak"]
             pada_num = details[p]["pada"]
-            tbl += sphuta_row(p, r_name, deg_fmt, f"{nak_name}-{pada_num}")
-        tbl += "</table></div>"
+            rows += f"<tr><td><b>{p}</b></td><td>{r_name}</td><td style='text-align:right'>{deg_fmt}</td><td style='text-align:right'>{nak_name}-{pada_num}</td></tr>"
+        
+        tbl = f"<table class='key-val-table'><tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th><th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>{rows}</table></div>"
         st.markdown(tbl, unsafe_allow_html=True)
         
     with t3:
@@ -345,16 +333,28 @@ elif st.session_state.page == "dashboard":
         st.markdown(dh, unsafe_allow_html=True)
     
     with t4:
-        # Helper to create rows safely to avoid f-string syntax errors
+        # Helper function defined LOCALLY to avoid scope issues
         def row(key, val):
             return f"<tr><td class='key'>{key}</td><td>{val}</td></tr>"
             
+        # Build string strictly step-by-step
         p_html = "<div class='card'><table class='key-val-table'>"
         p_html += row("ವಾರ", pan['v'])
         p_html += row("ತಿಥಿ", pan['t'])
         p_html += row("ನಕ್ಷತ್ರ", pan['n'])
-        p_html += row("ಉದಯಾದಿ", f"{pan['udayadi']} ಘಟಿ")
-        p_html += row("ಗತ", f"{pan['gata']} ಘಟಿ")
-        p_html += row("ಪರಮ", f"{pan['parama']} ಘಟಿ")
-        p_html += row("ಶೇಷ", f"{pan['rem']} ಘಟಿ")
-        p_html += row("ಮಾಂದಿ ಕಾಲ", f"{pan['m_period']} ({pan['m_
+        p_html += row("ಉದಯಾದಿ", str(pan['udayadi']) + " ಘಟಿ")
+        p_html += row("ಗತ", str(pan['gata']) + " ಘಟಿ")
+        p_html += row("ಪರಮ", str(pan['parama']) + " ಘಟಿ")
+        p_html += row("ಶೇಷ", str(pan['rem']) + " ಘಟಿ")
+        
+        # Safe concatenation for Mandi line
+        m_str = str(pan['m_period']) + " (" + str(pan['m_time']) + ")"
+        p_html += row("ಮಾಂದಿ ಕಾಲ", m_str)
+        p_html += row("ಆಧಾರ ಸಮಯ", pan['m_base'])
+        p_html += "</table></div>"
+        
+        st.markdown(p_html, unsafe_allow_html=True)
+            
+    with t5:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        b_rows = ""
