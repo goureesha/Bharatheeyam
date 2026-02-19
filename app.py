@@ -195,7 +195,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v32_popup_sync")
+geolocator = Nominatim(user_agent="bharatheeyam_v33_d12_fixed")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -476,7 +476,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "pada": pada
     }
 
-    # Panchanga details
     m_deg = positions["ಚಂದ್ರ"]
     s_deg = positions["ರವಿ"]
     t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
@@ -576,7 +575,6 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     elif dr_val < 20: true_d3_idx = (d1_idx + 4) % 12
     else: true_d3_idx = (d1_idx + 8) % 12
     
-    # EXACT DREKKANA TAB SUB-PARTS
     if dr_val < 10: p1_part = " 1"
     elif dr_val < 20: p1_part = " 2"
     else: p1_part = " 3"
@@ -592,11 +590,11 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     else: p9_part = " 3"
     d3_d9_str = d9_name + p9_part
     
-    d12_exact = (deg * 12) % 360
-    d12_idx = int(d12_exact / 30)
+    # FIXED D12 LOGIC TO MATCH PARASHARI CONTINUOUS CYCLE
+    d12_idx = (int(deg/30) + int((deg%30)/2.5)) % 12
     d12_name = KN_RASHI[d12_idx]
     
-    deg_in_d12 = d12_exact % 30
+    deg_in_d12 = (deg % 2.5) * 12
     if deg_in_d12 < 10: p12_part = " 1"
     elif deg_in_d12 < 20: p12_part = " 2"
     else: p12_part = " 3"
@@ -1047,10 +1045,10 @@ elif st.session_state.page == "dashboard":
             else: p9_part = " 3"
             d3_d9_str = d9_name + p9_part
             
-            d12_exact = (d * 12) % 360
-            d12_idx = int(d12_exact / 30)
+            # FIXED D12 LOGIC FOR THE MAIN TABLE
+            d12_idx = (int(d/30) + int((d%30)/2.5)) % 12
             d12_name = KN_RASHI[d12_idx]
-            deg_in_d12 = d12_exact % 30
+            deg_in_d12 = (d % 2.5) * 12
             if deg_in_d12 < 10: p12_part = " 1"
             elif deg_in_d12 < 20: p12_part = " 2"
             else: p12_part = " 3"
