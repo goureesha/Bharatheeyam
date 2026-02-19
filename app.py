@@ -164,7 +164,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v11_clean")
+geolocator = Nominatim(user_agent="bharatheeyam_v12_navdrekkana")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -410,7 +410,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "pada": pada
     }
 
-    # Panchanga details
     m_deg = positions["ಚಂದ್ರ"]
     s_deg = positions["ರವಿ"]
     t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
@@ -529,8 +528,8 @@ elif st.session_state.page == "dashboard":
         st.session_state.page = "input"
         st.rerun()
         
-    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಟಿಪ್ಪಣಿ"]
-    t1, t2, t3, t4, t5, t6 = st.tabs(tabs)
+    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ", "ಟಿಪ್ಪಣಿ"]
+    t1, t2, t3, t4, t5, t6, t7 = st.tabs(tabs)
     
     with t1:
         c_v, c_b = st.columns([2, 1])
@@ -722,7 +721,39 @@ elif st.session_state.page == "dashboard":
             
         blines.append("</table></div>")
         st.markdown("".join(blines), unsafe_allow_html=True)
-
+        
     with t6:
+        nlines = []
+        nlines.append("<div class='card'><table class='key-val-table'>")
+        nlines.append("<tr><th>ಗ್ರಹ</th><th>D1 ರಾಶಿ</th>")
+        nlines.append("<th>D9 ರಾಶಿ</th><th>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</th></tr>")
+        
+        for p, d in pos.items():
+            d1_idx = int(d / 30)
+            d1_name = KN_RASHI[d1_idx]
+            
+            d9_exact = (d * 9) % 360
+            d9_idx = int(d9_exact / 30)
+            d9_name = KN_RASHI[d9_idx]
+            
+            deg_in_d9 = d9_exact % 30
+            if deg_in_d9 < 10:
+                d3_d9_idx = d9_idx
+            elif deg_in_d9 < 20:
+                d3_d9_idx = (d9_idx + 4) % 12
+            else:
+                d3_d9_idx = (d9_idx + 8) % 12
+                
+            d3_d9_name = KN_RASHI[d3_d9_idx]
+            
+            nr = "<tr><td><b>" + p + "</b></td><td>" + d1_name
+            nr += "</td><td>" + d9_name + "</td><td>" 
+            nr += d3_d9_name + "</td></tr>"
+            nlines.append(nr)
+            
+        nlines.append("</table></div>")
+        st.markdown("".join(nlines), unsafe_allow_html=True)
+
+    with t7:
         val = st.session_state.notes
         st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=val, height=300)
