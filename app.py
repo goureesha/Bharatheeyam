@@ -164,7 +164,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v14_d3_parts")
+geolocator = Nominatim(user_agent="bharatheeyam_v15_d3_parts")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -732,56 +732,39 @@ elif st.session_state.page == "dashboard":
         
         for p, d in pos.items():
             
-            # Format the degree string for display
             d1_v1 = str(int(d%30))
             d1_v2 = str(int((d%30*60)%60))
             deg_fmt = d1_v1 + "° " + d1_v2 + "'"
             
-            # 1. Base D1's D3
+            # 1. Base D1's D3 (Sign + Part)
             d1_idx = int(d / 30)
+            d1_name = KN_RASHI[d1_idx]
             deg_in_d1 = d % 30
-            if deg_in_d1 < 10:
-                d3_d1_idx = d1_idx
-                p1_part = "1"
-            elif deg_in_d1 < 20:
-                d3_d1_idx = (d1_idx + 4) % 12
-                p1_part = "2"
-            else:
-                d3_d1_idx = (d1_idx + 8) % 12
-                p1_part = "3"
-            d3_d1_str = KN_RASHI[d3_d1_idx] + " " + p1_part
+            if deg_in_d1 < 10: p1_part = " 1"
+            elif deg_in_d1 < 20: p1_part = " 2"
+            else: p1_part = " 3"
+            d3_d1_str = d1_name + p1_part
             
-            # 2. D9's D3
+            # 2. D9's D3 (Sign + Part)
             d9_exact = (d * 9) % 360
             d9_idx = int(d9_exact / 30)
+            d9_name = KN_RASHI[d9_idx]
             deg_in_d9 = d9_exact % 30
-            if deg_in_d9 < 10:
-                d3_d9_idx = d9_idx
-                p9_part = "1"
-            elif deg_in_d9 < 20:
-                d3_d9_idx = (d9_idx + 4) % 12
-                p9_part = "2"
-            else:
-                d3_d9_idx = (d9_idx + 8) % 12
-                p9_part = "3"
-            d3_d9_str = KN_RASHI[d3_d9_idx] + " " + p9_part
+            if deg_in_d9 < 10: p9_part = " 1"
+            elif deg_in_d9 < 20: p9_part = " 2"
+            else: p9_part = " 3"
+            d3_d9_str = d9_name + p9_part
             
-            # 3. D12's D3
+            # 3. D12's D3 (Sign + Part)
             d12_exact = (d * 12) % 360
             d12_idx = int(d12_exact / 30)
+            d12_name = KN_RASHI[d12_idx]
             deg_in_d12 = d12_exact % 30
-            if deg_in_d12 < 10:
-                d3_d12_idx = d12_idx
-                p12_part = "1"
-            elif deg_in_d12 < 20:
-                d3_d12_idx = (d12_idx + 4) % 12
-                p12_part = "2"
-            else:
-                d3_d12_idx = (d12_idx + 8) % 12
-                p12_part = "3"
-            d3_d12_str = KN_RASHI[d3_d12_idx] + " " + p12_part
+            if deg_in_d12 < 10: p12_part = " 1"
+            elif deg_in_d12 < 20: p12_part = " 2"
+            else: p12_part = " 3"
+            d3_d12_str = d12_name + p12_part
             
-            # Build the table row
             nr = "<tr><td><b>" + p + "</b></td><td>" + deg_fmt
             nr += "</td><td>" + d3_d1_str + "</td><td>" 
             nr += d3_d9_str + "</td><td>" + d3_d12_str + "</td></tr>"
