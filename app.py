@@ -92,7 +92,6 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
-    /* RADIO BUTTON TEXT STYLING */
     div[data-testid="stRadio"] label p {
         font-weight: 800 !important;
         color: #2B6CB0 !important;
@@ -196,7 +195,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v27_radio_fix")
+geolocator = Nominatim(user_agent="bharatheeyam_v28_hora")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -204,7 +203,6 @@ KN_PLANETS = {
     "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"
 }
 
-# FIXED KANNADA SPELLING FOR KARKA
 KN_RASHI = [
     "ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", 
     "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"
@@ -657,16 +655,16 @@ elif st.session_state.page == "dashboard":
         
         d_names = {
             1: "ರಾಶಿ", 
+            2: "ಹೋರಾ",
             3: "ದ್ರೇಕ್ಕಾಣ", 
             9: "ನವಾಂಶ", 
             12: "ದ್ವಾದಶಾಂಶ", 
             30: "ತ್ರಿಂಶಾಂಶ"
         }
         
-        opts = [1, 3, 9, 12, 30]
+        opts = [1, 2, 3, 9, 12, 30]
         v_opt = c_v.selectbox("ವರ್ಗ", opts, format_func=lambda x: d_names[x])
         
-        # PROMINENT RADIO BUTTON FOR RASHI/BHAVA
         mode_opts = ["ರಾಶಿ", "ಭಾವ"]
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", mode_opts, horizontal=True)
         b_opt = (c_mode == "ಭಾವ")
@@ -680,6 +678,23 @@ elif st.session_state.page == "dashboard":
                     ri = int(d/30)
                 else:
                     ri = (int(ld/30) + int(((d - ld + 360)%360 + 15)/30)) % 12
+            
+            # --- HORA (D2) CALCULATION LOGIC ---
+            elif v_opt == 2:
+                r = int(d/30)
+                dr = d % 30
+                is_odd_sign = (r % 2 == 0)
+                if is_odd_sign:
+                    if dr < 15: 
+                        ri = 4 
+                    else: 
+                        ri = 3 
+                else:
+                    if dr < 15: 
+                        ri = 3 
+                    else: 
+                        ri = 4 
+                        
             elif v_opt == 30: 
                 r = int(d/30)
                 dr = d%30
@@ -859,6 +874,7 @@ elif st.session_state.page == "dashboard":
     with t6:
         nlines = []
         nlines.append("<div class='card'><table class='key-val-table'>")
+        
         nlines.append("<tr><th>ಗ್ರಹ</th><th>ಅಂಶ</th>")
         nlines.append("<th>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</th><th>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</th>")
         nlines.append("<th>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</th></tr>")
