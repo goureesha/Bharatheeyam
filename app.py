@@ -92,12 +92,11 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
-    /* PROMINENT TOGGLE SWITCH TEXT */
-    div[data-testid="stToggle"] label p {
+    /* RADIO BUTTON TEXT STYLING */
+    div[data-testid="stRadio"] label p {
         font-weight: 800 !important;
         color: #2B6CB0 !important;
-        font-size: 16px !important;
-        margin-top: 4px;
+        font-size: 15px !important;
     }
     
     .grid-container { 
@@ -197,17 +196,20 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v26_pure_vedic")
+geolocator = Nominatim(user_agent="bharatheeyam_v27_radio_fix")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
     5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", 
     "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"
 }
+
+# FIXED KANNADA SPELLING FOR KARKA
 KN_RASHI = [
-    "ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "కర్ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", 
+    "ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", 
     "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"
 ]
+
 KN_VARA = [
     "ಭಾನುವಾರ", "ಸೋಮವಾರ", "ಮಂಗಳವಾರ", "ಬುಧವಾರ", 
     "ಗುರುವಾರ", "ಶುಕ್ರವಾರ", "ಶನಿವಾರ"
@@ -653,7 +655,6 @@ elif st.session_state.page == "dashboard":
     with t1:
         c_v, c_b = st.columns(2)
         
-        # PURE VEDIC NAMES FOR DROPDOWN
         d_names = {
             1: "ರಾಶಿ", 
             3: "ದ್ರೇಕ್ಕಾಣ", 
@@ -665,8 +666,10 @@ elif st.session_state.page == "dashboard":
         opts = [1, 3, 9, 12, 30]
         v_opt = c_v.selectbox("ವರ್ಗ", opts, format_func=lambda x: d_names[x])
         
-        # PROMINENT TOGGLE SWITCH
-        b_opt = c_b.toggle("ರಾಶಿ / ಭಾವ", value=False)
+        # PROMINENT RADIO BUTTON FOR RASHI/BHAVA
+        mode_opts = ["ರಾಶಿ", "ಭಾವ"]
+        c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", mode_opts, horizontal=True)
+        b_opt = (c_mode == "ಭಾವ")
         
         bxs = {i: "" for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
@@ -856,8 +859,6 @@ elif st.session_state.page == "dashboard":
     with t6:
         nlines = []
         nlines.append("<div class='card'><table class='key-val-table'>")
-        
-        # PURE KANNADA HEADERS
         nlines.append("<tr><th>ಗ್ರಹ</th><th>ಅಂಶ</th>")
         nlines.append("<th>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</th><th>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</th>")
         nlines.append("<th>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</th></tr>")
