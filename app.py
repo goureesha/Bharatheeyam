@@ -209,7 +209,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v41_fixed_sphutas")
+geolocator = Nominatim(user_agent="bharatheeyam_v42_prashna_sphuta")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -587,9 +587,9 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     Ma = positions["ಮಾಂದಿ"]
     R = positions["ರಾಹು"]
     
-    # Fixed Trisphuta: Lagna + Moon + Sun
-    tri = (L + M + S) % 360
-    chatu = (tri + Ma) % 360
+    # FIXED TRISPHUTA (Lagna + Moon + Mandi)
+    tri = (L + M + Ma) % 360
+    chatu = (tri + S) % 360
     pancha = (chatu + R) % 360
     
     prana = ((L * 5) + Ma) % 360
@@ -597,7 +597,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     mrityu = ((Ma * 7) + S) % 360
     sootra = (prana + deha + mrityu) % 360
     
-    # Aprakasha Grahas
     dhooma = (S + 133.333333) % 360
     vyatipata = (360 - dhooma) % 360
     parivesha = (vyatipata + 180) % 360
@@ -605,6 +604,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     upaketu = (indrachapa + 16.666667) % 360
     
     adv_sphutas = {
+        "ಲಗ್ನ ಸ್ಫುಟ": L,
         "ಪ್ರಾಣ ಸ್ಫುಟ": prana,
         "ದೇಹ ಸ್ಫುಟ": deha,
         "ಮೃತ್ಯು ಸ್ಫುಟ": mrityu,
@@ -1035,6 +1035,7 @@ elif st.session_state.page == "dashboard":
         slines.append("<th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>")
         
         sphuta_order = [
+            "ಲಗ್ನ ಸ್ಫುಟ",
             "ಪ್ರಾಣ ಸ್ಫುಟ", "ದೇಹ ಸ್ಫುಟ", "ಮೃತ್ಯು ಸ್ಫುಟ", 
             "ತ್ರಿಸ್ಫುಟ", "ಚತುಸ್ಫುಟ", "ಪಂಚಸ್ಫುಟ", "ಸೂತ್ರ ತ್ರಿಸ್ಫುಟ",
             "ಧೂಮ ಸ್ಫುಟ", "ವ್ಯತೀಪಾತ ಸ್ಫುಟ", "ಪರಿವೇಷ ಸ್ಫುಟ", "ಇಂದ್ರಚಾಪ ಸ್ಫುಟ", "ಉಪಕೇತು ಸ್ಫುಟ"
@@ -1176,7 +1177,7 @@ elif st.session_state.page == "dashboard":
         slines.append("</div>")
         st.markdown("".join(slines), unsafe_allow_html=True)
         
-        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>📝 ಬಿನ್ನಾಷ್ಟಕವರ್ಗ (BAV)</h4>", unsafe_allow_html=True)
+        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>📝 ಬಿನ್ನಾಷ್ಟಕವರ್ಗ (BAV Detail)</h4>", unsafe_allow_html=True)
         
         t_arr = []
         t_arr.append("<div class='card' style='overflow-x:auto;'>")
