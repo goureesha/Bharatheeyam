@@ -162,16 +162,16 @@ st.markdown("""
         font-size: 14px;
     }
     
-    /* BAV TABLE SPECIFIC STYLING */
+    /* BAV TABLE CSS FIX FOR MOBILE */
     .bav-table th {
         background-color: #EDF2F7;
         color: #2D3748;
-        padding: 8px 4px;
-        font-size: 12px;
+        padding: 6px 2px;
+        font-size: 11px;
     }
     .bav-table td {
-        padding: 8px 4px;
-        font-size: 13px;
+        padding: 8px 2px;
+        font-size: 12px;
         border-bottom: 1px solid #EDF2F7;
     }
     
@@ -210,7 +210,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v36_bav_detail")
+geolocator = Nominatim(user_agent="bharatheeyam_v37_kannada_fix")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -1124,8 +1124,9 @@ elif st.session_state.page == "dashboard":
         t_arr.append("<tr><th>ರಾಶಿ</th><th>ರವಿ</th><th>ಚಂ</th><th>ಕು</th><th>ಬು</th>")
         t_arr.append("<th>ಗು</th><th>ಶು</th><th>ಶ</th><th>ಒಟ್ಟು</th></tr>")
         
+        # FULL KANNADA RASHI NAMES FIXED
         for i in range(12):
-            tr = "<tr><td><b>" + KN_RASHI[i][:3] + "</b></td>"
+            tr = "<tr><td><b>" + KN_RASHI[i] + "</b></td>"
             for p in ["ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ"]:
                 tr += "<td>" + str(bav_vals[p][i]) + "</td>"
             tr += "<td style='color:#E53E3E; font-weight:bold;'>" + str(sav_vals[i]) + "</td></tr>"
