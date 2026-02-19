@@ -208,7 +208,7 @@ st.markdown("""
 # 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
-geolocator = Nominatim(user_agent="bharatheeyam_v44_kp_fix")
+geolocator = Nominatim(user_agent="bharatheeyam_v45_upagrahas_only")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -465,7 +465,6 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
 
 def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
     
-    # DYNAMIC AYANAMSA FIX
     swe.set_sid_mode(ayan_mode)
     swe.set_topo(float(lon), float(lat), 0)
     ayan = swe.get_ayanamsa(jd_birth)
@@ -489,7 +488,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
             "pada": pada
         }
 
-    # DYNAMIC RAHU SETTING
     node_flag = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
     rahu_res = swe.calc_ut(jd_birth, node_mode, node_flag)
     rahu_deg = rahu_res[0][0] % 360
@@ -584,21 +582,8 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
     
     sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
-    # --- CORRECTED ADVANCED SPHUTAS (PRASHNA MARGA) ---
-    L = positions["ಲಗ್ನ"]
-    M = positions["ಚಂದ್ರ"]
+    # --- UPAGRAHAS ONLY ---
     S = positions["ರವಿ"]
-    Ma = positions["ಮಾಂದಿ"]
-    R = positions["ರಾಹು"]
-    
-    tri = (L + M + Ma) % 360
-    chatu = (tri + S) % 360
-    pancha = (chatu + R) % 360
-    
-    prana = ((L * 5) + Ma) % 360
-    deha = ((M * 8) + R) % 360
-    mrityu = ((Ma * 7) + S) % 360
-    sootra = (prana + deha + mrityu) % 360
     
     dhooma = (S + 133.333333) % 360
     vyatipata = (360 - dhooma) % 360
@@ -607,19 +592,11 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
     upaketu = (indrachapa + 16.666667) % 360
     
     adv_sphutas = {
-        "ಲಗ್ನ ಸ್ಫುಟ": L,
-        "ಪ್ರಾಣ ಸ್ಫುಟ": prana,
-        "ದೇಹ ಸ್ಫುಟ": deha,
-        "ಮೃತ್ಯು ಸ್ಫುಟ": mrityu,
-        "ತ್ರಿಸ್ಫುಟ": tri,
-        "ಚತುಸ್ಫುಟ": chatu,
-        "ಪಂಚಸ್ಫುಟ": pancha,
-        "ಸೂತ್ರ ತ್ರಿಸ್ಫುಟ": sootra,
-        "ಧೂಮ ಸ್ಫುಟ": dhooma,
-        "ವ್ಯತೀಪಾತ ಸ್ಫುಟ": vyatipata,
-        "ಪರಿವೇಷ ಸ್ಫುಟ": parivesha,
-        "ಇಂದ್ರಚಾಪ ಸ್ಫುಟ": indrachapa,
-        "ಉಪಕೇತು ಸ್ಫುಟ": upaketu
+        "ಧೂಮ (Dhooma)": dhooma,
+        "ವ್ಯತೀಪಾತ (Vyatipata)": vyatipata,
+        "ಪರಿವೇಷ (Parivesha)": parivesha,
+        "ಇಂದ್ರಚಾಪ (Indrachapa)": indrachapa,
+        "ಉಪಕೇತು (Upaketu)": upaketu
     }
     
     pan = {
@@ -1048,17 +1025,16 @@ elif st.session_state.page == "dashboard":
                 show_planet_popup(p_n, pos[p_n], speeds.get(p_n, 0), pos["ರವಿ"])
     
     with t2:
+        # PURE UPAGRAHAS TAB
         slines = []
         slines.append("<div class='card'><table class='key-val-table'>")
-        slines.append("<tr><th>ವಿಶೇಷ ಸ್ಫುಟ</th><th>ರಾಶಿ</th>")
+        slines.append("<tr><th>ಉಪಗ್ರಹ ಸ್ಫುಟ</th><th>ರಾಶಿ</th>")
         slines.append("<th style='text-align:right'>ಅಂಶ</th>")
         slines.append("<th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>")
         
         sphuta_order = [
-            "ಲಗ್ನ ಸ್ಫುಟ",
-            "ಪ್ರಾಣ ಸ್ಫುಟ", "ದೇಹ ಸ್ಫುಟ", "ಮೃತ್ಯು ಸ್ಫುಟ", 
-            "ತ್ರಿಸ್ಫುಟ", "ಚತುಸ್ಫುಟ", "ಪಂಚಸ್ಫುಟ", "ಸೂತ್ರ ತ್ರಿಸ್ಫುಟ",
-            "ಧೂಮ ಸ್ಫುಟ", "ವ್ಯತೀಪಾತ ಸ್ಫುಟ", "ಪರಿವೇಷ ಸ್ಫುಟ", "ಇಂದ್ರಚಾಪ ಸ್ಫುಟ", "ಉಪಕೇತು ಸ್ಫುಟ"
+            "ಧೂಮ (Dhooma)", "ವ್ಯತೀಪಾತ (Vyatipata)", "ಪರಿವೇಷ (Parivesha)",
+            "ಇಂದ್ರಚಾಪ (Indrachapa)", "ಉಪಕೇತು (Upaketu)"
         ]
         
         for sp in sphuta_order:
@@ -1071,7 +1047,10 @@ elif st.session_state.page == "dashboard":
             nak_name = KN_NAK[nak_idx % 27]
             pada_num = str(pada)
             
-            sr = "<tr><td><b>" + sp + "</b></td><td>" + r_name + "</td>"
+            # Shorten label for clean table view
+            sp_short = sp.split(" ")[0]
+            
+            sr = "<tr><td><b>" + sp_short + "</b></td><td>" + r_name + "</td>"
             sr += "<td style='text-align:right'>" + deg_fmt + "</td>"
             sr += "<td style='text-align:right'>" + nak_name + "-" + pada_num + "</td></tr>"
             slines.append(sr)
