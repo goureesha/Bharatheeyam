@@ -326,4 +326,4 @@ elif st.session_state.page == "dashboard":
                 <tr><td class='key' style='color:blue'>ಮಾಂದಿ ಕಾಲ</td><td>{pan['m_period']} ({pan['m_time']})</td></tr>
             </table></div>""", unsafe_allow_html=True)
     with t5:
-        st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300)
+        st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300
