@@ -50,7 +50,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v119")
+geolocator = Nominatim(user_agent="bharatheeyam_unified_v2025")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -113,7 +113,7 @@ def get_full_calculations(jd, lat, lon):
     ayan = swe.get_ayanamsa(jd)
     positions = {}
     
-    # Standard Planets
+    # Planets
     for pid in [0, 1, 2, 3, 4, 5, 6]:
         positions[KN_PLANETS[pid]] = (swe.calc_ut(jd, pid, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
     rahu = (swe.calc_ut(jd, swe.TRUE_NODE, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0][0]) % 360
@@ -121,99 +121,77 @@ def get_full_calculations(jd, lat, lon):
     positions[KN_PLANETS["Lagna"]] = (swe.houses(jd, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     
     # ----------------------------------------------------
-    # PERFECTED MANDI LOGIC (DAY & NIGHT)
+    # UNIFIED MANDI LOGIC (HYBRID: CODE A + CODE B)
     # ----------------------------------------------------
-    # 1. Get Today's Sunrise (SR) and Sunset (SS)
     sr_today, ss_today = find_sunrise_set(jd, lat, lon)
     
-    # 2. Determine Period & Vedic Weekday
-    # NOTE: 0=Sunday, 1=Monday in your KN_VARA list.
+    # Calculate Vedic Weekday (0=Sunday, 1=Monday...)
+    # We use India Offset (+5.5) logic for weekday matching
+    jd_local = jd + (5.5/24.0)
+    cal_wday = int(jd_local + 0.5 + 1.5) % 7 
     
-    is_day_birth = False
+    is_night = False
+    w_idx = cal_wday
     
-    # Case A: Born Before Sunrise (e.g., 2 AM) -> Belongs to Previous Day's Night
+    # LOGIC BRANCH 1: Pre-Sunrise (Vedic Night of Previous Day)
     if jd < sr_today:
-        prev_day_jd = jd - 1.0
-        # Find prev day sunset
-        _, ss_prev = find_sunrise_set(prev_day_jd, lat, lon)
+        is_night = True
+        w_idx = (cal_wday - 1) % 7 # Shift to Yesterday
         
-        # Period: Prev Sunset -> Today Sunrise
-        start_time = ss_prev
-        end_time = sr_today
-        is_day_birth = False
+        # Calculate Night Duration from Yesterday's Sunset
+        prev_sr, prev_ss = find_sunrise_set(jd - 1.0, lat, lon)
+        start_base = prev_ss
+        duration = sr_today - prev_ss
         
-        # Weekday is Yesterday (subtract 1 day from jd)
-        w_idx = int((jd - 1.0) + 1.5) % 7
-        
-    # Case B: Born After Sunset -> Current Day's Night
+    # LOGIC BRANCH 2: Post-Sunset (Vedic Night of Current Day)
     elif jd >= ss_today:
-        next_day_jd = jd + 1.0
-        # Find next day sunrise
-        sr_next, _ = find_sunrise_set(next_day_jd, lat, lon)
+        is_night = True
+        w_idx = cal_wday
         
-        # Period: Today Sunset -> Next Sunrise
-        start_time = ss_today
-        end_time = sr_next
-        is_day_birth = False
+        # Calculate Night Duration to Tomorrow's Sunrise
+        next_sr, _ = find_sunrise_set(jd + 1.0, lat, lon)
+        start_base = ss_today
+        duration = next_sr - ss_today
         
-        # Weekday is Today
-        w_idx = int(jd + 1.5) % 7
-        
-    # Case C: Day Birth (Sunrise to Sunset)
+    # LOGIC BRANCH 3: Daytime (Vedic Day of Current Day)
     else:
-        start_time = sr_today
-        end_time = ss_today
-        is_day_birth = True
+        is_night = False
+        w_idx = cal_wday
         
-        # Weekday is Today
-        w_idx = int(jd + 1.5) % 7
+        # Calculate Day Duration
+        start_base = sr_today
+        duration = ss_today - sr_today
 
-    # 3. Mandi Coefficients (The "Magic Numbers")
-    # Format: {Weekday_Index: (Day_Value, Night_Value)}
-    # 0=Sunday ... 6=Saturday
-    mandi_lookup = {
-        0: (26, 10), # Sunday
-        1: (22, 6),  # Monday
-        2: (18, 2),  # Tuesday
-        3: (14, 26), # Wednesday
-        4: (10, 22), # Thursday
-        5: (6, 18),  # Friday
-        6: (2, 14)   # Saturday
-    }
+    # CONSTANTS from User Code
+    # Day Factors (from Day-Perfect Code)
+    DAY_GHATI_ARR = [26, 22, 18, 14, 10, 6, 2]   # Sun -> Sat
+    # Night Factors (from Night-Perfect Code)
+    NIGHT_GHATI_ARR = [10, 6, 2, 26, 22, 18, 14] # Sun -> Sat
     
-    day_ghati, night_ghati = mandi_lookup[w_idx]
-    target_ghati = day_ghati if is_day_birth else night_ghati
+    # Select Factor
+    factor = NIGHT_GHATI_ARR[w_idx] if is_night else DAY_GHATI_ARR[w_idx]
     
-    # 4. Calculate Mandi Time
-    total_duration = end_time - start_time
-    mandi_rise_jd = start_time + (total_duration * (target_ghati / 30.0))
-    
-    # 5. Get Mandi Position (Ascendant at Mandi Rise Time)
-    # Using 'P' (Placidus) or 'W' (Whole Sign) for houses - keeping your default 'P'
-    mandi_asc = swe.houses(mandi_rise_jd, float(lat), float(lon), b'P')[1][0]
-    positions[KN_PLANETS["Ma"]] = (mandi_asc - swe.get_ayanamsa(mandi_rise_jd)) % 360
+    # Calculate Mandi Time & Position
+    mtime = start_base + (duration * factor / 30.0)
+    mandi_deg = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
+    positions[KN_PLANETS["Ma"]] = mandi_deg
 
     # ----------------------------------------------------
-    # PANCHANGA CALCULATIONS
+    # PANCHANGA
     # ----------------------------------------------------
     m_deg, s_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
     t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
     n_idx = int(m_deg / 13.333333333)
-    
-    # For Nakshatra balance
-    js = find_nak_limit(jd, n_idx * 13.333333333)
-    je = find_nak_limit(jd, (n_idx + 1) * 13.333333333)
+    js = find_nak_limit(jd, n_idx * 13.333333333); je = find_nak_limit(jd, (n_idx + 1) * 13.333333333)
     perc = (m_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
     
-    # Determine Panchanga Variables based on our clean Day/Night logic above
-    panch_sr = sr_today
-    # Display Vara based on Vedic Day (w_idx calculated in Mandi section)
-    panch_vara = KN_VARA[w_idx] 
+    # For display: Udayadi calc depends on today's SR (or Prev SR if pre-dawn)
+    panch_sr = prev_sr if (jd < sr_today) else sr_today
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
-        "v": panch_vara, 
+        "v": KN_VARA[w_idx], # Use Vedic Weekday
         "n": KN_NAK[n_idx % 27],
         "sr": panch_sr, 
         "udayadi": fmt_ghati((jd - panch_sr) * 60), 
@@ -221,9 +199,7 @@ def get_full_calculations(jd, lat, lon):
         "parama": fmt_ghati((je - js) * 60), 
         "rem": fmt_ghati((je - jd) * 60),
         "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ",
-        "n_idx": n_idx, 
-        "perc": perc, 
-        "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
+        "n_idx": n_idx, "perc": perc, "date_obj": datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
     }
     return positions, pan
 
@@ -237,6 +213,9 @@ if 'lat' not in st.session_state: st.session_state.lat, st.session_state.lon = 1
 
 st.markdown('<div class="header-box">ಭಾರತೀಯಮ್</div>', unsafe_allow_html=True)
 
+# ==========================================
+# 4. APP UI
+# ==========================================
 if st.session_state.page == "input":
     with st.container():
         st.markdown("<div class='card'>", unsafe_allow_html=True)
