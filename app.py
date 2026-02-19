@@ -195,7 +195,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v30_strict_order")
+geolocator = Nominatim(user_agent="bharatheeyam_v31_detailed_deg")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -203,7 +203,6 @@ KN_PLANETS = {
     "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"
 }
 
-# STRICT VEDIC PLANET ORDER
 PLANET_ORDER = [
     "ಲಗ್ನ", "ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", 
     "ಗುರು", "ಶುಕ್ರ", "ಶನಿ", "ರಾಹು", "ಕೇತು", "ಮಾಂದಿ"
@@ -319,6 +318,22 @@ def fmt_ghati(decimal_val):
         g += 1
         v = 0
     return str(g) + "." + str(v).zfill(2)
+
+# --- NEW DETAILED DEGREE FORMATTER ---
+def fmt_deg(dec_deg):
+    rem = dec_deg % 30
+    t_sec = int(round(rem * 3600))
+    dg = int(t_sec / 3600)
+    mn = int((t_sec % 3600) / 60)
+    sc = int(t_sec % 60)
+    if dg == 30:
+        dg = 29
+        mn = 59
+        sc = 59
+    s_dg = str(dg)
+    s_mn = str(mn).zfill(2)
+    s_sc = str(sc).zfill(2)
+    return s_dg + "° " + s_mn + "' " + s_sc + '"'
 
 # ==========================================
 # 4. CALCULATIONS & SPEED LOGIC
@@ -462,6 +477,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "pada": pada
     }
 
+    # Panchanga details
     m_deg = positions["ಚಂದ್ರ"]
     s_deg = positions["ರವಿ"]
     t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
@@ -519,9 +535,9 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
 # ==========================================
 @st.dialog("ಗ್ರಹದ ಸಂಪೂರ್ಣ ವಿವರ")
 def show_planet_popup(p_name, deg, speed, sun_deg):
-    d1_v1 = str(int(deg%30))
-    d1_v2 = str(int((deg%30*60)%60))
-    deg_fmt = d1_v1 + "° " + d1_v2 + "'"
+    
+    # NEW DETAILED FORMAT
+    deg_fmt = fmt_deg(deg)
     
     is_asta = False
     gathi_str = "N/A"
@@ -795,7 +811,6 @@ elif st.session_state.page == "dashboard":
         bxs = {i: "" for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
         
-        # PROPER VEDIC PLACEMENT ORDER
         for n in PLANET_ORDER:
             d = pos[n]
             if v_opt == 1: 
@@ -872,7 +887,6 @@ elif st.session_state.page == "dashboard":
         st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>🔍 ಗ್ರಹಗಳ ವಿಸ್ತೃತ ವಿವರ</h4>", unsafe_allow_html=True)
         btn_cols = st.columns(4)
         
-        # BUTTONS IN STRICT VEDIC ORDER
         for i, p_n in enumerate(PLANET_ORDER):
             if btn_cols[i % 4].button(p_n, key="pop_" + p_n, use_container_width=True):
                 show_planet_popup(p_n, pos[p_n], speeds.get(p_n, 0), pos["ರವಿ"])
@@ -884,13 +898,10 @@ elif st.session_state.page == "dashboard":
         slines.append("<th style='text-align:right'>ಅಂಶ</th>")
         slines.append("<th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>")
         
-        # STRICT VEDIC TABLE ORDER
         for p in PLANET_ORDER:
             d = pos[p]
             r_name = KN_RASHI[int(d/30)]
-            d1 = str(int(d%30))
-            d2 = str(int((d%30*60)%60))
-            deg_fmt = d1 + "° " + d2 + "'"
+            deg_fmt = fmt_deg(d)
             nak_name = details[p]["nak"]
             pada_num = str(details[p]["pada"])
             
@@ -988,9 +999,7 @@ elif st.session_state.page == "dashboard":
         for i, deg in enumerate(bhavas):
             bhava_num = str(i + 1)
             r_name = KN_RASHI[int(deg/30)]
-            d1 = str(int(deg%30))
-            d2 = str(int((deg%30*60)%60))
-            d_fmt = d1 + "° " + d2 + "'"
+            d_fmt = fmt_deg(deg)
             
             br = "<tr><td><b>" + bhava_num + "</b></td><td>" + d_fmt
             br += "</td><td>" + r_name + "</td></tr>"
@@ -1002,16 +1011,14 @@ elif st.session_state.page == "dashboard":
     with t6:
         nlines = []
         nlines.append("<div class='card'><table class='key-val-table'>")
+        
         nlines.append("<tr><th>ಗ್ರಹ</th><th>ಅಂಶ</th>")
         nlines.append("<th>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</th><th>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</th>")
         nlines.append("<th>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</th></tr>")
         
-        # STRICT VEDIC TABLE ORDER
         for p in PLANET_ORDER:
             d = pos[p]
-            d1_v1 = str(int(d%30))
-            d1_v2 = str(int((d%30*60)%60))
-            deg_fmt = d1_v1 + "° " + d1_v2 + "'"
+            deg_fmt = fmt_deg(d)
             
             d1_idx = int(d / 30)
             d1_name = KN_RASHI[d1_idx]
