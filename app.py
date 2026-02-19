@@ -164,7 +164,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v15_d3_parts")
+geolocator = Nominatim(user_agent="bharatheeyam_v16_live_time")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -484,12 +484,29 @@ if st.session_state.page == "input":
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
         name = st.text_input("ಹೆಸರು", "ಬಳಕೆದಾರ")
-        dob = st.date_input("ದಿನಾಂಕ", datetime.date(1997, 5, 24))
+        
+        # --- GET LIVE CLOCK TIME ---
+        now = datetime.datetime.now()
+        cur_date = now.date()
+        cur_h24 = now.hour
+        cur_m = now.minute
+        
+        if cur_h24 < 12:
+            am_pm_idx = 0 
+        else:
+            am_pm_idx = 1
+            
+        cur_h12 = cur_h24 % 12
+        if cur_h12 == 0:
+            cur_h12 = 12
+            
+        dob = st.date_input("ದಿನಾಂಕ", cur_date)
         
         c1, c2, c3 = st.columns(3)
-        h = c1.number_input("ಗಂಟೆ", 1, 12, 2)
-        m = c2.number_input("ನಿಮಿಷ", 0, 59, 43)
-        ampm = c3.selectbox("M", ["AM", "PM"], index=0)
+        h = c1.number_input("ಗಂಟೆ", 1, 12, cur_h12)
+        m = c2.number_input("ನಿಮಿಷ", 0, 59, cur_m)
+        ampm = c3.selectbox("M", ["AM", "PM"], index=am_pm_idx)
+        # ---------------------------
         
         place_q = st.text_input("ಊರು ಹುಡುಕಿ", "Yellapur")
         if st.button("ಹುಡುಕಿ"):
@@ -736,7 +753,6 @@ elif st.session_state.page == "dashboard":
             d1_v2 = str(int((d%30*60)%60))
             deg_fmt = d1_v1 + "° " + d1_v2 + "'"
             
-            # 1. Base D1's D3 (Sign + Part)
             d1_idx = int(d / 30)
             d1_name = KN_RASHI[d1_idx]
             deg_in_d1 = d % 30
@@ -745,7 +761,6 @@ elif st.session_state.page == "dashboard":
             else: p1_part = " 3"
             d3_d1_str = d1_name + p1_part
             
-            # 2. D9's D3 (Sign + Part)
             d9_exact = (d * 9) % 360
             d9_idx = int(d9_exact / 30)
             d9_name = KN_RASHI[d9_idx]
@@ -755,7 +770,6 @@ elif st.session_state.page == "dashboard":
             else: p9_part = " 3"
             d3_d9_str = d9_name + p9_part
             
-            # 3. D12's D3 (Sign + Part)
             d12_exact = (d * 12) % 360
             d12_idx = int(d12_exact / 30)
             d12_name = KN_RASHI[d12_idx]
