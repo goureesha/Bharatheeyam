@@ -14,7 +14,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Break CSS into tiny lines so copy-paste doesn't break it
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
@@ -165,7 +164,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v8_safe")
+geolocator = Nominatim(user_agent="bharatheeyam_v9_panchanga")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -197,6 +196,14 @@ KN_NAK = [
     "ಅನುರಾಧ", "ಜ್ಯೇಷ್ಠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ",
     "ಶ್ರವಣ", "ಧನಿಷ್ಠ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರ", "ಉತ್ತರಾಭಾದ್ರ",
     "ರೇವತಿ"
+]
+KN_YOGA = [
+    "ವಿಷ್ಕಂಭ", "ಪ್ರೀತಿ", "ಆಯುಷ್ಮಾನ್", "ಸೌಭಾಗ್ಯ", "ಶೋಭನ",
+    "ಅತಿಗಂಡ", "ಸುಕರ್ಮ", "ಧೃತಿ", "ಶೂಲ", "ಗಂಡ",
+    "ವೃದ್ಧಿ", "ಧ್ರುವ", "ವ್ಯಾಘಾತ", "ಹರ್ಷಣ", "ವಜ್ರ",
+    "ಸಿದ್ಧಿ", "ವ್ಯತೀಪಾತ", "ವರೀಯಾನ್", "ಪರಿಘ", "ಶಿವ",
+    "ಸಿದ್ಧ", "ಸಾಧ್ಯ", "ಶುಭ", "ಶುಕ್ಲ", "ಬ್ರಹ್ಮ",
+    "ಇಂದ್ರ", "ವೈಧೃತಿ"
 ]
 LORDS = ["ಕೇತು","ಶುಕ್ರ","ರವಿ","ಚಂದ್ರ","ಕುಜ","ರಾಹು","ಗುರು","ಶನಿ","ಬುಧ"]
 YEARS = [7, 20, 6, 10, 7, 18, 16, 19, 17]
@@ -276,7 +283,7 @@ def fmt_ghati(decimal_val):
 
 def jd_to_time_str(jd):
     dt = datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
-    return dt.strftime("%I:%M:%S %p")
+    return dt.strftime("%I:%M %p")
 
 # ==========================================
 # 3. CALCULATIONS
@@ -344,7 +351,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     positions = {}
     extra_details = {}
     
-    # Planets
     for pid in [0, 1, 2, 3, 4, 5, 6]:
         flag = swe.FLG_SWIEPH | swe.FLG_SIDEREAL
         deg = (swe.calc_ut(jd_birth, pid, flag)[0][0]) % 360
@@ -408,23 +414,55 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "pada": pada
     }
 
+    # Advanced Panchanga
     m_deg = positions["ಚಂದ್ರ"]
     s_deg = positions["ರವಿ"]
     t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
     n_idx = int(m_deg / 13.333333333)
+    
+    y_deg = (m_deg + s_deg) % 360
+    y_idx = int(y_deg / 13.333333333)
+    yoga_name = KN_YOGA[y_idx]
+    
+    k_idx = int(((m_deg - s_deg + 360) % 360) / 6)
+    if k_idx == 0:
+        k_name = "ಕಿಂಸ್ತುಘ್ನ"
+    elif k_idx == 57:
+        k_name = "ಶಕುನಿ"
+    elif k_idx == 58:
+        k_name = "ಚತುಷ್ಪಾದ"
+    elif k_idx == 59:
+        k_name = "ನಾಗ"
+    else:
+        k_arr = ["ಬವ", "ಬಾಲವ", "ಕೌಲವ", "ತೈತಿಲ", "ಗರ", "ವಣಿಜ", "ಭದ್ರಾ (ವಿಷ್ಟಿ)"]
+        k_name = k_arr[(k_idx - 1) % 7]
+        
+    r_idx = int(m_deg / 30)
+    rasi_name = KN_RASHI[r_idx]
+    
+    sr_c, ss_c = find_sunrise_set_for_date(dob_obj.year, dob_obj.month, dob_obj.day, lat, lon)
+    
+    a_deg = int(ayan)
+    a_min = int((ayan - a_deg) * 60)
+    ayan_str = str(a_deg) + "° " + str(a_min) + "'"
     
     js = find_nak_limit(jd_birth, n_idx * 13.333333333)
     je = find_nak_limit(jd_birth, (n_idx + 1) * 13.333333333)
     
     perc = (m_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
-    
     dt_birth = datetime.datetime.fromtimestamp((jd_birth - 2440587.5) * 86400)
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
         "v": KN_VARA[w_idx], 
         "n": KN_NAK[n_idx % 27],
+        "y": yoga_name,
+        "k": k_name,
+        "r": rasi_name,
+        "sr_t": jd_to_time_str(sr_c),
+        "ss_t": jd_to_time_str(ss_c),
+        "ayan": ayan_str,
         "sr": panch_sr, 
         "udayadi": fmt_ghati((jd_birth - panch_sr) * 60), 
         "gata": fmt_ghati((jd_birth - js) * 60), 
@@ -662,15 +700,21 @@ elif st.session_state.page == "dashboard":
         p_lines.append("<div class='card'><table class='key-val-table'>")
         
         arr = [
+            ("ಸೂರ್ಯೋದಯ", pan['sr_t']),
+            ("ಸೂರ್ಯಾಸ್ತ", pan['ss_t']),
             ("ವಾರ", str(pan['v'])),
             ("ತಿಥಿ", str(pan['t'])),
             ("ನಕ್ಷತ್ರ", str(pan['n'])),
+            ("ಯೋಗ", str(pan['y'])),
+            ("ಕರಣ", str(pan['k'])),
+            ("ಚಂದ್ರ ರಾಶಿ", str(pan['r'])),
             ("ಉದಯಾದಿ", str(pan['udayadi']) + " ಘಟಿ"),
             ("ಗತ", str(pan['gata']) + " ಘಟಿ"),
             ("ಪರಮ", str(pan['parama']) + " ಘಟಿ"),
             ("ಶೇಷ", str(pan['rem']) + " ಘಟಿ"),
             ("ಮಾಂದಿ ಕಾಲ", str(pan['m_period']) + " (" + str(pan['m_time']) + ")"),
-            ("ಆಧಾರ ಸಮಯ", str(pan['m_base']))
+            ("ಆಧಾರ ಸಮಯ", str(pan['m_base'])),
+            ("ಅಯನಾಂಶ (ಲಾಹಿರಿ)", str(pan['ayan']))
         ]
         
         for k, v in arr:
