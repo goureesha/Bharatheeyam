@@ -195,7 +195,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v28_hora")
+geolocator = Nominatim(user_agent="bharatheeyam_v29_popups")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -315,7 +315,7 @@ def fmt_ghati(decimal_val):
     return str(g) + "." + str(v).zfill(2)
 
 # ==========================================
-# 4. CALCULATIONS
+# 4. CALCULATIONS & SPEED LOGIC
 # ==========================================
 def calculate_mandi(jd_birth, lat, lon, dob_obj):
     y = dob_obj.year
@@ -378,12 +378,19 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     swe.set_topo(float(lon), float(lat), 0)
     ayan = swe.get_ayanamsa(jd_birth)
     positions = {}
+    speeds = {} # Captures Planet Speed for Vakri
     extra_details = {}
     
+    # CALCULATE MAIN PLANETS + SPEED
     for pid in [0, 1, 2, 3, 4, 5, 6]:
-        flag = swe.FLG_SWIEPH | swe.FLG_SIDEREAL
-        deg = (swe.calc_ut(jd_birth, pid, flag)[0][0]) % 360
+        flag = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
+        res = swe.calc_ut(jd_birth, pid, flag)
+        deg = res[0][0] % 360
+        speed = res[0][3]
+        
         positions[KN_PLANETS[pid]] = deg
+        speeds[KN_PLANETS[pid]] = speed
+        
         nak_idx = int(deg / 13.333333333)
         pada = int((deg % 13.333333333) / 3.333333333) + 1
         extra_details[KN_PLANETS[pid]] = {
@@ -391,14 +398,20 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
             "pada": pada
         }
 
-    rahu_deg = swe.calc_ut(jd_birth, swe.TRUE_NODE, flag)[0][0]
-    rahu = rahu_deg % 360
-    positions[KN_PLANETS[101]] = rahu
-    positions[KN_PLANETS[102]] = (rahu + 180) % 360
+    # CALCULATE RAHU / KETU + SPEED
+    rahu_res = swe.calc_ut(jd_birth, swe.TRUE_NODE, flag)
+    rahu_deg = rahu_res[0][0] % 360
+    rahu_speed = rahu_res[0][3]
+    
+    positions[KN_PLANETS[101]] = rahu_deg
+    speeds[KN_PLANETS[101]] = rahu_speed
+    
+    positions[KN_PLANETS[102]] = (rahu_deg + 180) % 360
+    speeds[KN_PLANETS[102]] = rahu_speed
     
     nodes = [
-        (KN_PLANETS[101], rahu), 
-        (KN_PLANETS[102], (rahu + 180) % 360)
+        (KN_PLANETS[101], rahu_deg), 
+        (KN_PLANETS[102], (rahu_deg + 180) % 360)
     ]
     
     for p, d in nodes:
@@ -417,6 +430,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         bhava_sphutas = [(cusps[i] - ayan) % 360 for i in range(0, 12)]
 
     positions[KN_PLANETS["Lagna"]] = asc_deg
+    speeds[KN_PLANETS["Lagna"]] = 0
     nak_idx = int(asc_deg / 13.333333333)
     pada = int((asc_deg % 13.333333333) / 3.333333333) + 1
     extra_details[KN_PLANETS["Lagna"]] = {
@@ -435,6 +449,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     a_mandi = swe.get_ayanamsa(mandi_time_jd)
     mandi_deg = (h_mandi[1][0] - a_mandi) % 360
     positions[KN_PLANETS["Ma"]] = mandi_deg
+    speeds[KN_PLANETS["Ma"]] = 0
     
     nak_idx = int(mandi_deg / 13.333333333)
     pada = int((mandi_deg % 13.333333333) / 3.333333333) + 1
@@ -443,7 +458,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "pada": pada
     }
 
-    # Panchanga details
     m_deg = positions["ಚಂದ್ರ"]
     s_deg = positions["ರವಿ"]
     t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
@@ -494,10 +508,116 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "date_obj": dt_birth,
         "lord_bal": LORDS[n_idx%9]
     }
-    return positions, pan, extra_details, bhava_sphutas
+    return positions, pan, extra_details, bhava_sphutas, speeds
 
 # ==========================================
-# 5. SESSION STATE & UI
+# 5. DIALOG UI FOR PLANET POPUP
+# ==========================================
+@st.dialog("ಗ್ರಹದ ಸಂಪೂರ್ಣ ವಿವರ (Planet Details)")
+def show_planet_popup(p_name, deg, speed, sun_deg):
+    d1_v1 = str(int(deg%30))
+    d1_v2 = str(int((deg%30*60)%60))
+    deg_fmt = d1_v1 + "° " + d1_v2 + "'"
+    
+    # Asta (Combust) Logic
+    is_asta = False
+    gathi_str = "N/A"
+    
+    if p_name not in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]:
+        diff = abs(deg - sun_deg)
+        if diff > 180: diff = 360 - diff
+        limits = {"ಚಂದ್ರ": 12, "ಕುಜ": 17, "ಬುಧ": 14, "ಗುರು": 11, "ಶುಕ್ರ": 10, "ಶನಿ": 15}
+        if diff <= limits.get(p_name, 0):
+            is_asta = True
+            
+        if p_name == "ಚಂದ್ರ": gathi_str = "ನೇರ (Direct)"
+        elif speed < 0: gathi_str = "ವಕ್ರಿ (Retrograde)"
+        else: gathi_str = "ನೇರ (Direct)"
+        
+    elif p_name in ["ರಾಹು", "ಕೇತು"]:
+        gathi_str = "ವಕ್ರಿ (Retrograde)"
+    elif p_name == "ರವಿ":
+        gathi_str = "ನೇರ (Direct)"
+    else:
+        gathi_str = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ (-)"
+        
+    asta_text = "ಹೌದು (Combust)" if is_asta else "ಇಲ್ಲ (No)"
+    if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: 
+        asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ (-)"
+        
+    # Varga Math
+    d1_idx = int(deg/30)
+    
+    r_val = int(deg/30)
+    dr_val = deg % 30
+    is_odd = (r_val % 2 == 0)
+    if is_odd: d2_idx = 4 if dr_val < 15 else 3
+    else: d2_idx = 3 if dr_val < 15 else 4
+    
+    if dr_val < 10: d3_idx = d1_idx
+    elif dr_val < 20: d3_idx = (d1_idx + 4) % 12
+    else: d3_idx = (d1_idx + 8) % 12
+    
+    d9_exact = (deg * 9) % 360
+    d9_idx = int(d9_exact / 30)
+    
+    d12_exact = (deg * 12) % 360
+    d12_idx = int(d12_exact / 30)
+    
+    if is_odd:
+        if dr_val < 5: d30_idx = 0
+        elif dr_val < 10: d30_idx = 10
+        elif dr_val < 18: d30_idx = 8
+        elif dr_val < 25: d30_idx = 2
+        else: d30_idx = 6
+    else:
+        if dr_val < 5: d30_idx = 5
+        elif dr_val < 12: d30_idx = 2
+        elif dr_val < 20: d30_idx = 8
+        elif dr_val < 25: d30_idx = 10
+        else: d30_idx = 0
+        
+    d9_dr = d9_exact % 30
+    if d9_dr < 10: d9_d3_idx = d9_idx; d9_part = " 1"
+    elif d9_dr < 20: d9_d3_idx = (d9_idx + 4) % 12; d9_part = " 2"
+    else: d9_d3_idx = (d9_idx + 8) % 12; d9_part = " 3"
+    
+    d12_dr = d12_exact % 30
+    if d12_dr < 10: d12_d3_idx = d12_idx; d12_part = " 1"
+    elif d12_dr < 20: d12_d3_idx = (d12_idx + 4) % 12; d12_part = " 2"
+    else: d12_d3_idx = (d12_idx + 8) % 12; d12_part = " 3"
+    
+    h_arr = []
+    h_arr.append("<div class='card'><table class='key-val-table'>")
+    h_arr.append("<tr><td class='key'>ಸ್ಫುಟ (Sphuta)</td><td>" + deg_fmt + "</td></tr>")
+    h_arr.append("<tr><td class='key'>ಗತಿ (Vakri/Nera)</td><td><b>" + gathi_str + "</b></td></tr>")
+    h_arr.append("<tr><td class='key'>ಅಸ್ತ (Asta)</td><td><b>" + asta_text + "</b></td></tr>")
+    h_arr.append("</table></div>")
+    st.markdown("".join(h_arr), unsafe_allow_html=True)
+    
+    st.markdown("#### 📊 ವರ್ಗಗಳು (Vargas)")
+    v_arr = []
+    v_arr.append("<div class='card'><table class='key-val-table'>")
+    v_arr.append("<tr><td class='key'>ರಾಶಿ</td><td>" + KN_RASHI[d1_idx] + "</td></tr>")
+    v_arr.append("<tr><td class='key'>ಹೋರಾ</td><td>" + KN_RASHI[d2_idx] + "</td></tr>")
+    v_arr.append("<tr><td class='key'>ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d3_idx] + "</td></tr>")
+    v_arr.append("<tr><td class='key'>ನವಾಂಶ</td><td>" + KN_RASHI[d9_idx] + "</td></tr>")
+    v_arr.append("<tr><td class='key'>ದ್ವಾದಶಾಂಶ</td><td>" + KN_RASHI[d12_idx] + "</td></tr>")
+    v_arr.append("<tr><td class='key'>ತ್ರಿಂಶಾಂಶ</td><td>" + KN_RASHI[d30_idx] + "</td></tr>")
+    v_arr.append("</table></div>")
+    st.markdown("".join(v_arr), unsafe_allow_html=True)
+    
+    st.markdown("#### 📐 ಉಪ-ದ್ರೇಕ್ಕಾಣ (Sub-Drekkanas)")
+    sd_arr = []
+    sd_arr.append("<div class='card'><table class='key-val-table'>")
+    sd_arr.append("<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d3_idx] + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d9_d3_idx] + d9_part + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d12_d3_idx] + d12_part + "</td></tr>")
+    sd_arr.append("</table></div>")
+    st.markdown("".join(sd_arr), unsafe_allow_html=True)
+
+# ==========================================
+# 6. SESSION STATE & UI
 # ==========================================
 if 'page' not in st.session_state: 
     st.session_state.page = "input"
@@ -606,10 +726,10 @@ if st.session_state.page == "input":
             h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
             
-            p1, p2, p3, p4 = get_full_calculations(jd, lat, lon, dob)
+            p1, p2, p3, p4, p5 = get_full_calculations(jd, lat, lon, dob)
             
             st.session_state.data = {
-                "pos": p1, "pan": p2, "details": p3, "bhavas": p4
+                "pos": p1, "pan": p2, "details": p3, "bhavas": p4, "speeds": p5
             }
             st.session_state.page = "dashboard"
             st.rerun()
@@ -619,7 +739,8 @@ elif st.session_state.page == "dashboard":
     pos = st.session_state.data['pos']
     pan = st.session_state.data['pan']
     details = st.session_state.data['details'] 
-    bhavas = st.session_state.data['bhavas']   
+    bhavas = st.session_state.data['bhavas']
+    speeds = st.session_state.data['speeds']
     
     c_bk, c_sv = st.columns(2)
     
@@ -678,23 +799,16 @@ elif st.session_state.page == "dashboard":
                     ri = int(d/30)
                 else:
                     ri = (int(ld/30) + int(((d - ld + 360)%360 + 15)/30)) % 12
-            
-            # --- HORA (D2) CALCULATION LOGIC ---
             elif v_opt == 2:
                 r = int(d/30)
                 dr = d % 30
                 is_odd_sign = (r % 2 == 0)
                 if is_odd_sign:
-                    if dr < 15: 
-                        ri = 4 
-                    else: 
-                        ri = 3 
+                    if dr < 15: ri = 4 
+                    else: ri = 3 
                 else:
-                    if dr < 15: 
-                        ri = 3 
-                    else: 
-                        ri = 4 
-                        
+                    if dr < 15: ri = 3 
+                    else: ri = 4 
             elif v_opt == 30: 
                 r = int(d/30)
                 dr = d%30
@@ -750,6 +864,15 @@ elif st.session_state.page == "dashboard":
                 
         glines.append("</div>")
         st.markdown("".join(glines), unsafe_allow_html=True)
+        
+        # --- PLANET INSPECTOR BUTTONS (TRIGGERS POPUP) ---
+        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>🔍 ಗ್ರಹಗಳ ವಿಸ್ತೃತ ವಿವರ (Click Planet)</h4>", unsafe_allow_html=True)
+        btn_cols = st.columns(4)
+        p_list = ["ಲಗ್ನ", "ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ", "ರಾಹು", "ಕೇತು", "ಮಾಂದಿ"]
+        
+        for i, p_n in enumerate(p_list):
+            if btn_cols[i % 4].button(p_n, key="pop_" + p_n, use_container_width=True):
+                show_planet_popup(p_n, pos[p_n], speeds.get(p_n, 0), pos["ರವಿ"])
     
     with t2:
         slines = []
