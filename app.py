@@ -209,7 +209,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v39_popup_revert")
+geolocator = Nominatim(user_agent="bharatheeyam_v40_adv_sphutas")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -580,6 +580,43 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     
     sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
+    # --- CALCULATE ADVANCED SPHUTAS ---
+    L = positions["ಲಗ್ನ"]
+    M = positions["ಚಂದ್ರ"]
+    S = positions["ರವಿ"]
+    Ma = positions["ಮಾಂದಿ"]
+    R = positions["ರಾಹು"]
+    
+    tri = (L + M + Ma) % 360
+    chatu = (tri + S) % 360
+    pancha = (chatu + R) % 360
+    
+    prana = ((L * 5) + Ma) % 360
+    deha = ((M * 8) + R) % 360
+    mrityu = ((Ma * 7) + S) % 360
+    sootra = (prana + deha + mrityu) % 360
+    
+    dhooma = (S + 133.333333) % 360
+    vyatipata = (360 - dhooma) % 360
+    parivesha = (vyatipata + 180) % 360
+    indrachapa = (360 - parivesha) % 360
+    upaketu = (indrachapa + 16.666667) % 360
+    
+    adv_sphutas = {
+        "ಪ್ರಾಣ ಸ್ಫುಟ": prana,
+        "ದೇಹ ಸ್ಫುಟ": deha,
+        "ಮೃತ್ಯು ಸ್ಫುಟ": mrityu,
+        "ತ್ರಿಸ್ಫುಟ": tri,
+        "ಚತುಸ್ಫುಟ": chatu,
+        "ಪಂಚಸ್ಫುಟ": pancha,
+        "ಸೂತ್ರ ತ್ರಿಸ್ಫುಟ": sootra,
+        "ಧೂಮ ಸ್ಫುಟ": dhooma,
+        "ವ್ಯತೀಪಾತ ಸ್ಫುಟ": vyatipata,
+        "ಪರಿವೇಷ ಸ್ಫುಟ": parivesha,
+        "ಇಂದ್ರಚಾಪ ಸ್ಫುಟ": indrachapa,
+        "ಉಪಕೇತು ಸ್ಫುಟ": upaketu
+    }
+    
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
         "v": KN_VARA[w_idx], 
@@ -598,7 +635,8 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "date_obj": dt_birth,
         "lord_bal": LORDS[n_idx%9],
         "sav_bindus": sav_bindus,
-        "bav_bindus": bav_bindus
+        "bav_bindus": bav_bindus,
+        "adv_sphutas": adv_sphutas
     }
     return positions, pan, extra_details, bhava_sphutas, speeds
 
@@ -633,7 +671,6 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: 
         asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    # Varga Math
     d1_idx = int(deg/30)
     d1_name = KN_RASHI[d1_idx]
     
@@ -704,7 +741,6 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     v_arr.append("</table></div>")
     st.markdown("".join(v_arr), unsafe_allow_html=True)
     
-    # REVERTED TO EXACTLY 2 COLUMNS (NO EXACT SPHUTA)
     st.markdown("#### 📐 ಉಪ-ದ್ರೇಕ್ಕಾಣ")
     sd_arr = []
     sd_arr.append("<div class='card'><table class='key-val-table'>")
@@ -841,6 +877,7 @@ elif st.session_state.page == "dashboard":
     speeds = st.session_state.data['speeds']
     sav_vals = pan['sav_bindus']
     bav_vals = pan['bav_bindus']
+    adv_sp = pan['adv_sphutas']
     
     c_bk, c_sv = st.columns(2)
     
@@ -989,23 +1026,32 @@ elif st.session_state.page == "dashboard":
                 show_planet_popup(p_n, pos[p_n], speeds.get(p_n, 0), pos["ರವಿ"])
     
     with t2:
+        # ADVANCED SPHUTAS TAB REPLACEMENT
         slines = []
         slines.append("<div class='card'><table class='key-val-table'>")
-        slines.append("<tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th>")
+        slines.append("<tr><th>ವಿಶೇಷ ಸ್ಫುಟ</th><th>ರಾಶಿ</th>")
         slines.append("<th style='text-align:right'>ಅಂಶ</th>")
         slines.append("<th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>")
         
-        for p in PLANET_ORDER:
-            d = pos[p]
+        sphuta_order = [
+            "ಪ್ರಾಣ ಸ್ಫುಟ", "ದೇಹ ಸ್ಫುಟ", "ಮೃತ್ಯು ಸ್ಫುಟ", 
+            "ತ್ರಿಸ್ಫುಟ", "ಚತುಸ್ಫುಟ", "ಪಂಚಸ್ಫುಟ", "ಸೂತ್ರ ತ್ರಿಸ್ಫುಟ",
+            "ಧೂಮ ಸ್ಫುಟ", "ವ್ಯತೀಪಾತ ಸ್ಫುಟ", "ಪರಿವೇಷ ಸ್ಫುಟ", "ಇಂದ್ರಚಾಪ ಸ್ಫುಟ", "ಉಪಕೇತು ಸ್ಫುಟ"
+        ]
+        
+        for sp in sphuta_order:
+            d = adv_sp[sp]
             r_name = KN_RASHI[int(d/30)]
             deg_fmt = fmt_deg(d)
-            nak_name = details[p]["nak"]
-            pada_num = str(details[p]["pada"])
             
-            sr = "<tr><td><b>" + p + "</b></td><td>" + r_name + "</td>"
+            nak_idx = int(d / 13.333333333)
+            pada = int((d % 13.333333333) / 3.333333333) + 1
+            nak_name = KN_NAK[nak_idx % 27]
+            pada_num = str(pada)
+            
+            sr = "<tr><td><b>" + sp + "</b></td><td>" + r_name + "</td>"
             sr += "<td style='text-align:right'>" + deg_fmt + "</td>"
-            sr += "<td style='text-align:right'>" + nak_name + "-"
-            sr += pada_num + "</td></tr>"
+            sr += "<td style='text-align:right'>" + nak_name + "-" + pada_num + "</td></tr>"
             slines.append(sr)
             
         slines.append("</table></div>")
