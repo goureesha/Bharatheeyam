@@ -164,7 +164,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v13_d12")
+geolocator = Nominatim(user_agent="bharatheeyam_v14_d3_parts")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -529,7 +529,7 @@ elif st.session_state.page == "dashboard":
         st.session_state.page = "input"
         st.rerun()
         
-    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "D9 & D12 ದ್ರೇಕ್ಕಾಣ", "ಟಿಪ್ಪಣಿ"]
+    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ದ್ರೇಕ್ಕಾಣ (D3)", "ಟಿಪ್ಪಣಿ"]
     t1, t2, t3, t4, t5, t6, t7 = st.tabs(tabs)
     
     with t1:
@@ -727,47 +727,64 @@ elif st.session_state.page == "dashboard":
         nlines = []
         nlines.append("<div class='card'><table class='key-val-table'>")
         nlines.append("<tr><th>ಗ್ರಹ</th><th>D1 ಅಂಶ</th>")
-        nlines.append("<th>D9 ರಾಶಿ</th><th>D9-D3</th>")
-        nlines.append("<th>D12 ರಾಶಿ</th><th>D12-D3</th></tr>")
+        nlines.append("<th>D1-D3</th><th>D9-D3</th>")
+        nlines.append("<th>D12-D3</th></tr>")
         
         for p, d in pos.items():
             
+            # Format the degree string for display
             d1_v1 = str(int(d%30))
             d1_v2 = str(int((d%30*60)%60))
             deg_fmt = d1_v1 + "° " + d1_v2 + "'"
             
+            # 1. Base D1's D3
+            d1_idx = int(d / 30)
+            deg_in_d1 = d % 30
+            if deg_in_d1 < 10:
+                d3_d1_idx = d1_idx
+                p1_part = "1"
+            elif deg_in_d1 < 20:
+                d3_d1_idx = (d1_idx + 4) % 12
+                p1_part = "2"
+            else:
+                d3_d1_idx = (d1_idx + 8) % 12
+                p1_part = "3"
+            d3_d1_str = KN_RASHI[d3_d1_idx] + " " + p1_part
+            
+            # 2. D9's D3
             d9_exact = (d * 9) % 360
             d9_idx = int(d9_exact / 30)
-            d9_name = KN_RASHI[d9_idx]
-            
             deg_in_d9 = d9_exact % 30
             if deg_in_d9 < 10:
                 d3_d9_idx = d9_idx
+                p9_part = "1"
             elif deg_in_d9 < 20:
                 d3_d9_idx = (d9_idx + 4) % 12
+                p9_part = "2"
             else:
                 d3_d9_idx = (d9_idx + 8) % 12
-                
-            d3_d9_name = KN_RASHI[d3_d9_idx]
+                p9_part = "3"
+            d3_d9_str = KN_RASHI[d3_d9_idx] + " " + p9_part
             
+            # 3. D12's D3
             d12_exact = (d * 12) % 360
             d12_idx = int(d12_exact / 30)
-            d12_name = KN_RASHI[d12_idx]
-            
             deg_in_d12 = d12_exact % 30
             if deg_in_d12 < 10:
                 d3_d12_idx = d12_idx
+                p12_part = "1"
             elif deg_in_d12 < 20:
                 d3_d12_idx = (d12_idx + 4) % 12
+                p12_part = "2"
             else:
                 d3_d12_idx = (d12_idx + 8) % 12
-                
-            d3_d12_name = KN_RASHI[d3_d12_idx]
+                p12_part = "3"
+            d3_d12_str = KN_RASHI[d3_d12_idx] + " " + p12_part
             
+            # Build the table row
             nr = "<tr><td><b>" + p + "</b></td><td>" + deg_fmt
-            nr += "</td><td>" + d9_name + "</td><td>" 
-            nr += d3_d9_name + "</td><td>" + d12_name
-            nr += "</td><td>" + d3_d12_name + "</td></tr>"
+            nr += "</td><td>" + d3_d1_str + "</td><td>" 
+            nr += d3_d9_str + "</td><td>" + d3_d12_str + "</td></tr>"
             
             nlines.append(nr)
             
