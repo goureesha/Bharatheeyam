@@ -92,7 +92,6 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
-    /* PROMINENT TOGGLE SWITCH TEXT */
     div[data-testid="stToggle"] label p {
         font-weight: 800 !important;
         color: #2B6CB0 !important;
@@ -172,7 +171,6 @@ st.markdown("""
         cursor: pointer;
     }
     
-    /* GRADIENT SAFFRON DASHA DESIGN */
     .md-node { 
         background: linear-gradient(135deg, #FF9933, #DD6B20) !important; 
         color: #FFFFFF !important; 
@@ -198,7 +196,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v24_saffron")
+geolocator = Nominatim(user_agent="bharatheeyam_v25_vedic_names")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -653,10 +651,19 @@ elif st.session_state.page == "dashboard":
     
     with t1:
         c_v, c_b = st.columns(2)
-        opts = [1, 3, 9, 12, 30]
-        v_opt = c_v.selectbox("ವರ್ಗ (Divisional)", opts, format_func=lambda x: "D" + str(x))
         
-        # RESTORED AND STYLED TOGGLE SWITCH
+        # MAPPED VEDIC NAMES
+        d_names = {
+            1: "D1 ರಾಶಿ (Rashi)", 
+            3: "D3 ದ್ರೇಕ್ಕಾಣ (Drekkana)", 
+            9: "D9 ನವಾಂಶ (Navamsha)", 
+            12: "D12 ದ್ವಾದಶಾಂಶ (Dwadasamsha)", 
+            30: "D30 ತ್ರಿಂಶಾಂಶ (Trishamsha)"
+        }
+        
+        opts = [1, 3, 9, 12, 30]
+        v_opt = c_v.selectbox("ವರ್ಗ (Divisional)", opts, format_func=lambda x: d_names[x])
+        
         b_opt = c_b.toggle("ರಾಶಿ / ಭಾವ (Rashi/Bhava)", value=False)
         
         bxs = {i: "" for i in range(12)}
@@ -712,8 +719,10 @@ elif st.session_state.page == "dashboard":
         for idx in grid:
             if idx is None:
                 if c_count == 0: 
-                    g_txt = "<div class='center-box'>ಭಾರತೀಯಮ್<br>D"
-                    g_txt += str(v_opt) + "</div>"
+                    # Use only the Kannada word for the center box (e.g., "ರಾಶಿ", "ನವಾಂಶ")
+                    short_name = d_names[v_opt].split(" ")[1]
+                    g_txt = "<div class='center-box'>ಭಾರತೀಯಮ್<br>"
+                    g_txt += short_name + "</div>"
                     glines.append(g_txt)
                     c_count = 1
             else: 
@@ -750,8 +759,6 @@ elif st.session_state.page == "dashboard":
         
     with t3:
         bal_txt = "ಶಿಷ್ಟ ದಶೆ: " + pan['lord_bal'] + " ಉಳಿಕೆ: " + pan['d_bal']
-        
-        # COLORED TO MATCH SAFFRON THEME
         ht = "<div class='card' style='color:#DD6B20; font-weight:900;'>"
         ht += bal_txt + "</div>"
         st.markdown(ht, unsafe_allow_html=True)
@@ -806,6 +813,7 @@ elif st.session_state.page == "dashboard":
         p_lines = []
         p_lines.append("<div class='card'><table class='key-val-table'>")
         
+        # UPDATED GHATI LABELS
         arr = [
             ("ವಾರ", str(pan['v'])),
             ("ತಿಥಿ", str(pan['t'])),
@@ -813,10 +821,10 @@ elif st.session_state.page == "dashboard":
             ("ಯೋಗ", str(pan['y'])),
             ("ಕರಣ", str(pan['k'])),
             ("ಚಂದ್ರ ರಾಶಿ", str(pan['r'])),
-            ("ಉದಯಾದಿ", str(pan['udayadi']) + " ಘಟಿ"),
-            ("ಗತ", str(pan['gata']) + " ಘಟಿ"),
-            ("ಪರಮ", str(pan['parama']) + " ಘಟಿ"),
-            ("ಶೇಷ", str(pan['rem']) + " ಘಟಿ")
+            ("ಉದಯಾದಿ ಘಟಿ", str(pan['udayadi'])),
+            ("ಗತ ಘಟಿ", str(pan['gata'])),
+            ("ಪರಮ ಘಟಿ", str(pan['parama'])),
+            ("ಶೇಷ ಘಟಿ", str(pan['rem']))
         ]
         
         for k, v in arr:
