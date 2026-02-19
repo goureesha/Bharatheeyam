@@ -2,10 +2,29 @@ import streamlit as st
 import swisseph as swe
 import datetime
 import math
+import json
+import os
 from geopy.geocoders import Nominatim
 
 # ==========================================
-# 1. PAGE CONFIG & THEME
+# 1. DATABASE & FILE HANDLING
+# ==========================================
+DB_FILE = "kundli_db.json"
+
+def load_db():
+    if not os.path.exists(DB_FILE):
+        return {}
+    with open(DB_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_db(name, data):
+    db = load_db()
+    db[name] = data
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(db, f, ensure_ascii=False, indent=2)
+
+# ==========================================
+# 2. PAGE CONFIG & THEME
 # ==========================================
 st.set_page_config(
     page_title="ಭಾರತೀಯಮ್", 
@@ -160,11 +179,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. CORE MATH ENGINE
+# 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v17_live_time_fix")
+geolocator = Nominatim(user_agent="bharatheeyam_v18_database")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -282,7 +301,7 @@ def fmt_ghati(decimal_val):
     return str(g) + "." + str(v).zfill(2)
 
 # ==========================================
-# 3. CALCULATIONS
+# 4. CALCULATIONS
 # ==========================================
 def calculate_mandi(jd_birth, lat, lon, dob_obj):
     y = dob_obj.year
@@ -464,7 +483,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     return positions, pan, extra_details, bhava_sphutas
 
 # ==========================================
-# 4. SESSION STATE & UI
+# 5. SESSION STATE & UI
 # ==========================================
 if 'page' not in st.session_state: 
     st.session_state.page = "input"
@@ -472,12 +491,16 @@ if 'data' not in st.session_state:
     st.session_state.data = {}
 if 'notes' not in st.session_state: 
     st.session_state.notes = ""
+    
+if 'name_input' not in st.session_state: 
+    st.session_state.name_input = ""
+if 'place_input' not in st.session_state: 
+    st.session_state.place_input = "Yellapur"
 if 'lat' not in st.session_state: 
     st.session_state.lat = 14.98
 if 'lon' not in st.session_state: 
     st.session_state.lon = 74.73
 
-# --- GET LIVE TIME ONCE PER PAGE RELOAD ---
 if 'dob_input' not in st.session_state:
     tz_ist = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
     now = datetime.datetime.now(tz_ist)
@@ -502,10 +525,39 @@ st.markdown('<div class="header-box">ಭಾರತೀಯಮ್</div>', unsafe_all
 if st.session_state.page == "input":
     with st.container():
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
-        name = st.text_input("ಹೆಸರು", "ಬಳಕೆದಾರ")
         
-        # Explicit min_value to stop Streamlit from restricting older birth years
+        # --- LOAD SAVED KUNDLIS ---
+        saved_db = load_db()
+        if len(saved_db) > 0:
+            st.info("ಉಳಿಸಿದ ಜಾತಕ (Saved Profiles)")
+            c_sel, c_btn = st.columns([3, 1])
+            k_list = [""] + list(saved_db.keys())
+            
+            sel_n = c_sel.selectbox("Select", k_list, label_visibility="collapsed")
+            
+            if c_btn.button("Open", use_container_width=True):
+                if sel_n != "":
+                    prof = saved_db[sel_n]
+                    st.session_state.name_input = sel_n
+                    
+                    dt_obj = datetime.datetime.strptime(prof['d'], "%Y-%m-%d")
+                    st.session_state.dob_input = dt_obj.date()
+                    
+                    st.session_state.h_input = prof['h']
+                    st.session_state.m_input = prof['m']
+                    st.session_state.ampm_input = prof['ampm']
+                    st.session_state.lat = prof['lat']
+                    st.session_state.lon = prof['lon']
+                    st.session_state.place_input = prof['p']
+                    st.rerun()
+                    
+            st.markdown("<hr>", unsafe_allow_html=True)
+        
+        # --- NEW KUNDLI FORM ---
+        st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
+        
+        name = st.text_input("ಹೆಸರು", key="name_input")
+        
         d_min = datetime.date(1800, 1, 1)
         d_max = datetime.date(2100, 12, 31)
         
@@ -521,7 +573,7 @@ if st.session_state.page == "input":
         m = c2.number_input("ನಿಮಿಷ", 0, 59, key="m_input")
         ampm = c3.selectbox("M", ["AM", "PM"], key="ampm_input")
         
-        place_q = st.text_input("ಊರು ಹುಡುಕಿ", "Yellapur")
+        place_q = st.text_input("ಊರು ಹುಡುಕಿ", key="place_input")
         if st.button("ಹುಡುಕಿ"):
             try:
                 loc = geolocator.geocode(place_q)
@@ -532,8 +584,8 @@ if st.session_state.page == "input":
             except: 
                 st.error("Error")
                 
-        lat = st.number_input("Lat", value=st.session_state.lat, format="%.4f")
-        lon = st.number_input("Lon", value=st.session_state.lon, format="%.4f")
+        lat = st.number_input("Lat", key="lat", format="%.4f")
+        lon = st.number_input("Lon", key="lon", format="%.4f")
         
         if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
             h24 = h + (12 if ampm == "PM" and h != 12 else 0)
@@ -555,10 +607,33 @@ elif st.session_state.page == "dashboard":
     details = st.session_state.data['details'] 
     bhavas = st.session_state.data['bhavas']   
     
-    if st.button("⬅️ ಹಿಂದಕ್ಕೆ"): 
+    # --- TOP BUTTONS (BACK & SAVE) ---
+    c_bk, c_sv = st.columns(2)
+    
+    if c_bk.button("⬅️ ಹಿಂದಕ್ಕೆ"): 
         st.session_state.page = "input"
         st.rerun()
         
+    if c_sv.button("💾 ಉಳಿಸಿ (Save)"):
+        d_str = st.session_state.dob_input.strftime("%Y-%m-%d")
+        
+        prof_data = {
+            "d": d_str,
+            "h": st.session_state.h_input,
+            "m": st.session_state.m_input,
+            "ampm": st.session_state.ampm_input,
+            "lat": st.session_state.lat,
+            "lon": st.session_state.lon,
+            "p": st.session_state.place_input
+        }
+        
+        n_val = st.session_state.name_input
+        if n_val == "":
+            n_val = "Unknown_" + d_str
+            
+        save_db(n_val, prof_data)
+        st.success("ಉಳಿಸಲಾಗಿದೆ! (Saved successfully)")
+    
     tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ದ್ರೇಕ್ಕಾಣ (D3)", "ಟಿಪ್ಪಣಿ"]
     t1, t2, t3, t4, t5, t6, t7 = st.tabs(tabs)
     
