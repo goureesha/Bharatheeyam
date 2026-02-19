@@ -183,7 +183,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v20_visible_about")
+geolocator = Nominatim(user_agent="bharatheeyam_v21_ad_free")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -879,9 +879,14 @@ elif st.session_state.page == "dashboard":
 
     with t8:
         st.markdown("<div class='card' style='text-align:center;'>", unsafe_allow_html=True)
-        st.markdown("### 💎 ಪ್ರೀಮಿಯಂ ಚಂದಾದಾರಿಕೆ (Premium)")
-        st.markdown("Unlock advanced Shadbala, Ashtakavarga, and PDF Exports.")
-        st.button("Upgrade Now - ₹99/month", type="primary", use_container_width=True)
+        st.markdown("### 🚫 ಜಾಹೀರಾತು-ಮುಕ್ತ (Ad-Free)")
+        
+        info_text = "ಜಾಹೀರಾತುಗಳಿಲ್ಲದೆ ನಿರಂತರವಾಗಿ ಆ್ಯಪ್ ಬಳಸಿ.<br>"
+        info_text += "Enjoy a seamless, distraction-free calculation experience."
+        st.markdown(info_text, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.button("Remove Ads (₹99)", type="primary", use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with t9:
@@ -890,12 +895,11 @@ elif st.session_state.page == "dashboard":
         
         info = "**ಆವೃತ್ತಿ (Version): 1.0.0**<br><br>"
         info += "ನಿಖರವಾದ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಲೆಕ್ಕಾಚಾರಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.<br>"
-        info += "Designed for precise Vedic Astrology calculations, specifically tailored for accurate Dasha, Panchanga, and Divisional chart generation. Built to operate seamlessly offline for fast and private astrological consultations."
+        info += "Designed for precise Vedic Astrology calculations, specifically tailored for accurate Dasha, Panchanga, and Nadi sub-divisional charts. Built to operate seamlessly offline for fast and private astrological consultations."
         st.markdown(info, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Safe, visible, standard Streamlit button for the source code link
         st.link_button("</> Source Code", "https://github.com/your-username/bharatheeyam", use_container_width=True)
         
         st.markdown("</div>", unsafe_allow_html=True)
