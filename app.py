@@ -196,7 +196,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v34_ashtakavarga")
+geolocator = Nominatim(user_agent="bharatheeyam_v35_brihat_jataka")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -335,13 +335,61 @@ def fmt_deg(dec_deg):
     s_sc = str(sc).zfill(2)
     return s_dg + "° " + s_mn + "' " + s_sc + '"'
 
-def get_sav_bindus(jd):
-    base_sav = [28, 25, 30, 27, 29, 32, 24, 31, 26, 28, 30, 27]
-    shift = int(jd * 100) % 12
-    return base_sav[shift:] + base_sav[:shift]
+# --- BRIHAT JATAKA EXACT ASHTAKAVARGA LOGIC ---
+def calculate_sav(positions):
+    P_KEYS = ["ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ", "ಲಗ್ನ"]
+    r_idx = {k: int(positions[k] / 30) for k in P_KEYS}
+    sav = [0] * 12
+    
+    BAV_RULES = {
+        "ರವಿ": [
+            [1,2,4,7,8,9,10,11], [3,6,10,11], [1,2,4,7,8,9,10,11], 
+            [3,5,6,9,10,11,12], [5,6,9,11], [6,7,12], 
+            [1,2,4,7,8,9,10,11], [3,4,6,10,11,12]
+        ],
+        "ಚಂದ್ರ": [
+            [3,6,7,8,10,11], [1,3,6,7,10,11], [2,3,5,6,9,10,11],
+            [1,3,4,5,7,8,10,11], [1,4,7,8,10,11,12], [3,4,5,7,9,10,11],
+            [3,5,6,11], [3,6,10,11]
+        ],
+        "ಕುಜ": [
+            [3,5,6,10,11], [3,6,11], [1,2,4,7,8,10,11],
+            [3,5,6,11], [6,10,11,12], [6,8,11,12],
+            [1,4,7,8,9,10,11], [1,3,6,10,11]
+        ],
+        "ಬುಧ": [
+            [5,6,9,11,12], [2,4,6,8,10,11], [1,2,4,7,8,9,10,11],
+            [1,3,5,6,9,10,11,12], [6,8,11,12], [1,2,3,4,5,8,9,11],
+            [1,2,4,7,8,9,10,11], [1,2,4,6,8,10,11]
+        ],
+        "ಗುರು": [
+            [1,2,3,4,7,8,9,10,11], [2,5,7,9,11], [1,2,4,7,8,10,11],
+            [1,2,4,5,6,9,10,11], [1,2,3,4,7,8,10,11], [2,5,6,9,10,11],
+            [3,5,6,12], [1,2,4,5,6,9,10,11]
+        ],
+        "ಶುಕ್ರ": [
+            [8,11,12], [1,2,3,4,5,8,9,11,12], [3,5,6,9,11,12],
+            [3,5,6,9,11], [5,8,9,10,11], [1,2,3,4,5,8,9,10,11],
+            [3,4,5,8,9,10,11], [1,2,3,4,5,8,9,11]
+        ],
+        "ಶನಿ": [
+            [1,2,4,7,8,10,11], [3,6,11], [3,5,6,10,11,12],
+            [6,8,9,10,11,12], [5,6,11,12], [6,11,12],
+            [3,5,6,11], [1,3,4,6,10,11]
+        ]
+    }
+    
+    for target in ["ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ"]:
+        rules = BAV_RULES[target]
+        for ref_idx, ref_planet in enumerate(P_KEYS):
+            ref_rashi = r_idx[ref_planet]
+            for h in rules[ref_idx]:
+                sav[(ref_rashi + h - 1) % 12] += 1
+                
+    return sav
 
 # ==========================================
-# 4. CALCULATIONS & SPEED LOGIC
+# 4. MAIN CALCULATIONS & SPEED LOGIC
 # ==========================================
 def calculate_mandi(jd_birth, lat, lon, dob_obj):
     y = dob_obj.year
@@ -514,7 +562,8 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     bal = YEARS[n_idx % 9] * (1 - perc)
     dt_birth = datetime.datetime.fromtimestamp((jd_birth - 2440587.5) * 86400)
     
-    sav_bindus = get_sav_bindus(jd_birth)
+    # EXACT PARASHARI ASHTAKAVARGA ARRAY
+    sav_bindus = calculate_sav(positions)
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
@@ -802,7 +851,6 @@ elif st.session_state.page == "dashboard":
         save_db(n_val, prof_data)
         st.success("ಉಳಿಸಲಾಗಿದೆ! (Saved successfully)")
     
-    # REPLACED DREKKANA WITH ASHTAKAVARGA
     tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
     t1, t2, t3, t4, t5, t6, t7, t8, t9 = st.tabs(tabs)
     
