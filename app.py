@@ -50,7 +50,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_app_final")
+geolocator = Nominatim(user_agent="bharatheeyam_pro_fixed_final")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -71,7 +71,6 @@ def get_altitude_manual(jd, lat, lon):
     sin_alt = (math.sin(lat_rad) * math.sin(dec_rad)) + (math.cos(lat_rad) * math.cos(dec_rad) * math.cos(ha_rad))
     return math.degrees(math.asin(sin_alt))
 
-# THE LOOP FROM DAYTIME PERFECT CODE
 def find_sunrise_set(jd_noon, lat, lon):
     start_jd = jd_noon - 0.5
     rise_time, set_time = -1, -1
@@ -109,7 +108,9 @@ def find_nak_limit(jd, target_deg):
     return mid
 
 def fmt_ghati(decimal_val):
-    g = int(decimal_val); v = int(round((decimal_val - g) * 60))
+    g = int(decimal_val)
+    rem = decimal_val - g
+    v = int(round(rem * 60))
     if v == 60: g += 1; v = 0
     return f"{g}.{v:02d}"
 
@@ -117,7 +118,73 @@ def jd_to_time_str(jd):
     dt = datetime.datetime.fromtimestamp((jd - 2440587.5) * 86400.0)
     return dt.strftime("%I:%M:%S %p")
 
-def get_full_calculations(jd_birth, lat, lon):
+# ==========================================
+# 3. MANDI CALCULATOR (With Explicit Sunset Base)
+# ==========================================
+def calculate_mandi(jd_birth, lat, lon, dob_obj):
+    # 1. Get Today's Sunrise/Sunset
+    sr_civil, ss_civil = find_sunrise_set(jd_birth, lat, lon)
+    
+    # 2. Get Civil Weekday (Sun=0, Mon=1...Sat=6) for Indexing
+    py_weekday = dob_obj.weekday() # 0=Mon
+    civil_weekday_idx = (py_weekday + 1) % 7 # Convert to Sun=0
+    
+    is_night = False
+    start_base = 0.0
+    duration = 0.0
+    final_wday = 0
+    
+    # --- DAYTIME ---
+    if jd_birth >= sr_civil and jd_birth < ss_civil:
+        is_night = False
+        final_wday = civil_weekday_idx
+        
+        start_base = sr_civil # Starts at Sunrise
+        duration = ss_civil - sr_civil
+        panch_sr = sr_civil
+        
+    # --- NIGHTTIME ---
+    else:
+        is_night = True
+        
+        # PRE-SUNRISE (Yesterday Night)
+        if jd_birth < sr_civil:
+            final_wday = (civil_weekday_idx - 1) % 7
+            
+            # Recalculate Previous Sunset
+            prev_sr, prev_ss = find_sunrise_set(jd_birth - 1.0, lat, lon)
+            
+            # CRITICAL: Night starts at Sunset
+            start_base = prev_ss 
+            duration = sr_civil - prev_ss
+            panch_sr = prev_sr
+            
+        # POST-SUNSET (Today Night)
+        else:
+            final_wday = civil_weekday_idx
+            
+            # Recalculate Next Sunrise
+            next_sr, _ = find_sunrise_set(jd_birth + 1.0, lat, lon)
+            
+            # CRITICAL: Night starts at Sunset
+            start_base = ss_civil 
+            duration = next_sr - ss_civil
+            panch_sr = sr_civil
+
+    # Apply Factors
+    if not is_night:
+        factors = [26, 22, 18, 14, 10, 6, 2] # Day
+    else:
+        factors = [10, 6, 2, 26, 22, 18, 14] # Night
+        
+    factor = factors[final_wday]
+    
+    # Calculate Mandi Time
+    mandi_jd = start_base + (duration * factor / 30.0)
+    
+    return mandi_jd, is_night, panch_sr, final_wday
+
+def get_full_calculations(jd_birth, lat, lon, dob_obj):
     swe.set_topo(float(lon), float(lat), 0)
     ayan = swe.get_ayanamsa(jd_birth)
     positions = {}
@@ -129,66 +196,9 @@ def get_full_calculations(jd_birth, lat, lon):
     positions[KN_PLANETS[101]], positions[KN_PLANETS[102]] = rahu, (rahu + 180) % 360
     positions[KN_PLANETS["Lagna"]] = (swe.houses(jd_birth, float(lat), float(lon), b'P')[1][0] - ayan) % 360
     
-    # ----------------------------------------------------
-    # UNIFIED MANDI CALCULATION
-    # ----------------------------------------------------
-    # 1. Sunrise/Set using the Loop Method
-    sr_civil, ss_civil = find_sunrise_set(jd_birth, lat, lon)
-    
-    # 2. Weekday Calc (From Hindi Code)
-    jd_local = jd_birth + (5.5/24.0)
-    cal_wday = int(jd_local + 0.5 + 1.5) % 7 
-    
-    is_night = False
-    
-    # 3. Logic Application
-    # Case A: Pre-Sunrise (Yesterday Night)
-    if jd_birth < sr_civil:
-        is_night = True
-        
-        # Use Night Code Logic
-        prev_sr, prev_ss = find_sunrise_set(jd_birth - 1.0, lat, lon)
-        w_idx = (cal_wday - 1) % 7
-        
-        start_base = prev_ss
-        duration = sr_civil - prev_ss
-        panch_sr = prev_sr
-        
-    # Case B: Post-Sunset (Today Night)
-    elif jd_birth >= ss_civil:
-        is_night = True
-        
-        # Use Night Code Logic
-        next_sr, _ = find_sunrise_set(jd_birth + 1.0, lat, lon)
-        w_idx = cal_wday
-        
-        start_base = ss_civil
-        duration = next_sr - ss_civil
-        panch_sr = sr_civil
-        
-    # Case C: Daytime (Today Day)
-    else:
-        is_night = False
-        
-        # Use Day Code Logic
-        w_idx = cal_wday
-        start_base = sr_civil
-        duration = ss_civil - sr_civil
-        panch_sr = sr_civil
-        
-    # 4. Apply Factors (From Hindi Code)
-    if is_night:
-        # [Sun, Mon, Tue, Wed, Thu, Fri, Sat] for NIGHT
-        factors = [10, 6, 2, 26, 22, 18, 14]
-    else:
-        # [Sun, Mon, Tue, Wed, Thu, Fri, Sat] for DAY
-        factors = [26, 22, 18, 14, 10, 6, 2]
-        
-    factor = factors[w_idx]
-    
-    # 5. Calculate
-    mtime = start_base + (duration * factor / 30.0)
-    mandi_deg = (swe.houses(mtime, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mtime)) % 360
+    # Mandi
+    mandi_time_jd, is_night, panch_sr, w_idx = calculate_mandi(jd_birth, lat, lon, dob_obj)
+    mandi_deg = (swe.houses(mandi_time_jd, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mandi_time_jd)) % 360
     positions[KN_PLANETS["Ma"]] = mandi_deg
 
     # Panchanga
@@ -211,12 +221,12 @@ def get_full_calculations(jd_birth, lat, lon):
         "d_bal": f"{LORDS[n_idx%9]} ಉಳಿಕೆ: {int(bal)}ವ {int((bal%1)*12)}ತಿ",
         "n_idx": n_idx, "perc": perc, "date_obj": datetime.datetime.fromtimestamp((jd_birth - 2440587.5) * 86400.0),
         "m_period": "Night" if is_night else "Day",
-        "m_time": jd_to_time_str(mtime)
+        "m_time": jd_to_time_str(mandi_time_jd)
     }
     return positions, pan
 
 # ==========================================
-# 4. SESSION STATE
+# 4. SESSION STATE & UI
 # ==========================================
 if 'page' not in st.session_state: st.session_state.page = "input"
 if 'data' not in st.session_state: st.session_state.data = {}
@@ -225,9 +235,6 @@ if 'lat' not in st.session_state: st.session_state.lat, st.session_state.lon = 1
 
 st.markdown('<div class="header-box">ಭಾರತೀಯಮ್</div>', unsafe_allow_html=True)
 
-# ==========================================
-# 5. APP UI
-# ==========================================
 if st.session_state.page == "input":
     with st.container():
         st.markdown("<div class='card'>", unsafe_allow_html=True)
@@ -246,7 +253,8 @@ if st.session_state.page == "input":
         if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
             h24 = h + (12 if ampm == "PM" and h != 12 else 0); h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
-            pos, pan = get_full_calculations(jd, lat, lon)
+            # Pass DOB Object
+            pos, pan = get_full_calculations(jd, lat, lon, dob)
             st.session_state.data = {"pos": pos, "pan": pan}; st.session_state.page = "dashboard"; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
