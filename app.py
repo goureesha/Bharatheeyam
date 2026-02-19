@@ -92,6 +92,7 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
+    /* PROMINENT TOGGLE SWITCH TEXT */
     div[data-testid="stToggle"] label p {
         font-weight: 800 !important;
         color: #2B6CB0 !important;
@@ -196,7 +197,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v25_vedic_names")
+geolocator = Nominatim(user_agent="bharatheeyam_v26_pure_vedic")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -204,7 +205,7 @@ KN_PLANETS = {
     "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"
 }
 KN_RASHI = [
-    "ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", 
+    "ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "కర్ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", 
     "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"
 ]
 KN_VARA = [
@@ -541,7 +542,7 @@ if st.session_state.page == "input":
         saved_db = load_db()
         if len(saved_db) > 0:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
-            st.markdown("#### 📂 ಉಳಿಸಿದ ಜಾತಕ (Saved Profiles)")
+            st.markdown("#### 📂 ಉಳಿಸಿದ ಜಾತಕ")
             c_sel, c_btn = st.columns([3, 1])
             k_list = [""] + list(saved_db.keys())
             
@@ -565,15 +566,15 @@ if st.session_state.page == "input":
             st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.markdown("#### ✨ ಹೊಸ ಜಾತಕ (New Kundli)")
+        st.markdown("#### ✨ ಹೊಸ ಜಾತಕ")
         
-        name = st.text_input("ಹೆಸರು (Name)", key="name_input")
+        name = st.text_input("ಹೆಸರು", key="name_input")
         
         d_min = datetime.date(1800, 1, 1)
         d_max = datetime.date(2100, 12, 31)
         
         dob = st.date_input(
-            "ದಿನಾಂಕ (Date)", 
+            "ದಿನಾಂಕ", 
             key="dob_input", 
             min_value=d_min, 
             max_value=d_max
@@ -584,8 +585,8 @@ if st.session_state.page == "input":
         m = c2.number_input("ನಿಮಿಷ", 0, 59, key="m_input")
         ampm = c3.selectbox("M", ["AM", "PM"], key="ampm_input")
         
-        place_q = st.text_input("ಊರು ಹುಡುಕಿ (City Search)", key="place_input")
-        if st.button("ಹುಡುಕಿ (Search)"):
+        place_q = st.text_input("ಊರು ಹುಡುಕಿ", key="place_input")
+        if st.button("ಹುಡುಕಿ"):
             try:
                 loc = geolocator.geocode(place_q)
                 if loc: 
@@ -600,7 +601,7 @@ if st.session_state.page == "input":
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        if st.button("ಜಾತಕ ರಚಿಸಿ (Generate)", type="primary"):
+        if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
             h24 = h + (12 if ampm == "PM" and h != 12 else 0)
             h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
@@ -622,11 +623,11 @@ elif st.session_state.page == "dashboard":
     
     c_bk, c_sv = st.columns(2)
     
-    if c_bk.button("⬅️ ಹಿಂದಕ್ಕೆ (Back)"): 
+    if c_bk.button("⬅️ ಹಿಂದಕ್ಕೆ"): 
         st.session_state.page = "input"
         st.rerun()
         
-    if c_sv.button("💾 ಉಳಿಸಿ (Save)"):
+    if c_sv.button("💾 ಉಳಿಸಿ"):
         d_str = st.session_state.dob_input.strftime("%Y-%m-%d")
         
         prof_data = {
@@ -652,19 +653,20 @@ elif st.session_state.page == "dashboard":
     with t1:
         c_v, c_b = st.columns(2)
         
-        # MAPPED VEDIC NAMES
+        # PURE VEDIC NAMES FOR DROPDOWN
         d_names = {
-            1: "D1 ರಾಶಿ (Rashi)", 
-            3: "D3 ದ್ರೇಕ್ಕಾಣ (Drekkana)", 
-            9: "D9 ನವಾಂಶ (Navamsha)", 
-            12: "D12 ದ್ವಾದಶಾಂಶ (Dwadasamsha)", 
-            30: "D30 ತ್ರಿಂಶಾಂಶ (Trishamsha)"
+            1: "ರಾಶಿ", 
+            3: "ದ್ರೇಕ್ಕಾಣ", 
+            9: "ನವಾಂಶ", 
+            12: "ದ್ವಾದಶಾಂಶ", 
+            30: "ತ್ರಿಂಶಾಂಶ"
         }
         
         opts = [1, 3, 9, 12, 30]
-        v_opt = c_v.selectbox("ವರ್ಗ (Divisional)", opts, format_func=lambda x: d_names[x])
+        v_opt = c_v.selectbox("ವರ್ಗ", opts, format_func=lambda x: d_names[x])
         
-        b_opt = c_b.toggle("ರಾಶಿ / ಭಾವ (Rashi/Bhava)", value=False)
+        # PROMINENT TOGGLE SWITCH
+        b_opt = c_b.toggle("ರಾಶಿ / ಭಾವ", value=False)
         
         bxs = {i: "" for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
@@ -719,10 +721,8 @@ elif st.session_state.page == "dashboard":
         for idx in grid:
             if idx is None:
                 if c_count == 0: 
-                    # Use only the Kannada word for the center box (e.g., "ರಾಶಿ", "ನವಾಂಶ")
-                    short_name = d_names[v_opt].split(" ")[1]
                     g_txt = "<div class='center-box'>ಭಾರತೀಯಮ್<br>"
-                    g_txt += short_name + "</div>"
+                    g_txt += d_names[v_opt] + "</div>"
                     glines.append(g_txt)
                     c_count = 1
             else: 
@@ -813,7 +813,6 @@ elif st.session_state.page == "dashboard":
         p_lines = []
         p_lines.append("<div class='card'><table class='key-val-table'>")
         
-        # UPDATED GHATI LABELS
         arr = [
             ("ವಾರ", str(pan['v'])),
             ("ತಿಥಿ", str(pan['t'])),
@@ -857,9 +856,11 @@ elif st.session_state.page == "dashboard":
     with t6:
         nlines = []
         nlines.append("<div class='card'><table class='key-val-table'>")
-        nlines.append("<tr><th>ಗ್ರಹ</th><th>D1 ಅಂಶ</th>")
-        nlines.append("<th>D1-D3</th><th>D9-D3</th>")
-        nlines.append("<th>D12-D3</th></tr>")
+        
+        # PURE KANNADA HEADERS
+        nlines.append("<tr><th>ಗ್ರಹ</th><th>ಅಂಶ</th>")
+        nlines.append("<th>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</th><th>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</th>")
+        nlines.append("<th>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</th></tr>")
         
         for p, d in pos.items():
             
@@ -908,10 +909,9 @@ elif st.session_state.page == "dashboard":
 
     with t8:
         st.markdown("<div class='card' style='text-align:center;'>", unsafe_allow_html=True)
-        st.markdown("### 🚫 ಜಾಹೀರಾತು-ಮುಕ್ತ (Ad-Free)")
+        st.markdown("### 🚫 ಜಾಹೀರಾತು-ಮುಕ್ತ")
         
-        info_text = "<p style='color:#718096; font-weight:600;'>ಜಾಹೀರಾತುಗಳಿಲ್ಲದೆ ನಿರಂತರವಾಗಿ ಆ್ಯಪ್ ಬಳಸಿ.<br>"
-        info_text += "Enjoy a seamless, distraction-free calculation experience.</p>"
+        info_text = "<p style='color:#718096; font-weight:600;'>ಜಾಹೀರಾತುಗಳಿಲ್ಲದೆ ನಿರಂತರವಾಗಿ ಆ್ಯಪ್ ಬಳಸಿ.<br></p>"
         st.markdown(info_text, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
@@ -920,12 +920,11 @@ elif st.session_state.page == "dashboard":
 
     with t9:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        st.markdown("#### ಭಾರತೀಯಮ್ (Bharatheeyam)")
+        st.markdown("#### ಭಾರತೀಯಮ್")
         
         info = "<p style='color:#4A5568; font-size:14px; line-height:1.6;'>"
-        info += "<b>ಆವೃತ್ತಿ (Version): 1.0.0</b><br><br>"
-        info += "ನಿಖರವಾದ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಲೆಕ್ಕಾಚಾರಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.<br>"
-        info += "Designed for precise Vedic Astrology calculations, specifically tailored for accurate Dasha, Panchanga, and Nadi sub-divisional charts. Built to operate seamlessly offline for fast and private astrological consultations.</p>"
+        info += "<b>ಆವೃತ್ತಿ: 1.0.0</b><br><br>"
+        info += "ನಿಖರವಾದ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಲೆಕ್ಕಾಚಾರಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.</p>"
         st.markdown(info, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
