@@ -1,7 +1,6 @@
 import streamlit as st
 import swisseph as swe
 import datetime
-import pytz
 from geopy.geocoders import Nominatim
 
 # ==========================================
@@ -50,7 +49,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_pro_v2025")
+geolocator = Nominatim(user_agent="bharatheeyam_pro_fixed_v3")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -86,49 +85,65 @@ def jd_to_time_str(jd):
 # 3. ROBUST MANDI CALCULATION
 # ==========================================
 def calculate_mandi(jd_birth, lat, lon):
+    # Correct Tuple Format for Geopos: (lon, lat, height)
+    geopos = (float(lon), float(lat), 0.0)
+    
     # 1. Find Events: Previous Rise/Set and Next Rise/Set relative to birth
-    # Note: swe.rise_trans returns a tuple. Index 1 is the time (JD).
+    # Search backwards (-1 day) to ensure we capture the previous events
     
-    # Search backwards for last sunrise
-    prev_rise = swe.rise_trans(jd_birth, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_RISE, lon, lat, 0)[1][0]
-    # Search backwards for last sunset
-    prev_set = swe.rise_trans(jd_birth, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_SET, lon, lat, 0)[1][0]
+    # Last Sunrise
+    res_pr = swe.rise_trans(jd_birth - 1.0, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_RISE, geopos, 0, 0)
+    prev_rise = res_pr[1][0]
     
-    # Search forwards for next sunrise
-    next_rise = swe.rise_trans(jd_birth, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_RISE, lon, lat, 0)[1][0]
-    # Search forwards for next sunset
-    next_set = swe.rise_trans(jd_birth, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_SET, lon, lat, 0)[1][0]
-
-    # 2. Determine Day vs Night
-    # If the last event was Sunrise (and it happened after the last sunset), it's Day.
-    # If the last event was Sunset, it's Night.
+    # Last Sunset
+    res_ps = swe.rise_trans(jd_birth - 1.0, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_SET, geopos, 0, 0)
+    prev_set = res_ps[1][0]
     
-    is_night = False
-    start_base = 0.0
-    duration = 0.0
+    # Check if we need to search forward if the above returned very old events
+    # We want the event strictly < jd_birth but closest to it
+    # Usually rise_trans finds the *next* event after the start time provided.
     
-    if prev_rise > prev_set:
-        # === DAYTIME ===
+    # Better logic: Search for Next Rise/Set starting from jd_birth - 1.2 days 
+    # and pick the last one that is <= jd_birth
+    
+    # Simplified Professional Logic:
+    # 1. Get Next Rise and Next Set starting from jd_birth
+    # 2. Infer current state
+    
+    next_rise = swe.rise_trans(jd_birth, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_RISE, geopos, 0, 0)[1][0]
+    next_set = swe.rise_trans(jd_birth, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_SET, geopos, 0, 0)[1][0]
+    
+    # Determine Period
+    if next_set < next_rise:
+        # If Next Set comes BEFORE Next Rise, we are currently in Daytime
         is_night = False
-        start_base = prev_rise
-        # Duration is from this Sunrise to the Next Sunset
-        # (We need the sunset immediately following this sunrise)
-        # Since prev_rise > prev_set, next_set is the sunset closing this day.
-        duration = next_set - prev_rise
-        vedic_start_jd = prev_rise
+        
+        # Current Day Start = The Rise that just happened
+        # We find it by searching backwards from current Set
+        sr_today = swe.rise_trans(next_set - 1.0, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_RISE, geopos, 0, 0)[1][0]
+        ss_today = next_set
+        
+        start_base = sr_today
+        duration = ss_today - sr_today
+        panch_sr = sr_today
         
     else:
-        # === NIGHTTIME ===
+        # If Next Rise comes BEFORE Next Set, we are currently in Nighttime
         is_night = True
-        start_base = prev_set
-        # Duration is from this Sunset to the Next Sunrise
-        duration = next_rise - prev_set
-        vedic_start_jd = prev_rise # The Vedic day always starts at the PREVIOUS Sunrise
+        
+        # Current Night Start = The Sunset that just happened
+        ss_today = swe.rise_trans(next_rise - 1.0, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_SET, geopos, 0, 0)[1][0]
+        sr_next = next_rise
+        
+        start_base = ss_today
+        duration = sr_next - ss_today
+        
+        # For Panchanga, the Vedic day started at the Sunrise BEFORE this Sunset
+        panch_sr = swe.rise_trans(ss_today - 1.0, swe.SUN, '', swe.FLG_SWIEPH, swe.CALC_RISE, geopos, 0, 0)[1][0]
     
     # 3. Determine Vedic Weekday
-    # We must find the weekday of the 'vedic_start_jd' (the sunrise that started this cycle)
-    # Convert JD to Python Datetime to get weekday safely
-    dt_vedic = datetime.datetime.fromtimestamp((vedic_start_jd - 2440587.5) * 86400.0)
+    # Based on panch_sr (The sunrise that started this Vedic Day)
+    dt_vedic = datetime.datetime.fromtimestamp((panch_sr - 2440587.5) * 86400.0)
     # Python: Mon=0, Sun=6. Vedic: Sun=0, Mon=1...
     w_idx = (dt_vedic.weekday() + 1) % 7
     
@@ -145,7 +160,7 @@ def calculate_mandi(jd_birth, lat, lon):
     # 5. Calculate Mandi Time
     mandi_jd = start_base + (duration * factor / 30.0)
     
-    return mandi_jd, is_night, prev_rise
+    return mandi_jd, is_night, panch_sr
 
 def get_full_calculations(jd_birth, lat, lon):
     swe.set_topo(float(lon), float(lat), 0)
