@@ -209,7 +209,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v38_navamsha_sphuta")
+geolocator = Nominatim(user_agent="bharatheeyam_v39_popup_revert")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -633,27 +633,25 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: 
         asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    # --- EXACT SPHUTA CALCULATIONS ---
+    # Varga Math
     d1_idx = int(deg/30)
     d1_name = KN_RASHI[d1_idx]
+    
+    r_val = int(deg/30)
     dr_val = deg % 30
+    is_odd = (r_val % 2 == 0)
+    if is_odd: d2_idx = 4 if dr_val < 15 else 3
+    else: d2_idx = 3 if dr_val < 15 else 4
     
-    # 1. RASHI DREKKANA (D3)
-    if dr_val < 10: 
-        true_d3_idx = d1_idx
-        p1_part = " 1"
-    elif dr_val < 20: 
-        true_d3_idx = (d1_idx + 4) % 12
-        p1_part = " 2"
-    else: 
-        true_d3_idx = (d1_idx + 8) % 12
-        p1_part = " 3"
-        
+    if dr_val < 10: true_d3_idx = d1_idx
+    elif dr_val < 20: true_d3_idx = (d1_idx + 4) % 12
+    else: true_d3_idx = (d1_idx + 8) % 12
+    
+    if dr_val < 10: p1_part = " 1"
+    elif dr_val < 20: p1_part = " 2"
+    else: p1_part = " 3"
     d3_d1_str = d1_name + p1_part
-    deg_in_d3 = (dr_val % 10) * 3
-    d3_sphuta = fmt_deg(deg_in_d3)
     
-    # 2. NAVAMSHA DREKKANA (D9)
     d9_exact = (deg * 9) % 360
     d9_idx = int(d9_exact / 30)
     d9_name = KN_RASHI[d9_idx]
@@ -662,26 +660,16 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     if deg_in_d9 < 10: p9_part = " 1"
     elif deg_in_d9 < 20: p9_part = " 2"
     else: p9_part = " 3"
-    
     d3_d9_str = d9_name + p9_part
-    d9_sphuta = fmt_deg(d9_exact)
     
-    # 3. DWADASAMSHA DREKKANA (D12)
-    d12_idx = (int(deg/30) + int(dr_val/2.5)) % 12
+    d12_idx = (int(deg/30) + int((deg%30)/2.5)) % 12
     d12_name = KN_RASHI[d12_idx]
     
-    deg_in_d12 = (dr_val % 2.5) * 12
+    deg_in_d12 = (deg % 2.5) * 12
     if deg_in_d12 < 10: p12_part = " 1"
     elif deg_in_d12 < 20: p12_part = " 2"
     else: p12_part = " 3"
-    
     d3_d12_str = d12_name + p12_part
-    d12_sphuta = fmt_deg(deg_in_d12)
-    
-    # Other Vargas
-    is_odd = ((int(deg/30)) % 2 == 0)
-    if is_odd: d2_idx = 4 if dr_val < 15 else 3
-    else: d2_idx = 3 if dr_val < 15 else 4
     
     if is_odd:
         if dr_val < 5: d30_idx = 0
@@ -716,17 +704,13 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     v_arr.append("</table></div>")
     st.markdown("".join(v_arr), unsafe_allow_html=True)
     
-    # NEW 3-COLUMN TABLE FOR EXACT SPHUTAS
-    st.markdown("#### 📐 ಉಪ-ದ್ರೇಕ್ಕಾಣ (Exact Sphuta)")
+    # REVERTED TO EXACTLY 2 COLUMNS (NO EXACT SPHUTA)
+    st.markdown("#### 📐 ಉಪ-ದ್ರೇಕ್ಕಾಣ")
     sd_arr = []
     sd_arr.append("<div class='card'><table class='key-val-table'>")
-    sd_arr.append("<tr><th style='text-align:left; color:#4A00E0; padding-bottom:8px;'>ವಿವರ</th>")
-    sd_arr.append("<th style='text-align:left; color:#4A00E0; padding-bottom:8px;'>ಸ್ಥಾನ</th>")
-    sd_arr.append("<th style='text-align:left; color:#4A00E0; padding-bottom:8px;'>ಸ್ಫುಟ</th></tr>")
-    
-    sd_arr.append("<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d1_str + "</td><td>" + d3_sphuta + "</td></tr>")
-    sd_arr.append("<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d9_str + "</td><td>" + d9_sphuta + "</td></tr>")
-    sd_arr.append("<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d12_str + "</td><td>" + d12_sphuta + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d1_str + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d9_str + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d12_str + "</td></tr>")
     sd_arr.append("</table></div>")
     st.markdown("".join(sd_arr), unsafe_allow_html=True)
 
@@ -902,7 +886,6 @@ elif st.session_state.page == "dashboard":
         opts = [1, 2, 3, 9, 12, 30]
         v_opt_base = c_v.selectbox("ವರ್ಗ", opts, format_func=lambda x: d_names[x])
         
-        # --- NEW 3-WAY RADIO TOGGLE ---
         mode_opts = ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"]
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", mode_opts, horizontal=True)
         
