@@ -195,7 +195,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v31_detailed_deg")
+geolocator = Nominatim(user_agent="bharatheeyam_v32_popup_sync")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -319,7 +319,6 @@ def fmt_ghati(decimal_val):
         v = 0
     return str(g) + "." + str(v).zfill(2)
 
-# --- NEW DETAILED DEGREE FORMATTER ---
 def fmt_deg(dec_deg):
     rem = dec_deg % 30
     t_sec = int(round(rem * 3600))
@@ -536,7 +535,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
 @st.dialog("ಗ್ರಹದ ಸಂಪೂರ್ಣ ವಿವರ")
 def show_planet_popup(p_name, deg, speed, sun_deg):
     
-    # NEW DETAILED FORMAT
     deg_fmt = fmt_deg(deg)
     
     is_asta = False
@@ -564,7 +562,9 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: 
         asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
+    # Varga Math
     d1_idx = int(deg/30)
+    d1_name = KN_RASHI[d1_idx]
     
     r_val = int(deg/30)
     dr_val = deg % 30
@@ -572,15 +572,35 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     if is_odd: d2_idx = 4 if dr_val < 15 else 3
     else: d2_idx = 3 if dr_val < 15 else 4
     
-    if dr_val < 10: d3_idx = d1_idx; d3_part = " 1"
-    elif dr_val < 20: d3_idx = (d1_idx + 4) % 12; d3_part = " 2"
-    else: d3_idx = (d1_idx + 8) % 12; d3_part = " 3"
+    if dr_val < 10: true_d3_idx = d1_idx
+    elif dr_val < 20: true_d3_idx = (d1_idx + 4) % 12
+    else: true_d3_idx = (d1_idx + 8) % 12
+    
+    # EXACT DREKKANA TAB SUB-PARTS
+    if dr_val < 10: p1_part = " 1"
+    elif dr_val < 20: p1_part = " 2"
+    else: p1_part = " 3"
+    d3_d1_str = d1_name + p1_part
     
     d9_exact = (deg * 9) % 360
     d9_idx = int(d9_exact / 30)
+    d9_name = KN_RASHI[d9_idx]
+    
+    deg_in_d9 = d9_exact % 30
+    if deg_in_d9 < 10: p9_part = " 1"
+    elif deg_in_d9 < 20: p9_part = " 2"
+    else: p9_part = " 3"
+    d3_d9_str = d9_name + p9_part
     
     d12_exact = (deg * 12) % 360
     d12_idx = int(d12_exact / 30)
+    d12_name = KN_RASHI[d12_idx]
+    
+    deg_in_d12 = d12_exact % 30
+    if deg_in_d12 < 10: p12_part = " 1"
+    elif deg_in_d12 < 20: p12_part = " 2"
+    else: p12_part = " 3"
+    d3_d12_str = d12_name + p12_part
     
     if is_odd:
         if dr_val < 5: d30_idx = 0
@@ -595,16 +615,6 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
         elif dr_val < 25: d30_idx = 10
         else: d30_idx = 0
         
-    d9_dr = d9_exact % 30
-    if d9_dr < 10: d9_d3_idx = d9_idx; d9_part = " 1"
-    elif d9_dr < 20: d9_d3_idx = (d9_idx + 4) % 12; d9_part = " 2"
-    else: d9_d3_idx = (d9_idx + 8) % 12; d9_part = " 3"
-    
-    d12_dr = d12_exact % 30
-    if d12_dr < 10: d12_d3_idx = d12_idx; d12_part = " 1"
-    elif d12_dr < 20: d12_d3_idx = (d12_idx + 4) % 12; d12_part = " 2"
-    else: d12_d3_idx = (d12_idx + 8) % 12; d12_part = " 3"
-    
     h_arr = []
     h_arr.append("<div class='card'><table class='key-val-table'>")
     h_arr.append("<tr><td class='key'>ಸ್ಫುಟ</td><td>" + deg_fmt + "</td></tr>")
@@ -618,7 +628,7 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     v_arr.append("<div class='card'><table class='key-val-table'>")
     v_arr.append("<tr><td class='key'>ರಾಶಿ</td><td>" + KN_RASHI[d1_idx] + "</td></tr>")
     v_arr.append("<tr><td class='key'>ಹೋರಾ</td><td>" + KN_RASHI[d2_idx] + "</td></tr>")
-    v_arr.append("<tr><td class='key'>ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d3_idx] + "</td></tr>")
+    v_arr.append("<tr><td class='key'>ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[true_d3_idx] + "</td></tr>")
     v_arr.append("<tr><td class='key'>ನವಾಂಶ</td><td>" + KN_RASHI[d9_idx] + "</td></tr>")
     v_arr.append("<tr><td class='key'>ದ್ವಾದಶಾಂಶ</td><td>" + KN_RASHI[d12_idx] + "</td></tr>")
     v_arr.append("<tr><td class='key'>ತ್ರಿಂಶಾಂಶ</td><td>" + KN_RASHI[d30_idx] + "</td></tr>")
@@ -628,9 +638,9 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     st.markdown("#### 📐 ಉಪ-ದ್ರೇಕ್ಕಾಣ")
     sd_arr = []
     sd_arr.append("<div class='card'><table class='key-val-table'>")
-    sd_arr.append("<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d3_idx] + d3_part + "</td></tr>")
-    sd_arr.append("<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d9_d3_idx] + d9_part + "</td></tr>")
-    sd_arr.append("<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d12_d3_idx] + d12_part + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d1_str + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d9_str + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + d3_d12_str + "</td></tr>")
     sd_arr.append("</table></div>")
     st.markdown("".join(sd_arr), unsafe_allow_html=True)
 
