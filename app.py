@@ -586,4 +586,120 @@ elif st.session_state.page == "dashboard":
         slines.append("<div class='card'><table class='key-val-table'>")
         slines.append("<tr><th>ಗ್ರಹ</th><th>ರಾಶಿ</th>")
         slines.append("<th style='text-align:right'>ಅಂಶ</th>")
-        slines.append("
+        slines.append("<th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>")
+        
+        for p, d in pos.items():
+            r_name = KN_RASHI[int(d/30)]
+            d1 = str(int(d%30))
+            d2 = str(int((d%30*60)%60))
+            deg_fmt = d1 + "° " + d2 + "'"
+            nak_name = details[p]["nak"]
+            pada_num = str(details[p]["pada"])
+            
+            sr = "<tr><td><b>" + p + "</b></td><td>" + r_name + "</td>"
+            sr += "<td style='text-align:right'>" + deg_fmt + "</td>"
+            sr += "<td style='text-align:right'>" + nak_name + "-"
+            sr += pada_num + "</td></tr>"
+            slines.append(sr)
+            
+        slines.append("</table></div>")
+        st.markdown("".join(slines), unsafe_allow_html=True)
+        
+    with t3:
+        bal_txt = "ಶಿಷ್ಟ ದಶೆ: " + pan['lord_bal'] + " ಉಳಿಕೆ: " + pan['d_bal']
+        ht = "<div class='card' style='color:#6A040F; font-weight:bold;'>"
+        ht += bal_txt + "</div>"
+        st.markdown(ht, unsafe_allow_html=True)
+        
+        dlines = []
+        cur_d = pan['date_obj']
+        si = pan['n_idx'] % 9
+        
+        for i in range(9):
+            im = (si + i) % 9
+            y_mul = (1 - pan['perc']) if i == 0 else 1
+            md_dur = YEARS[im] * y_mul
+            md_end = cur_d + datetime.timedelta(days=md_dur*365.25)
+            
+            dlines.append("<details><summary class='md-node'><span>")
+            dlines.append(LORDS[im] + "</span><span class='date-label'>")
+            dlines.append(md_end.strftime('%d-%m-%y') + "</span></summary>")
+            
+            cad = cur_d
+            for j in range(9):
+                ia = (im + j) % 9
+                ad_y = (YEARS[im] * YEARS[ia] / 120.0)
+                if i == 0: ad_y *= (1 - pan['perc'])
+                ae = cad + datetime.timedelta(days=ad_y*365.25)
+                
+                dlines.append("<details><summary class='ad-node'><span>")
+                dlines.append(LORDS[ia] + "</span><span class='date-label'>")
+                dlines.append(ae.strftime('%d-%m-%y') + "</span></summary>")
+                
+                cpd = cad
+                for k in range(9):
+                    ip = (ia + k) % 9
+                    pd_y = (ad_y * YEARS[ip] / 120.0)
+                    pe = cpd + datetime.timedelta(days=pd_y*365.25)
+                    
+                    p_div = "<div class='pd-node' style='padding:8px 15px; "
+                    p_div += "border-bottom:1px solid #eee; display:flex; "
+                    p_div += "justify-content:space-between'><span>"
+                    p_div += LORDS[ip] + "</span><span>" 
+                    p_div += pe.strftime('%d-%m-%y') + "</span></div>"
+                    
+                    dlines.append(p_div)
+                    cpd = pe
+                dlines.append("</details>")
+                cad = ae
+            dlines.append("</details>")
+            cur_d = md_end
+            
+        st.markdown("".join(dlines), unsafe_allow_html=True)
+    
+    with t4:
+        p_lines = []
+        p_lines.append("<div class='card'><table class='key-val-table'>")
+        
+        arr = [
+            ("ವಾರ", str(pan['v'])),
+            ("ತಿಥಿ", str(pan['t'])),
+            ("ನಕ್ಷತ್ರ", str(pan['n'])),
+            ("ಉದಯಾದಿ", str(pan['udayadi']) + " ಘಟಿ"),
+            ("ಗತ", str(pan['gata']) + " ಘಟಿ"),
+            ("ಪರಮ", str(pan['parama']) + " ಘಟಿ"),
+            ("ಶೇಷ", str(pan['rem']) + " ಘಟಿ"),
+            ("ಮಾಂದಿ ಕಾಲ", str(pan['m_period']) + " (" + str(pan['m_time']) + ")"),
+            ("ಆಧಾರ ಸಮಯ", str(pan['m_base']))
+        ]
+        
+        for k, v in arr:
+            p_lines.append("<tr><td class='key'>" + k + "</td><td>")
+            p_lines.append(v + "</td></tr>")
+            
+        p_lines.append("</table></div>")
+        st.markdown("".join(p_lines), unsafe_allow_html=True)
+            
+    with t5:
+        blines = []
+        blines.append("<div class='card'><table class='key-val-table'>")
+        blines.append("<tr><th>ಭಾವ</th><th>ಆರಂಭ (Sphuta)</th>")
+        blines.append("<th>ರಾಶಿ</th></tr>")
+        
+        for i, deg in enumerate(bhavas):
+            bhava_num = str(i + 1)
+            r_name = KN_RASHI[int(deg/30)]
+            d1 = str(int(deg%30))
+            d2 = str(int((deg%30*60)%60))
+            d_fmt = d1 + "° " + d2 + "'"
+            
+            br = "<tr><td><b>" + bhava_num + "</b></td><td>" + d_fmt
+            br += "</td><td>" + r_name + "</td></tr>"
+            blines.append(br)
+            
+        blines.append("</table></div>")
+        st.markdown("".join(blines), unsafe_allow_html=True)
+
+    with t6:
+        val = st.session_state.notes
+        st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=val, height=300)
