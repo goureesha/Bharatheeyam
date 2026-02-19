@@ -24,7 +24,7 @@ def save_db(name, data):
         json.dump(db, f, ensure_ascii=False, indent=2)
 
 # ==========================================
-# 2. PAGE CONFIG & THEME (MINIMAL UI)
+# 2. PAGE CONFIG & MULTI-COLOR THEME
 # ==========================================
 st.set_page_config(
     page_title="ಭಾರತೀಯಮ್", 
@@ -38,63 +38,71 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;800&display=swap');
     
     .stApp { 
-        background-color: #F8F9FA !important; 
+        background-color: #FFFDF7 !important; /* Soft warm cream */
         font-family: 'Noto Sans Kannada', sans-serif; 
         color: #2D3748 !important; 
     }
+    
+    /* VIBRANT VIOLET HEADER */
     .header-box { 
-        background: #FFFFFF; 
-        color: #800020 !important; 
+        background: linear-gradient(135deg, #8E2DE2, #4A00E0); 
+        color: #FFFFFF !important; 
         padding: 20px; 
         text-align: center; 
         font-weight: 800; 
         font-size: 26px; 
         border-radius: 16px; 
         margin-bottom: 24px; 
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); 
-        border-bottom: 3px solid #D4AF37; 
+        box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3); 
+        border-bottom: 4px solid #F6D365; 
         letter-spacing: 1px;
     }
+    
     div[data-testid="stInput"] { 
         background-color: #FFFFFF; 
         border-radius: 10px; 
     }
-    .stButton>button { 
-        width: 100%; 
+    
+    /* PRIMARY BUTTONS (SAFFRON/ORANGE) */
+    .stButton>button[kind="primary"] { 
+        background: linear-gradient(135deg, #DD6B20, #C05621) !important;
+        color: white !important; 
+        font-weight: 800; 
         border-radius: 12px; 
-        background-color: #800020 !important; 
-        color: #FFFFFF !important; 
-        font-weight: 600; 
         border: none; 
         padding: 12px; 
-        transition: all 0.2s ease; 
-        box-shadow: 0 4px 12px rgba(128, 0, 32, 0.2);
+        box-shadow: 0 4px 10px rgba(221, 107, 32, 0.3);
     }
-    .stButton>button:hover { 
-        background-color: #660018 !important; 
-        box-shadow: 0 6px 16px rgba(128, 0, 32, 0.3); 
-        transform: translateY(-1px);
+    
+    /* SECONDARY BUTTONS (TEAL) */
+    .stButton>button[kind="secondary"] { 
+        background-color: #E6FFFA !important; 
+        color: #319795 !important; 
+        font-weight: 800; 
+        border: 2px solid #319795 !important; 
+        border-radius: 12px; 
     }
+    
+    /* MULTI-COLOR TABS */
     div[data-testid="stTabs"] button[aria-selected="false"] p { 
         color: #718096 !important; 
         font-weight: 600 !important; 
     }
     div[data-testid="stTabs"] button[aria-selected="true"] p { 
-        color: #800020 !important; 
+        color: #047857 !important; /* Emerald Green */
         font-weight: 800 !important; 
     }
     div[data-testid="stTabs"] button[aria-selected="true"] { 
-        border-bottom: 3px solid #800020 !important; 
+        border-bottom: 3px solid #047857 !important; 
     }
     
-    /* FIX FOR BHAVA TOGGLE TEXT */
-    div[data-testid="stToggle"] label p {
+    /* RASHI / BHAVA RADIO SWITCH STYLING */
+    div[data-testid="stRadio"] > label > p {
         font-weight: 800 !important;
-        color: #2D3748 !important;
-        font-size: 15px !important;
+        color: #2B6CB0 !important;
     }
     
-    /* NEW MINIMAL GRID */
+    /* VIBRANT KUNDALI GRID */
     .grid-container { 
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
@@ -102,9 +110,10 @@ st.markdown("""
         width: 100%; max-width: 400px; 
         aspect-ratio: 1 / 1; 
         margin: 0 auto; gap: 4px; 
-        background: #EDF2F7; 
-        border: 4px solid #EDF2F7; 
+        background: #E2E8F0; 
+        border: 4px solid #E2E8F0; 
         border-radius: 12px; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     .box { 
         background: #FFFFFF; 
@@ -114,40 +123,45 @@ st.markdown("""
         align-items: center; 
         justify-content: center; 
         font-size: 12px; 
-        font-weight: 600; 
+        font-weight: 800; 
         padding: 4px; 
         text-align: center; 
         border-radius: 8px;
-        color: #1A202C !important; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.02);
     }
+    
+    /* GOLDEN CENTER BOX */
     .center-box { 
         grid-column: 2/4; 
         grid-row: 2/4; 
-        background: transparent; 
+        background: linear-gradient(135deg, #F6D365 0%, #FDA085 100%); 
         display: flex; 
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
-        color: #A0AEC0 !important; 
-        font-weight: 600; 
+        color: #742A2A !important; 
+        font-weight: 900; 
         text-align: center; 
-        font-size: 14px; 
+        font-size: 15px; 
+        border-radius: 8px;
+        border: 2px solid #FFFFFF;
     }
+    
+    /* MULTI-COLOR TEXT IN CHART */
     .lbl { 
-        position: absolute; top: 4px; left: 6px; 
-        font-size: 10px; color: #D4AF37 !important; 
-        font-weight: 800; 
+        position: absolute; top: 3px; left: 5px; 
+        font-size: 10px; color: #2F855A !important; /* Forest Green numbers */
+        font-weight: 900; 
     }
-    .hi { color: #800020 !important; font-weight: 800; }
-    .pl { color: #2D3748 !important; font-weight: 600; }
+    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; } /* Crimson Red Lagna/Mandi */
+    .pl { color: #2B6CB0 !important; font-weight: 800; } /* Royal Blue Planets */
     
     .card { 
         background: #FFFFFF; border-radius: 16px; padding: 20px; 
-        margin-bottom: 16px; border: 1px solid #F0F4F8; 
+        margin-bottom: 16px; border: 1px solid #E2E8F0; 
         box-shadow: 0 4px 16px rgba(0,0,0,0.03); 
     }
-    .key { color: #718096 !important; font-weight: 600; width: 45%; }
+    .key { color: #4A5568 !important; font-weight: 800; width: 45%; }
     .key-val-table td { 
         border-bottom: 1px solid #EDF2F7; 
         padding: 12px 6px; color: #2D3748 !important; 
@@ -162,18 +176,18 @@ st.markdown("""
         border-bottom: 1px solid #EDF2F7; color: #2D3748 !important; 
         cursor: pointer;
     }
-    .md-node { background: #800020 !important; color: #FFFFFF !important; font-weight: 800; }
+    .md-node { background: #4A00E0 !important; color: #FFFFFF !important; font-weight: 800; }
     .md-node span { color: white !important; }
     .ad-node { 
-        background: #FFFBF0 !important; color: #800020 !important; 
-        font-weight: 600; border-left: 4px solid #D4AF37; 
+        background: #FFFDF7 !important; color: #DD6B20 !important; 
+        font-weight: 800; border-left: 4px solid #F6D365; 
     }
-    .ad-node span { color: #800020 !important; }
+    .ad-node span { color: #DD6B20 !important; }
     .pd-node { 
-        background: #FFFFFF !important; color: #4A5568 !important; 
-        font-weight: 600; border-left: 4px solid #CBD5E0; 
+        background: #FFFFFF !important; color: #319795 !important; 
+        font-weight: 700; border-left: 4px solid #81E6D9; 
     }
-    .pd-node span { color: #4A5568 !important; }
+    .pd-node span { color: #319795 !important; }
     .date-label { font-size: 12px; opacity: 0.9; float: right; font-weight: normal; }
 </style>
 """, unsafe_allow_html=True)
@@ -183,7 +197,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v22_minimal")
+geolocator = Nominatim(user_agent="bharatheeyam_v23_multicolor")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -639,10 +653,12 @@ elif st.session_state.page == "dashboard":
     with t1:
         c_v, c_b = st.columns(2)
         opts = [1, 3, 9, 12, 30]
-        v_opt = c_v.selectbox("ವರ್ಗ", opts, format_func=lambda x: "D" + str(x))
+        v_opt = c_v.selectbox("ವರ್ಗ (Divisional)", opts, format_func=lambda x: "D" + str(x))
         
-        # UPGRADED TO MODERN TOGGLE SWITCH
-        b_opt = c_b.toggle("ಭಾವ ಚಾರ್ಟ್ (Bhava)", value=False)
+        # UPGRADED RASHI / BHAVA SWITCH (RADIO BUTTONS)
+        mode_opts = ["ರಾಶಿ (Rashi)", "ಭಾವ (Bhava)"]
+        c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ (Chart Mode)", mode_opts, horizontal=True)
+        b_opt = (c_mode == "ಭಾವ (Bhava)")
         
         bxs = {i: "" for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
@@ -735,7 +751,7 @@ elif st.session_state.page == "dashboard":
         
     with t3:
         bal_txt = "ಶಿಷ್ಟ ದಶೆ: " + pan['lord_bal'] + " ಉಳಿಕೆ: " + pan['d_bal']
-        ht = "<div class='card' style='color:#800020; font-weight:800;'>"
+        ht = "<div class='card' style='color:#8E2DE2; font-weight:900;'>"
         ht += bal_txt + "</div>"
         st.markdown(ht, unsafe_allow_html=True)
         
