@@ -24,7 +24,7 @@ def save_db(name, data):
         json.dump(db, f, ensure_ascii=False, indent=2)
 
 # ==========================================
-# 2. PAGE CONFIG & THEME
+# 2. PAGE CONFIG & THEME (MINIMAL UI)
 # ==========================================
 st.set_page_config(
     page_title="ಭಾರತೀಯಮ್", 
@@ -35,75 +35,76 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;800&display=swap');
     
     .stApp { 
-        background-color: #FFFBF0 !important; 
+        background-color: #F8F9FA !important; 
         font-family: 'Noto Sans Kannada', sans-serif; 
-        color: #1F1F1F !important; 
+        color: #2D3748 !important; 
     }
     .header-box { 
-        background: linear-gradient(135deg, #6A040F, #9D0208); 
-        color: #FFFFFF !important; 
-        padding: 16px; 
+        background: #FFFFFF; 
+        color: #800020 !important; 
+        padding: 20px; 
         text-align: center; 
-        font-weight: 900; 
-        font-size: 24px; 
-        border-radius: 12px; 
-        margin-bottom: 20px; 
-        box-shadow: 0 4px 15px rgba(106, 4, 15, 0.3); 
-        border-bottom: 4px solid #FAA307; 
+        font-weight: 800; 
+        font-size: 26px; 
+        border-radius: 16px; 
+        margin-bottom: 24px; 
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04); 
+        border-bottom: 3px solid #D4AF37; 
+        letter-spacing: 1px;
     }
     div[data-testid="stInput"] { 
-        background-color: white; 
-        border-radius: 8px; 
-        border: 1px solid #E0E0E0; 
+        background-color: #FFFFFF; 
+        border-radius: 10px; 
     }
     .stButton>button { 
         width: 100%; 
-        border-radius: 10px; 
-        background-color: #9D0208 !important; 
-        color: white !important; 
-        font-weight: bold; 
+        border-radius: 12px; 
+        background-color: #800020 !important; 
+        color: #FFFFFF !important; 
+        font-weight: 600; 
         border: none; 
         padding: 12px; 
-        transition: all 0.3s ease; 
+        transition: all 0.2s ease; 
+        box-shadow: 0 4px 12px rgba(128, 0, 32, 0.2);
     }
     .stButton>button:hover { 
-        background-color: #D00000 !important; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
-    }
-    button[kind="secondary"] { 
-        background-color: #FFFFFF !important; 
-        color: #9D0208 !important; 
-        border: 2px solid #9D0208 !important; 
-    }
-    div[data-testid="stTabs"] button { 
-        background-color: transparent !important; 
+        background-color: #660018 !important; 
+        box-shadow: 0 6px 16px rgba(128, 0, 32, 0.3); 
+        transform: translateY(-1px);
     }
     div[data-testid="stTabs"] button[aria-selected="false"] p { 
-        color: #5D4037 !important; 
-        font-weight: 700 !important; 
-        font-size: 14px !important; 
+        color: #718096 !important; 
+        font-weight: 600 !important; 
     }
     div[data-testid="stTabs"] button[aria-selected="true"] p { 
-        color: #9D0208 !important; 
-        font-weight: 900 !important; 
-        font-size: 15px !important; 
+        color: #800020 !important; 
+        font-weight: 800 !important; 
     }
     div[data-testid="stTabs"] button[aria-selected="true"] { 
-        border-bottom: 4px solid #9D0208 !important; 
+        border-bottom: 3px solid #800020 !important; 
     }
+    
+    /* FIX FOR BHAVA TOGGLE TEXT */
+    div[data-testid="stToggle"] label p {
+        font-weight: 800 !important;
+        color: #2D3748 !important;
+        font-size: 15px !important;
+    }
+    
+    /* NEW MINIMAL GRID */
     .grid-container { 
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
         grid-template-rows: repeat(4, 1fr); 
-        width: 100%; max-width: 380px; 
+        width: 100%; max-width: 400px; 
         aspect-ratio: 1 / 1; 
-        margin: 0 auto; gap: 2px; 
-        background: #370617; 
-        border: 4px solid #6A040F; 
-        border-radius: 4px; 
+        margin: 0 auto; gap: 4px; 
+        background: #EDF2F7; 
+        border: 4px solid #EDF2F7; 
+        border-radius: 12px; 
     }
     .box { 
         background: #FFFFFF; 
@@ -112,69 +113,68 @@ st.markdown("""
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
-        font-size: 11px; 
-        font-weight: bold; 
-        padding: 2px; 
+        font-size: 12px; 
+        font-weight: 600; 
+        padding: 4px; 
         text-align: center; 
-        color: #000000 !important; 
+        border-radius: 8px;
+        color: #1A202C !important; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
     .center-box { 
         grid-column: 2/4; 
         grid-row: 2/4; 
-        background: linear-gradient(135deg, #FFBA08, #FAA307); 
+        background: transparent; 
         display: flex; 
         flex-direction: column; 
         align-items: center; 
         justify-content: center; 
-        color: #370617 !important; 
-        font-weight: 900; 
+        color: #A0AEC0 !important; 
+        font-weight: 600; 
         text-align: center; 
-        font-size: 13px; 
+        font-size: 14px; 
     }
     .lbl { 
-        position: absolute; top: 2px; left: 3px; 
-        font-size: 9px; color: #DC2F02 !important; 
-        font-weight: 900; 
+        position: absolute; top: 4px; left: 6px; 
+        font-size: 10px; color: #D4AF37 !important; 
+        font-weight: 800; 
     }
-    .hi { color: #D00000 !important; text-decoration: underline; font-weight: 900; }
-    .pl { color: #03071E !important; font-weight: bold; }
+    .hi { color: #800020 !important; font-weight: 800; }
+    .pl { color: #2D3748 !important; font-weight: 600; }
+    
     .card { 
-        background: #FFFFFF; border-radius: 12px; padding: 15px; 
-        margin-bottom: 12px; border: 1px solid #F0F0F0; 
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+        background: #FFFFFF; border-radius: 16px; padding: 20px; 
+        margin-bottom: 16px; border: 1px solid #F0F4F8; 
+        box-shadow: 0 4px 16px rgba(0,0,0,0.03); 
     }
-    .key { color: #9D0208 !important; font-weight: 900; width: 40%; }
+    .key { color: #718096 !important; font-weight: 600; width: 45%; }
     .key-val-table td { 
-        border-bottom: 1px solid #f0f0f0; 
-        padding: 10px 4px; color: #333 !important; 
+        border-bottom: 1px solid #EDF2F7; 
+        padding: 12px 6px; color: #2D3748 !important; 
+        font-size: 14px;
     }
     details { 
-        margin-bottom: 6px; border: 1px solid #eee; 
-        border-radius: 8px; overflow: hidden; background: white; 
+        margin-bottom: 8px; border: 1px solid #EDF2F7; 
+        border-radius: 10px; overflow: hidden; background: #FFFFFF; 
     }
     summary { 
-        padding: 12px; font-size: 14px; 
-        border-bottom: 1px solid #f5f5f5; color: #000 !important; 
+        padding: 14px; font-size: 14px; 
+        border-bottom: 1px solid #EDF2F7; color: #2D3748 !important; 
+        cursor: pointer;
     }
-    .md-node { background: #6A040F !important; color: #FFFFFF !important; font-weight: 900; }
+    .md-node { background: #800020 !important; color: #FFFFFF !important; font-weight: 800; }
     .md-node span { color: white !important; }
     .ad-node { 
-        background: #FFEFD5 !important; color: #9D0208 !important; 
-        font-weight: 700; border-left: 6px solid #FAA307; 
+        background: #FFFBF0 !important; color: #800020 !important; 
+        font-weight: 600; border-left: 4px solid #D4AF37; 
     }
-    .ad-node span { color: #9D0208 !important; }
+    .ad-node span { color: #800020 !important; }
     .pd-node { 
-        background: #F1F8E9 !important; color: #1B5E20 !important; 
-        font-weight: 700; border-left: 6px solid #558B2F; 
+        background: #FFFFFF !important; color: #4A5568 !important; 
+        font-weight: 600; border-left: 4px solid #CBD5E0; 
     }
-    .pd-node span { color: #1B5E20 !important; }
-    .sd-node { 
-        background: #F5F9FF !important; color: #0D47A1 !important; 
-        font-size: 11px; margin-left: 10px; 
-        border-left: 3px solid #2196F3; padding: 8px; 
-    }
-    .sd-node span { color: #0D47A1 !important; }
-    .date-label { font-size: 11px; opacity: 0.9; float: right; font-weight: normal; }
+    .pd-node span { color: #4A5568 !important; }
+    .date-label { font-size: 12px; opacity: 0.9; float: right; font-weight: normal; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -183,7 +183,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v21_ad_free")
+geolocator = Nominatim(user_agent="bharatheeyam_v22_minimal")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -524,11 +524,11 @@ st.markdown('<div class="header-box">ಭಾರತೀಯಮ್</div>', unsafe_all
 
 if st.session_state.page == "input":
     with st.container():
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
         
         saved_db = load_db()
         if len(saved_db) > 0:
-            st.info("ಉಳಿಸಿದ ಜಾತಕ (Saved Profiles)")
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            st.markdown("#### 📂 ಉಳಿಸಿದ ಜಾತಕ (Saved Profiles)")
             c_sel, c_btn = st.columns([3, 1])
             k_list = [""] + list(saved_db.keys())
             
@@ -549,18 +549,18 @@ if st.session_state.page == "input":
                     st.session_state.lon = prof['lon']
                     st.session_state.place_input = prof['p']
                     st.rerun()
-                    
-            st.markdown("<hr>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
         
-        st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown("#### ✨ ಹೊಸ ಜಾತಕ (New Kundli)")
         
-        name = st.text_input("ಹೆಸರು", key="name_input")
+        name = st.text_input("ಹೆಸರು (Name)", key="name_input")
         
         d_min = datetime.date(1800, 1, 1)
         d_max = datetime.date(2100, 12, 31)
         
         dob = st.date_input(
-            "ದಿನಾಂಕ", 
+            "ದಿನಾಂಕ (Date)", 
             key="dob_input", 
             min_value=d_min, 
             max_value=d_max
@@ -571,8 +571,8 @@ if st.session_state.page == "input":
         m = c2.number_input("ನಿಮಿಷ", 0, 59, key="m_input")
         ampm = c3.selectbox("M", ["AM", "PM"], key="ampm_input")
         
-        place_q = st.text_input("ಊರು ಹುಡುಕಿ", key="place_input")
-        if st.button("ಹುಡುಕಿ"):
+        place_q = st.text_input("ಊರು ಹುಡುಕಿ (City Search)", key="place_input")
+        if st.button("ಹುಡುಕಿ (Search)"):
             try:
                 loc = geolocator.geocode(place_q)
                 if loc: 
@@ -580,12 +580,14 @@ if st.session_state.page == "input":
                     st.session_state.lon = loc.longitude
                     st.success("📍 " + loc.address)
             except: 
-                st.error("Error")
+                st.error("Error connecting to location service.")
                 
-        lat = st.number_input("Lat", key="lat", format="%.4f")
-        lon = st.number_input("Lon", key="lon", format="%.4f")
+        lat = st.number_input("Latitude", key="lat", format="%.4f")
+        lon = st.number_input("Longitude", key="lon", format="%.4f")
         
-        if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        if st.button("ಜಾತಕ ರಚಿಸಿ (Generate)", type="primary"):
             h24 = h + (12 if ampm == "PM" and h != 12 else 0)
             h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
@@ -607,7 +609,7 @@ elif st.session_state.page == "dashboard":
     
     c_bk, c_sv = st.columns(2)
     
-    if c_bk.button("⬅️ ಹಿಂದಕ್ಕೆ"): 
+    if c_bk.button("⬅️ ಹಿಂದಕ್ಕೆ (Back)"): 
         st.session_state.page = "input"
         st.rerun()
         
@@ -635,10 +637,12 @@ elif st.session_state.page == "dashboard":
     t1, t2, t3, t4, t5, t6, t7, t8, t9 = st.tabs(tabs)
     
     with t1:
-        c_v, c_b = st.columns([2, 1])
+        c_v, c_b = st.columns(2)
         opts = [1, 3, 9, 12, 30]
         v_opt = c_v.selectbox("ವರ್ಗ", opts, format_func=lambda x: "D" + str(x))
-        b_opt = c_b.checkbox("ಭಾವ", value=False)
+        
+        # UPGRADED TO MODERN TOGGLE SWITCH
+        b_opt = c_b.toggle("ಭಾವ ಚಾರ್ಟ್ (Bhava)", value=False)
         
         bxs = {i: "" for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
@@ -731,7 +735,7 @@ elif st.session_state.page == "dashboard":
         
     with t3:
         bal_txt = "ಶಿಷ್ಟ ದಶೆ: " + pan['lord_bal'] + " ಉಳಿಕೆ: " + pan['d_bal']
-        ht = "<div class='card' style='color:#6A040F; font-weight:bold;'>"
+        ht = "<div class='card' style='color:#800020; font-weight:800;'>"
         ht += bal_txt + "</div>"
         st.markdown(ht, unsafe_allow_html=True)
         
@@ -766,8 +770,8 @@ elif st.session_state.page == "dashboard":
                     pd_y = (ad_y * YEARS[ip] / 120.0)
                     pe = cpd + datetime.timedelta(days=pd_y*365.25)
                     
-                    p_div = "<div class='pd-node' style='padding:8px 15px; "
-                    p_div += "border-bottom:1px solid #eee; display:flex; "
+                    p_div = "<div class='pd-node' style='padding:10px 15px; "
+                    p_div += "border-bottom:1px solid #EDF2F7; display:flex; "
                     p_div += "justify-content:space-between'><span>"
                     p_div += LORDS[ip] + "</span><span>" 
                     p_div += pe.strftime('%d-%m-%y') + "</span></div>"
@@ -881,8 +885,8 @@ elif st.session_state.page == "dashboard":
         st.markdown("<div class='card' style='text-align:center;'>", unsafe_allow_html=True)
         st.markdown("### 🚫 ಜಾಹೀರಾತು-ಮುಕ್ತ (Ad-Free)")
         
-        info_text = "ಜಾಹೀರಾತುಗಳಿಲ್ಲದೆ ನಿರಂತರವಾಗಿ ಆ್ಯಪ್ ಬಳಸಿ.<br>"
-        info_text += "Enjoy a seamless, distraction-free calculation experience."
+        info_text = "<p style='color:#718096; font-weight:600;'>ಜಾಹೀರಾತುಗಳಿಲ್ಲದೆ ನಿರಂತರವಾಗಿ ಆ್ಯಪ್ ಬಳಸಿ.<br>"
+        info_text += "Enjoy a seamless, distraction-free calculation experience.</p>"
         st.markdown(info_text, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
@@ -893,9 +897,10 @@ elif st.session_state.page == "dashboard":
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("#### ಭಾರತೀಯಮ್ (Bharatheeyam)")
         
-        info = "**ಆವೃತ್ತಿ (Version): 1.0.0**<br><br>"
+        info = "<p style='color:#4A5568; font-size:14px; line-height:1.6;'>"
+        info += "<b>ಆವೃತ್ತಿ (Version): 1.0.0</b><br><br>"
         info += "ನಿಖರವಾದ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಲೆಕ್ಕಾಚಾರಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.<br>"
-        info += "Designed for precise Vedic Astrology calculations, specifically tailored for accurate Dasha, Panchanga, and Nadi sub-divisional charts. Built to operate seamlessly offline for fast and private astrological consultations."
+        info += "Designed for precise Vedic Astrology calculations, specifically tailored for accurate Dasha, Panchanga, and Nadi sub-divisional charts. Built to operate seamlessly offline for fast and private astrological consultations.</p>"
         st.markdown(info, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
