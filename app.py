@@ -50,7 +50,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v99_final")
+geolocator = Nominatim(user_agent="bharatheeyam_pro_fixed_final")
 
 KN_PLANETS = {0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"}
 KN_RASHI = ["ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", "ತುಲಾ", "ವೃಶ್ಚಿಕ", "ಧನು", "ಮಕರ", "ಕುಂಭ", "ಮೀನ"]
@@ -108,7 +108,9 @@ def find_nak_limit(jd, target_deg):
     return mid
 
 def fmt_ghati(decimal_val):
-    g = int(decimal_val); v = int(round((decimal_val - g) * 60))
+    g = int(decimal_val)
+    rem = decimal_val - g
+    v = int(round(rem * 60))
     if v == 60: g += 1; v = 0
     return f"{g}.{v:02d}"
 
@@ -235,7 +237,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     return positions, pan
 
 # ==========================================
-# 4. APP UI
+# 4. SESSION STATE & UI
 # ==========================================
 if 'page' not in st.session_state: st.session_state.page = "input"
 if 'data' not in st.session_state: st.session_state.data = {}
@@ -262,7 +264,7 @@ if st.session_state.page == "input":
         if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
             h24 = h + (12 if ampm == "PM" and h != 12 else 0); h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
-            # Pass DOB explicitly
+            # Pass DOB Object
             pos, pan = get_full_calculations(jd, lat, lon, dob)
             st.session_state.data = {"pos": pos, "pan": pan}; st.session_state.page = "dashboard"; st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -275,7 +277,9 @@ elif st.session_state.page == "dashboard":
         c_v, c_b = st.columns([2, 1])
         v_opt = c_v.selectbox("ವರ್ಗ", [1, 3, 9, 12, 30], format_func=lambda x: f"D{x}")
         b_opt = c_b.checkbox("ಭಾವ", value=False)
-        bxs = {i: "" for i in range(12)}; ld = pos["Lagna"]
+        bxs = {i: "" for i in range(12)}; 
+        # FIX: Access Lagna using the Kannada key, not "Lagna"
+        ld = pos[KN_PLANETS["Lagna"]] 
         for n, d in pos.items():
             if v_opt == 1: ri = int(d/30) if not b_opt else (int(ld/30) + int(((d - ld + 360) % 360 + 15) / 30)) % 12
             elif v_opt == 30: 
