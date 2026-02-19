@@ -195,13 +195,19 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v29_popups")
+geolocator = Nominatim(user_agent="bharatheeyam_v30_strict_order")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
     5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", 
     "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"
 }
+
+# STRICT VEDIC PLANET ORDER
+PLANET_ORDER = [
+    "ಲಗ್ನ", "ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", 
+    "ಗುರು", "ಶುಕ್ರ", "ಶನಿ", "ರಾಹು", "ಕೇತು", "ಮಾಂದಿ"
+]
 
 KN_RASHI = [
     "ಮೇಷ", "ವೃಷಭ", "ಮಿಥುನ", "ಕರ್ಕ", "ಸಿಂಹ", "ಕನ್ಯಾ", 
@@ -378,10 +384,9 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     swe.set_topo(float(lon), float(lat), 0)
     ayan = swe.get_ayanamsa(jd_birth)
     positions = {}
-    speeds = {} # Captures Planet Speed for Vakri
+    speeds = {} 
     extra_details = {}
     
-    # CALCULATE MAIN PLANETS + SPEED
     for pid in [0, 1, 2, 3, 4, 5, 6]:
         flag = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
         res = swe.calc_ut(jd_birth, pid, flag)
@@ -398,7 +403,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
             "pada": pada
         }
 
-    # CALCULATE RAHU / KETU + SPEED
     rahu_res = swe.calc_ut(jd_birth, swe.TRUE_NODE, flag)
     rahu_deg = rahu_res[0][0] % 360
     rahu_speed = rahu_res[0][3]
@@ -513,13 +517,12 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
 # ==========================================
 # 5. DIALOG UI FOR PLANET POPUP
 # ==========================================
-@st.dialog("ಗ್ರಹದ ಸಂಪೂರ್ಣ ವಿವರ (Planet Details)")
+@st.dialog("ಗ್ರಹದ ಸಂಪೂರ್ಣ ವಿವರ")
 def show_planet_popup(p_name, deg, speed, sun_deg):
     d1_v1 = str(int(deg%30))
     d1_v2 = str(int((deg%30*60)%60))
     deg_fmt = d1_v1 + "° " + d1_v2 + "'"
     
-    # Asta (Combust) Logic
     is_asta = False
     gathi_str = "N/A"
     
@@ -530,22 +533,21 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
         if diff <= limits.get(p_name, 0):
             is_asta = True
             
-        if p_name == "ಚಂದ್ರ": gathi_str = "ನೇರ (Direct)"
-        elif speed < 0: gathi_str = "ವಕ್ರಿ (Retrograde)"
-        else: gathi_str = "ನೇರ (Direct)"
+        if p_name == "ಚಂದ್ರ": gathi_str = "ನೇರ"
+        elif speed < 0: gathi_str = "ವಕ್ರಿ"
+        else: gathi_str = "ನೇರ"
         
     elif p_name in ["ರಾಹು", "ಕೇತು"]:
-        gathi_str = "ವಕ್ರಿ (Retrograde)"
+        gathi_str = "ವಕ್ರಿ"
     elif p_name == "ರವಿ":
-        gathi_str = "ನೇರ (Direct)"
+        gathi_str = "ನೇರ"
     else:
-        gathi_str = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ (-)"
+        gathi_str = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    asta_text = "ಹೌದು (Combust)" if is_asta else "ಇಲ್ಲ (No)"
+    asta_text = "ಹೌದು" if is_asta else "ಇಲ್ಲ"
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: 
-        asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ (-)"
+        asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    # Varga Math
     d1_idx = int(deg/30)
     
     r_val = int(deg/30)
@@ -554,9 +556,9 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     if is_odd: d2_idx = 4 if dr_val < 15 else 3
     else: d2_idx = 3 if dr_val < 15 else 4
     
-    if dr_val < 10: d3_idx = d1_idx
-    elif dr_val < 20: d3_idx = (d1_idx + 4) % 12
-    else: d3_idx = (d1_idx + 8) % 12
+    if dr_val < 10: d3_idx = d1_idx; d3_part = " 1"
+    elif dr_val < 20: d3_idx = (d1_idx + 4) % 12; d3_part = " 2"
+    else: d3_idx = (d1_idx + 8) % 12; d3_part = " 3"
     
     d9_exact = (deg * 9) % 360
     d9_idx = int(d9_exact / 30)
@@ -589,13 +591,13 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     
     h_arr = []
     h_arr.append("<div class='card'><table class='key-val-table'>")
-    h_arr.append("<tr><td class='key'>ಸ್ಫುಟ (Sphuta)</td><td>" + deg_fmt + "</td></tr>")
-    h_arr.append("<tr><td class='key'>ಗತಿ (Vakri/Nera)</td><td><b>" + gathi_str + "</b></td></tr>")
-    h_arr.append("<tr><td class='key'>ಅಸ್ತ (Asta)</td><td><b>" + asta_text + "</b></td></tr>")
+    h_arr.append("<tr><td class='key'>ಸ್ಫುಟ</td><td>" + deg_fmt + "</td></tr>")
+    h_arr.append("<tr><td class='key'>ಗತಿ</td><td><b>" + gathi_str + "</b></td></tr>")
+    h_arr.append("<tr><td class='key'>ಅಸ್ತ</td><td><b>" + asta_text + "</b></td></tr>")
     h_arr.append("</table></div>")
     st.markdown("".join(h_arr), unsafe_allow_html=True)
     
-    st.markdown("#### 📊 ವರ್ಗಗಳು (Vargas)")
+    st.markdown("#### 📊 ವರ್ಗಗಳು")
     v_arr = []
     v_arr.append("<div class='card'><table class='key-val-table'>")
     v_arr.append("<tr><td class='key'>ರಾಶಿ</td><td>" + KN_RASHI[d1_idx] + "</td></tr>")
@@ -607,10 +609,10 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     v_arr.append("</table></div>")
     st.markdown("".join(v_arr), unsafe_allow_html=True)
     
-    st.markdown("#### 📐 ಉಪ-ದ್ರೇಕ್ಕಾಣ (Sub-Drekkanas)")
+    st.markdown("#### 📐 ಉಪ-ದ್ರೇಕ್ಕಾಣ")
     sd_arr = []
     sd_arr.append("<div class='card'><table class='key-val-table'>")
-    sd_arr.append("<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d3_idx] + "</td></tr>")
+    sd_arr.append("<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d3_idx] + d3_part + "</td></tr>")
     sd_arr.append("<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d9_d3_idx] + d9_part + "</td></tr>")
     sd_arr.append("<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>" + KN_RASHI[d12_d3_idx] + d12_part + "</td></tr>")
     sd_arr.append("</table></div>")
@@ -793,7 +795,9 @@ elif st.session_state.page == "dashboard":
         bxs = {i: "" for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
         
-        for n, d in pos.items():
+        # PROPER VEDIC PLACEMENT ORDER
+        for n in PLANET_ORDER:
+            d = pos[n]
             if v_opt == 1: 
                 if not b_opt:
                     ri = int(d/30)
@@ -865,12 +869,11 @@ elif st.session_state.page == "dashboard":
         glines.append("</div>")
         st.markdown("".join(glines), unsafe_allow_html=True)
         
-        # --- PLANET INSPECTOR BUTTONS (TRIGGERS POPUP) ---
-        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>🔍 ಗ್ರಹಗಳ ವಿಸ್ತೃತ ವಿವರ (Click Planet)</h4>", unsafe_allow_html=True)
+        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>🔍 ಗ್ರಹಗಳ ವಿಸ್ತೃತ ವಿವರ</h4>", unsafe_allow_html=True)
         btn_cols = st.columns(4)
-        p_list = ["ಲಗ್ನ", "ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ", "ರಾಹು", "ಕೇತು", "ಮಾಂದಿ"]
         
-        for i, p_n in enumerate(p_list):
+        # BUTTONS IN STRICT VEDIC ORDER
+        for i, p_n in enumerate(PLANET_ORDER):
             if btn_cols[i % 4].button(p_n, key="pop_" + p_n, use_container_width=True):
                 show_planet_popup(p_n, pos[p_n], speeds.get(p_n, 0), pos["ರವಿ"])
     
@@ -881,7 +884,9 @@ elif st.session_state.page == "dashboard":
         slines.append("<th style='text-align:right'>ಅಂಶ</th>")
         slines.append("<th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>")
         
-        for p, d in pos.items():
+        # STRICT VEDIC TABLE ORDER
+        for p in PLANET_ORDER:
+            d = pos[p]
             r_name = KN_RASHI[int(d/30)]
             d1 = str(int(d%30))
             d2 = str(int((d%30*60)%60))
@@ -997,13 +1002,13 @@ elif st.session_state.page == "dashboard":
     with t6:
         nlines = []
         nlines.append("<div class='card'><table class='key-val-table'>")
-        
         nlines.append("<tr><th>ಗ್ರಹ</th><th>ಅಂಶ</th>")
         nlines.append("<th>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</th><th>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</th>")
         nlines.append("<th>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</th></tr>")
         
-        for p, d in pos.items():
-            
+        # STRICT VEDIC TABLE ORDER
+        for p in PLANET_ORDER:
+            d = pos[p]
             d1_v1 = str(int(d%30))
             d1_v2 = str(int((d%30*60)%60))
             deg_fmt = d1_v1 + "° " + d1_v2 + "'"
