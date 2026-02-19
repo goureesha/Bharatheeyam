@@ -183,7 +183,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v18_database")
+geolocator = Nominatim(user_agent="bharatheeyam_v20_visible_about")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -526,7 +526,6 @@ if st.session_state.page == "input":
     with st.container():
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         
-        # --- LOAD SAVED KUNDLIS ---
         saved_db = load_db()
         if len(saved_db) > 0:
             st.info("ಉಳಿಸಿದ ಜಾತಕ (Saved Profiles)")
@@ -553,7 +552,6 @@ if st.session_state.page == "input":
                     
             st.markdown("<hr>", unsafe_allow_html=True)
         
-        # --- NEW KUNDLI FORM ---
         st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
         
         name = st.text_input("ಹೆಸರು", key="name_input")
@@ -607,7 +605,6 @@ elif st.session_state.page == "dashboard":
     details = st.session_state.data['details'] 
     bhavas = st.session_state.data['bhavas']   
     
-    # --- TOP BUTTONS (BACK & SAVE) ---
     c_bk, c_sv = st.columns(2)
     
     if c_bk.button("⬅️ ಹಿಂದಕ್ಕೆ"): 
@@ -634,8 +631,8 @@ elif st.session_state.page == "dashboard":
         save_db(n_val, prof_data)
         st.success("ಉಳಿಸಲಾಗಿದೆ! (Saved successfully)")
     
-    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ದ್ರೇಕ್ಕಾಣ (D3)", "ಟಿಪ್ಪಣಿ"]
-    t1, t2, t3, t4, t5, t6, t7 = st.tabs(tabs)
+    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ದ್ರೇಕ್ಕಾಣ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
+    t1, t2, t3, t4, t5, t6, t7, t8, t9 = st.tabs(tabs)
     
     with t1:
         c_v, c_b = st.columns([2, 1])
@@ -879,3 +876,26 @@ elif st.session_state.page == "dashboard":
     with t7:
         val = st.session_state.notes
         st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=val, height=300)
+
+    with t8:
+        st.markdown("<div class='card' style='text-align:center;'>", unsafe_allow_html=True)
+        st.markdown("### 💎 ಪ್ರೀಮಿಯಂ ಚಂದಾದಾರಿಕೆ (Premium)")
+        st.markdown("Unlock advanced Shadbala, Ashtakavarga, and PDF Exports.")
+        st.button("Upgrade Now - ₹99/month", type="primary", use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with t9:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown("#### ಭಾರತೀಯಮ್ (Bharatheeyam)")
+        
+        info = "**ಆವೃತ್ತಿ (Version): 1.0.0**<br><br>"
+        info += "ನಿಖರವಾದ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಲೆಕ್ಕಾಚಾರಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.<br>"
+        info += "Designed for precise Vedic Astrology calculations, specifically tailored for accurate Dasha, Panchanga, and Divisional chart generation. Built to operate seamlessly offline for fast and private astrological consultations."
+        st.markdown(info, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Safe, visible, standard Streamlit button for the source code link
+        st.link_button("</> Source Code", "https://github.com/your-username/bharatheeyam", use_container_width=True)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
