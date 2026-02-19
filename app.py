@@ -164,7 +164,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v9_panchanga")
+geolocator = Nominatim(user_agent="bharatheeyam_v10_final")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -414,7 +414,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "pada": pada
     }
 
-    # Advanced Panchanga
+    # Advanced Panchanga (Without Sunrise/Sunset Times)
     m_deg = positions["ಚಂದ್ರ"]
     s_deg = positions["ರವಿ"]
     t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
@@ -440,8 +440,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     r_idx = int(m_deg / 30)
     rasi_name = KN_RASHI[r_idx]
     
-    sr_c, ss_c = find_sunrise_set_for_date(dob_obj.year, dob_obj.month, dob_obj.day, lat, lon)
-    
     a_deg = int(ayan)
     a_min = int((ayan - a_deg) * 60)
     ayan_str = str(a_deg) + "° " + str(a_min) + "'"
@@ -460,8 +458,6 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "y": yoga_name,
         "k": k_name,
         "r": rasi_name,
-        "sr_t": jd_to_time_str(sr_c),
-        "ss_t": jd_to_time_str(ss_c),
         "ayan": ayan_str,
         "sr": panch_sr, 
         "udayadi": fmt_ghati((jd_birth - panch_sr) * 60), 
@@ -700,8 +696,6 @@ elif st.session_state.page == "dashboard":
         p_lines.append("<div class='card'><table class='key-val-table'>")
         
         arr = [
-            ("ಸೂರ್ಯೋದಯ", pan['sr_t']),
-            ("ಸೂರ್ಯಾಸ್ತ", pan['ss_t']),
             ("ವಾರ", str(pan['v'])),
             ("ತಿಥಿ", str(pan['t'])),
             ("ನಕ್ಷತ್ರ", str(pan['n'])),
