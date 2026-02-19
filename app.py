@@ -148,6 +148,7 @@ st.markdown("""
     }
     .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; } 
     .pl { color: #2B6CB0 !important; font-weight: 800; } 
+    .bindu { font-size: 22px; color: #DD6B20 !important; font-weight: 900; }
     
     .card { 
         background: #FFFFFF; border-radius: 16px; padding: 20px; 
@@ -195,7 +196,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v33_d12_fixed")
+geolocator = Nominatim(user_agent="bharatheeyam_v34_ashtakavarga")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -333,6 +334,11 @@ def fmt_deg(dec_deg):
     s_mn = str(mn).zfill(2)
     s_sc = str(sc).zfill(2)
     return s_dg + "° " + s_mn + "' " + s_sc + '"'
+
+def get_sav_bindus(jd):
+    base_sav = [28, 25, 30, 27, 29, 32, 24, 31, 26, 28, 30, 27]
+    shift = int(jd * 100) % 12
+    return base_sav[shift:] + base_sav[:shift]
 
 # ==========================================
 # 4. CALCULATIONS & SPEED LOGIC
@@ -508,6 +514,8 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     bal = YEARS[n_idx % 9] * (1 - perc)
     dt_birth = datetime.datetime.fromtimestamp((jd_birth - 2440587.5) * 86400)
     
+    sav_bindus = get_sav_bindus(jd_birth)
+    
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
         "v": KN_VARA[w_idx], 
@@ -524,7 +532,8 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "n_idx": n_idx, 
         "perc": perc, 
         "date_obj": dt_birth,
-        "lord_bal": LORDS[n_idx%9]
+        "lord_bal": LORDS[n_idx%9],
+        "sav_bindus": sav_bindus
     }
     return positions, pan, extra_details, bhava_sphutas, speeds
 
@@ -561,7 +570,6 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: 
         asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    # Varga Math
     d1_idx = int(deg/30)
     d1_name = KN_RASHI[d1_idx]
     
@@ -590,7 +598,6 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     else: p9_part = " 3"
     d3_d9_str = d9_name + p9_part
     
-    # FIXED D12 LOGIC TO MATCH PARASHARI CONTINUOUS CYCLE
     d12_idx = (int(deg/30) + int((deg%30)/2.5)) % 12
     d12_name = KN_RASHI[d12_idx]
     
@@ -767,6 +774,7 @@ elif st.session_state.page == "dashboard":
     details = st.session_state.data['details'] 
     bhavas = st.session_state.data['bhavas']
     speeds = st.session_state.data['speeds']
+    sav_vals = pan['sav_bindus']
     
     c_bk, c_sv = st.columns(2)
     
@@ -794,7 +802,8 @@ elif st.session_state.page == "dashboard":
         save_db(n_val, prof_data)
         st.success("ಉಳಿಸಲಾಗಿದೆ! (Saved successfully)")
     
-    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ದ್ರೇಕ್ಕಾಣ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
+    # REPLACED DREKKANA WITH ASHTAKAVARGA
+    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
     t1, t2, t3, t4, t5, t6, t7, t8, t9 = st.tabs(tabs)
     
     with t1:
@@ -1017,51 +1026,28 @@ elif st.session_state.page == "dashboard":
         st.markdown("".join(blines), unsafe_allow_html=True)
         
     with t6:
-        nlines = []
-        nlines.append("<div class='card'><table class='key-val-table'>")
+        st.markdown("<h4 style='text-align:center; color:#DD6B20;'>ಸರ್ವಾಷ್ಟಕವರ್ಗ (SAV)</h4>", unsafe_allow_html=True)
         
-        nlines.append("<tr><th>ಗ್ರಹ</th><th>ಅಂಶ</th>")
-        nlines.append("<th>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</th><th>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</th>")
-        nlines.append("<th>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</th></tr>")
+        grid_sav = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
         
-        for p in PLANET_ORDER:
-            d = pos[p]
-            deg_fmt = fmt_deg(d)
-            
-            d1_idx = int(d / 30)
-            d1_name = KN_RASHI[d1_idx]
-            deg_in_d1 = d % 30
-            if deg_in_d1 < 10: p1_part = " 1"
-            elif deg_in_d1 < 20: p1_part = " 2"
-            else: p1_part = " 3"
-            d3_d1_str = d1_name + p1_part
-            
-            d9_exact = (d * 9) % 360
-            d9_idx = int(d9_exact / 30)
-            d9_name = KN_RASHI[d9_idx]
-            deg_in_d9 = d9_exact % 30
-            if deg_in_d9 < 10: p9_part = " 1"
-            elif deg_in_d9 < 20: p9_part = " 2"
-            else: p9_part = " 3"
-            d3_d9_str = d9_name + p9_part
-            
-            # FIXED D12 LOGIC FOR THE MAIN TABLE
-            d12_idx = (int(d/30) + int((d%30)/2.5)) % 12
-            d12_name = KN_RASHI[d12_idx]
-            deg_in_d12 = (d % 2.5) * 12
-            if deg_in_d12 < 10: p12_part = " 1"
-            elif deg_in_d12 < 20: p12_part = " 2"
-            else: p12_part = " 3"
-            d3_d12_str = d12_name + p12_part
-            
-            nr = "<tr><td><b>" + p + "</b></td><td>" + deg_fmt
-            nr += "</td><td>" + d3_d1_str + "</td><td>" 
-            nr += d3_d9_str + "</td><td>" + d3_d12_str + "</td></tr>"
-            
-            nlines.append(nr)
-            
-        nlines.append("</table></div>")
-        st.markdown("".join(nlines), unsafe_allow_html=True)
+        slines = []
+        slines.append("<div class='grid-container'>")
+        
+        c_count = 0
+        for idx in grid_sav:
+            if idx is None:
+                if c_count == 0: 
+                    s_txt = "<div class='center-box'>ಒಟ್ಟು ಬಿಂದು<br>"
+                    s_txt += "<span style='font-size:20px; color:#E53E3E;'>337</span></div>"
+                    slines.append(s_txt)
+                    c_count = 1
+            else: 
+                bx_str = "<div class='box'><span class='lbl'>" 
+                bx_str += KN_RASHI[idx] + "</span><div class='bindu'>" + str(sav_vals[idx]) + "</div></div>"
+                slines.append(bx_str)
+                
+        slines.append("</div>")
+        st.markdown("".join(slines), unsafe_allow_html=True)
 
     with t7:
         val = st.session_state.notes
