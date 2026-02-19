@@ -164,7 +164,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v16_live_time")
+geolocator = Nominatim(user_agent="bharatheeyam_v17_live_time_fix")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -477,6 +477,26 @@ if 'lat' not in st.session_state:
 if 'lon' not in st.session_state: 
     st.session_state.lon = 74.73
 
+# --- GET LIVE TIME ONCE PER PAGE RELOAD ---
+if 'dob_input' not in st.session_state:
+    tz_ist = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+    now = datetime.datetime.now(tz_ist)
+    
+    st.session_state.dob_input = now.date()
+    
+    h24 = now.hour
+    h12 = h24 % 12
+    if h12 == 0:
+        h12 = 12
+        
+    st.session_state.h_input = h12
+    st.session_state.m_input = now.minute
+    
+    if h24 < 12:
+        st.session_state.ampm_input = "AM"
+    else:
+        st.session_state.ampm_input = "PM"
+
 st.markdown('<div class="header-box">ಭಾರತೀಯಮ್</div>', unsafe_allow_html=True)
 
 if st.session_state.page == "input":
@@ -485,28 +505,21 @@ if st.session_state.page == "input":
         st.info("ವಿವರಗಳನ್ನು ನಮೂದಿಸಿ (Enter Details)")
         name = st.text_input("ಹೆಸರು", "ಬಳಕೆದಾರ")
         
-        # --- GET LIVE CLOCK TIME ---
-        now = datetime.datetime.now()
-        cur_date = now.date()
-        cur_h24 = now.hour
-        cur_m = now.minute
+        # Explicit min_value to stop Streamlit from restricting older birth years
+        d_min = datetime.date(1800, 1, 1)
+        d_max = datetime.date(2100, 12, 31)
         
-        if cur_h24 < 12:
-            am_pm_idx = 0 
-        else:
-            am_pm_idx = 1
-            
-        cur_h12 = cur_h24 % 12
-        if cur_h12 == 0:
-            cur_h12 = 12
-            
-        dob = st.date_input("ದಿನಾಂಕ", cur_date)
+        dob = st.date_input(
+            "ದಿನಾಂಕ", 
+            key="dob_input", 
+            min_value=d_min, 
+            max_value=d_max
+        )
         
         c1, c2, c3 = st.columns(3)
-        h = c1.number_input("ಗಂಟೆ", 1, 12, cur_h12)
-        m = c2.number_input("ನಿಮಿಷ", 0, 59, cur_m)
-        ampm = c3.selectbox("M", ["AM", "PM"], index=am_pm_idx)
-        # ---------------------------
+        h = c1.number_input("ಗಂಟೆ", 1, 12, key="h_input")
+        m = c2.number_input("ನಿಮಿಷ", 0, 59, key="m_input")
+        ampm = c3.selectbox("M", ["AM", "PM"], key="ampm_input")
         
         place_q = st.text_input("ಊರು ಹುಡುಕಿ", "Yellapur")
         if st.button("ಹುಡುಕಿ"):
