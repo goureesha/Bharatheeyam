@@ -161,6 +161,20 @@ st.markdown("""
         padding: 12px 6px; color: #2D3748 !important; 
         font-size: 14px;
     }
+    
+    /* BAV TABLE SPECIFIC STYLING */
+    .bav-table th {
+        background-color: #EDF2F7;
+        color: #2D3748;
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+    .bav-table td {
+        padding: 8px 4px;
+        font-size: 13px;
+        border-bottom: 1px solid #EDF2F7;
+    }
+    
     details { 
         margin-bottom: 8px; border: 1px solid #EDF2F7; 
         border-radius: 10px; overflow: hidden; background: #FFFFFF; 
@@ -196,7 +210,7 @@ st.markdown("""
 # ==========================================
 swe.set_ephe_path(None)
 swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v35_brihat_jataka")
+geolocator = Nominatim(user_agent="bharatheeyam_v36_bav_detail")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -335,11 +349,13 @@ def fmt_deg(dec_deg):
     s_sc = str(sc).zfill(2)
     return s_dg + "° " + s_mn + "' " + s_sc + '"'
 
-# --- BRIHAT JATAKA EXACT ASHTAKAVARGA LOGIC ---
-def calculate_sav(positions):
+# --- BRIHAT JATAKA ASHTAKAVARGA ENGINE ---
+def calculate_ashtakavarga(positions):
     P_KEYS = ["ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ", "ಲಗ್ನ"]
     r_idx = {k: int(positions[k] / 30) for k in P_KEYS}
+    
     sav = [0] * 12
+    bav = {p: [0]*12 for p in ["ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ"]}
     
     BAV_RULES = {
         "ರವಿ": [
@@ -384,9 +400,11 @@ def calculate_sav(positions):
         for ref_idx, ref_planet in enumerate(P_KEYS):
             ref_rashi = r_idx[ref_planet]
             for h in rules[ref_idx]:
-                sav[(ref_rashi + h - 1) % 12] += 1
+                sign_idx = (ref_rashi + h - 1) % 12
+                bav[target][sign_idx] += 1
+                sav[sign_idx] += 1
                 
-    return sav
+    return sav, bav
 
 # ==========================================
 # 4. MAIN CALCULATIONS & SPEED LOGIC
@@ -562,8 +580,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     bal = YEARS[n_idx % 9] * (1 - perc)
     dt_birth = datetime.datetime.fromtimestamp((jd_birth - 2440587.5) * 86400)
     
-    # EXACT PARASHARI ASHTAKAVARGA ARRAY
-    sav_bindus = calculate_sav(positions)
+    sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], 
@@ -582,7 +599,8 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
         "perc": perc, 
         "date_obj": dt_birth,
         "lord_bal": LORDS[n_idx%9],
-        "sav_bindus": sav_bindus
+        "sav_bindus": sav_bindus,
+        "bav_bindus": bav_bindus
     }
     return positions, pan, extra_details, bhava_sphutas, speeds
 
@@ -824,6 +842,7 @@ elif st.session_state.page == "dashboard":
     bhavas = st.session_state.data['bhavas']
     speeds = st.session_state.data['speeds']
     sav_vals = pan['sav_bindus']
+    bav_vals = pan['bav_bindus']
     
     c_bk, c_sv = st.columns(2)
     
@@ -1096,6 +1115,24 @@ elif st.session_state.page == "dashboard":
                 
         slines.append("</div>")
         st.markdown("".join(slines), unsafe_allow_html=True)
+        
+        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>📝 ಬಿನ್ನಾಷ್ಟಕವರ್ಗ (BAV Detail)</h4>", unsafe_allow_html=True)
+        
+        t_arr = []
+        t_arr.append("<div class='card' style='overflow-x:auto;'>")
+        t_arr.append("<table class='bav-table' style='width:100%; text-align:center;'>")
+        t_arr.append("<tr><th>ರಾಶಿ</th><th>ರವಿ</th><th>ಚಂ</th><th>ಕು</th><th>ಬು</th>")
+        t_arr.append("<th>ಗು</th><th>ಶು</th><th>ಶ</th><th>ಒಟ್ಟು</th></tr>")
+        
+        for i in range(12):
+            tr = "<tr><td><b>" + KN_RASHI[i][:3] + "</b></td>"
+            for p in ["ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ"]:
+                tr += "<td>" + str(bav_vals[p][i]) + "</td>"
+            tr += "<td style='color:#E53E3E; font-weight:bold;'>" + str(sav_vals[i]) + "</td></tr>"
+            t_arr.append(tr)
+            
+        t_arr.append("</table></div>")
+        st.markdown("".join(t_arr), unsafe_allow_html=True)
 
     with t7:
         val = st.session_state.notes
