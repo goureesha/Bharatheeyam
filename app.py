@@ -208,8 +208,7 @@ st.markdown("""
 # 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
-swe.set_sid_mode(swe.SIDM_LAHIRI)
-geolocator = Nominatim(user_agent="bharatheeyam_v42_prashna_sphuta")
+geolocator = Nominatim(user_agent="bharatheeyam_v43_adv_settings")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -464,7 +463,10 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
     
     return mandi_jd, is_night, panch_sr, vedic_wday, start_base
 
-def get_full_calculations(jd_birth, lat, lon, dob_obj):
+def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
+    
+    # APPLY DYNAMIC AYANAMSA SETTING
+    swe.set_sid_mode(ayan_mode)
     swe.set_topo(float(lon), float(lat), 0)
     ayan = swe.get_ayanamsa(jd_birth)
     positions = {}
@@ -487,7 +489,9 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
             "pada": pada
         }
 
-    rahu_res = swe.calc_ut(jd_birth, swe.TRUE_NODE, flag)
+    # APPLY DYNAMIC NODE SETTING (True vs Mean)
+    node_flag = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
+    rahu_res = swe.calc_ut(jd_birth, node_mode, node_flag)
     rahu_deg = rahu_res[0][0] % 360
     rahu_speed = rahu_res[0][3]
     
@@ -580,14 +584,13 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj):
     
     sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
-    # --- CORRECTED ADVANCED SPHUTAS (PRASHNA MARGA) ---
+    # --- PRASHNA SPHUTAS ---
     L = positions["ಲಗ್ನ"]
     M = positions["ಚಂದ್ರ"]
     S = positions["ರವಿ"]
     Ma = positions["ಮಾಂದಿ"]
     R = positions["ರಾಹು"]
     
-    # FIXED TRISPHUTA (Lagna + Moon + Mandi)
     tri = (L + M + Ma) % 360
     chatu = (tri + S) % 360
     pancha = (chatu + R) % 360
@@ -855,6 +858,15 @@ if st.session_state.page == "input":
         lat = st.number_input("Latitude", key="lat", format="%.4f")
         lon = st.number_input("Longitude", key="lon", format="%.4f")
         
+        # --- NEW ADVANCED SETTINGS FOR AYANAMSA & RAHU ---
+        with st.expander("⚙️ ಸುಧಾರಿತ ಆಯ್ಕೆಗಳು (Advanced Settings)"):
+            ca, cn = st.columns(2)
+            ayan_opts = ["ಲಾಹಿರಿ (Lahiri)", "ರಾಮನ್ (Raman)", "ಕೆ.ಪಿ (KP)"]
+            ayan_sel = ca.selectbox("ಅಯನಾಂಶ", ayan_opts)
+            
+            node_opts = ["True Rahu", "Mean Rahu"]
+            node_sel = cn.selectbox("ರಾಹು ಗಣನೆ", node_opts)
+            
         st.markdown("<br>", unsafe_allow_html=True)
         
         if st.button("ಜಾತಕ ರಚಿಸಿ", type="primary"):
@@ -862,7 +874,16 @@ if st.session_state.page == "input":
             h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
             
-            p1, p2, p3, p4, p5 = get_full_calculations(jd, lat, lon, dob)
+            ayan_map = {
+                "ಲಾಹಿರಿ (Lahiri)": swe.SIDM_LAHIRI, 
+                "ರಾಮನ್ (Raman)": swe.SIDM_RAMAN, 
+                "ಕೆ.ಪಿ (KP)": swe.SIDM_KP
+            }
+            ayan_mode = ayan_map[ayan_sel]
+            
+            node_mode = swe.TRUE_NODE if node_sel == "True Rahu" else swe.MEAN_NODE
+            
+            p1, p2, p3, p4, p5 = get_full_calculations(jd, lat, lon, dob, ayan_mode, node_mode)
             
             st.session_state.data = {
                 "pos": p1, "pan": p2, "details": p3, "bhavas": p4, "speeds": p5
