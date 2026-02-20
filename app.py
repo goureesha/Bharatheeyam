@@ -92,6 +92,13 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
+    /* RADIO BUTTON TEXT STYLING */
+    div[data-testid="stRadio"] label p {
+        font-weight: 800 !important;
+        color: #2B6CB0 !important;
+        font-size: 15px !important;
+    }
+    
     .grid-container { 
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
@@ -157,7 +164,7 @@ st.markdown("""
         margin-bottom: 16px; border: 1px solid #E2E8F0; 
         box-shadow: 0 4px 16px rgba(0,0,0,0.03); 
     }
-    .key { color: #4A5568 !important; font-weight: 800; width: 45%; }
+    .key { color: #4A5568 !important; font-weight: 800; width: 50%; }
     .key-val-table td { 
         border-bottom: 1px solid #EDF2F7; 
         padding: 12px 6px; color: #2D3748 !important; 
@@ -453,7 +460,6 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     asta_text = "ಹೌದು" if is_asta else "ಇಲ್ಲ"
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    # Standard Vargas
     d1_idx = int(deg/30)
     dr_val = deg % 30
     is_odd = ((d1_idx) % 2 == 0)
@@ -465,14 +471,19 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     d12_idx = d12_sign_math
     d30_idx = (0 if dr_val < 5 else (10 if dr_val < 10 else (8 if dr_val < 18 else (2 if dr_val < 25 else 6)))) if is_odd else (5 if dr_val < 5 else (2 if dr_val < 12 else (8 if dr_val < 20 else (10 if dr_val < 25 else 0))))
         
-    # --- RESTORED: UPA DREKKANA CALCULATIONS ---
-    # 1. Rashi Drekkana (already true_d3_idx)
-    # 2. Navamsha Drekkana (D3 of exact D9 longitude)
+    # --- ಉಪ ದ್ರೇಕ್ಕಾಣ ಲೆಕ್ಕಾಚಾರಗಳು & ಸಂಖ್ಯೆಗಳು ---
+    # 1. ರಾಶಿ ದ್ರೇಕ್ಕಾಣ (D1 ರ D3)
+    rashi_drek_num = int(dr_val / 10) + 1
+    
+    # 2. ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ (D9 ನ ನಿಖರಾಂಶದಿಂದ D3)
     d9_rem = d9_exact % 30
     nav_drek_idx = d9_idx if d9_rem < 10 else ((d9_idx + 4) % 12 if d9_rem < 20 else (d9_idx + 8) % 12)
-    # 3. Dwadashamsha Drekkana (D3 of exact D12 longitude)
+    nav_drek_num = int(d9_rem / 10) + 1
+    
+    # 3. ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ (D12 ನ ನಿಖರಾಂಶದಿಂದ D3)
     d12_deg = ((deg % 30) % 2.5) * 12 
     dwa_drek_idx = d12_idx if d12_deg < 10 else ((d12_idx + 4) % 12 if d12_deg < 20 else (d12_idx + 8) % 12)
+    dwa_drek_num = int(d12_deg / 10) + 1
 
     h_arr = [
         "<div class='card'><table class='key-val-table'>",
@@ -494,13 +505,13 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     ]
     st.markdown("".join(v_arr), unsafe_allow_html=True)
 
-    # --- RESTORED: UPA DREKKANA DISPLAY ---
+    # --- ಉಪ ದ್ರೇಕ್ಕಾಣ ವಿಭಾಗ ---
     st.markdown("#### 📊 ಉಪ ದ್ರೇಕ್ಕಾಣ")
     upa_arr = [
         "<div class='card'><table class='key-val-table'>",
-        f"<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[true_d3_idx]}</td></tr>",
-        f"<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[nav_drek_idx]}</td></tr>",
-        f"<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[dwa_drek_idx]}</td></tr></table></div>"
+        f"<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[true_d3_idx]} ({rashi_drek_num})</td></tr>",
+        f"<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[nav_drek_idx]} ({nav_drek_num})</td></tr>",
+        f"<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[dwa_drek_idx]} ({dwa_drek_num})</td></tr></table></div>"
     ]
     st.markdown("".join(upa_arr), unsafe_allow_html=True)
 
@@ -529,7 +540,7 @@ if st.session_state.page == "input":
     with st.container():
         saved_db = load_db()
         if len(saved_db) > 0:
-            st.markdown("<div class='card'>#### 📂 ಉಳಿಸಿದ ಜಾತಕ", unsafe_allow_html=True)
+            st.markdown("<div class='card'>#### 📂 ಉಳಿಸಿದ ಜಾತಕ</div>", unsafe_allow_html=True)
             c_sel, c_btn = st.columns([3, 1])
             sel_n = c_sel.selectbox("ಆಯ್ಕೆಮಾಡಿ", [""] + list(saved_db.keys()), label_visibility="collapsed")
             if c_btn.button("ತೆಗೆಯಿರಿ", use_container_width=True) and sel_n != "":
@@ -540,9 +551,8 @@ if st.session_state.page == "input":
                     "lat": prof['lat'], "lon": prof['lon'], "place_input": prof['p']
                 })
                 st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
         
-        st.markdown("<div class='card'>#### ✨ ಹೊಸ ಜಾತಕ", unsafe_allow_html=True)
+        st.markdown("<div class='card'>#### ✨ ಹೊಸ ಜಾತಕ</div>", unsafe_allow_html=True)
         name = st.text_input("ಹೆಸರು", key="name_input")
         dob = st.date_input("ದಿನಾಂಕ", key="dob_input", min_value=datetime.date(1800, 1, 1), max_value=datetime.date(2100, 12, 31))
         
@@ -582,7 +592,6 @@ if st.session_state.page == "input":
             st.session_state.data = {"pos": p1, "pan": p2, "details": p3, "bhavas": p4, "speeds": p5}
             st.session_state.page = "dashboard"
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.page == "dashboard":
     pos, pan, details, bhavas, speeds = st.session_state.data['pos'], st.session_state.data['pan'], st.session_state.data['details'], st.session_state.data['bhavas'], st.session_state.data['speeds']
@@ -618,7 +627,7 @@ elif st.session_state.page == "dashboard":
         with c_tog_txt:
             st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-top:8px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</div>", unsafe_allow_html=True)
         with c_tog_btn:
-            show_sphutas = st.toggle("Sphutas", value=False, label_visibility="collapsed")
+            show_sphutas = st.toggle("Show Sphutas", value=False, label_visibility="collapsed")
             
         st.markdown("<br>", unsafe_allow_html=True)
         
