@@ -98,11 +98,12 @@ st.markdown("""
         font-size: 15px !important;
     }
 
-    /* FIX FOR TOGGLE TEXT CUTTING OFF ON MOBILE */
+    /* FIX FOR TOGGLE TEXT CUTTING OFF ON MOBILE & MATCHING RADIO COLOR */
     div[data-testid="stToggle"] label p {
         white-space: normal !important;
         font-weight: 800 !important;
-        color: #2D3748 !important;
+        color: #2B6CB0 !important;
+        font-size: 15px !important;
     }
     
     .grid-container { 
@@ -735,7 +736,6 @@ elif st.session_state.page == "dashboard":
         st.markdown("".join(dlines), unsafe_allow_html=True)
     
     with t5:
-        # Added Birth Details at the top of the Panchanga Tab
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown(f"<p style='color:#2B6CB0; font-weight:800; margin:0;'>ಸ್ಥಳ: <span style='color:#2D3748;'>{st.session_state.place_input}</span></p>", unsafe_allow_html=True)
         st.markdown(f"<p style='color:#2B6CB0; font-weight:800; margin:0;'>ದಿನಾಂಕ: <span style='color:#2D3748;'>{st.session_state.dob_input.strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
