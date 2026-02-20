@@ -92,16 +92,6 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
-    /* UNIFIED CSS FOR RADIO BUTTONS AND TOGGLE TEXT */
-    div[data-testid="stRadio"] label p,
-    div[data-testid="stToggle"] label p {
-        font-weight: 800 !important;
-        color: #2B6CB0 !important;
-        font-size: 15px !important;
-        white-space: normal !important;
-        overflow: visible !important;
-    }
-    
     .grid-container { 
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
@@ -598,11 +588,24 @@ elif st.session_state.page == "dashboard":
     with t1:
         c_v, c_b = st.columns(2)
         d_names = {1: "ರಾಶಿ", 2: "ಹೋರಾ", 3: "ದ್ರೇಕ್ಕಾಣ", 9: "ನವಾಂಶ", 12: "ದ್ವಾದಶಾಂಶ", 30: "ತ್ರಿಂಶಾಂಶ"}
-        v_opt_base = c_v.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
-        c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True)
         
-        # RESTORED TOGGLE NATIVELY
-        show_sphutas = st.toggle("ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ", value=False)
+        with c_v:
+            st.markdown("<p style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:-10px;'>ವರ್ಗ</p>", unsafe_allow_html=True)
+            v_opt_base = st.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x], label_visibility="collapsed")
+            
+        with c_b:
+            st.markdown("<p style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:-10px;'>ಚಾರ್ಟ್ ವಿಧ</p>", unsafe_allow_html=True)
+            c_mode = st.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True, label_visibility="collapsed")
+        
+        st.markdown("<hr style='margin: 10px 0px; border-color: #E2E8F0;'>", unsafe_allow_html=True)
+        
+        # FOOLPROOF TOGGLE RENDERING: Explicitly separated from CSS
+        c_tog_txt, c_tog_btn = st.columns([3, 1])
+        with c_tog_txt:
+            st.markdown("<p style='color:#2B6CB0; font-weight:800; font-size:16px; margin-top:8px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</p>", unsafe_allow_html=True)
+        with c_tog_btn:
+            show_sphutas = st.toggle("Sphutas", value=False, label_visibility="collapsed")
+            
         st.markdown("<br>", unsafe_allow_html=True)
         
         v_opt = 1 if c_mode == "ಭಾವ" else (9 if c_mode == "ನವಾಂಶ" else v_opt_base)
