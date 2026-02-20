@@ -111,24 +111,22 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     
-    /* UPDATED: Scrollable boxes so they don't crash the layout */
     .box { 
         background: #FFFFFF; 
         position: relative; 
         display: flex; 
         flex-direction: column; 
         align-items: center; 
-        justify-content: flex-start; /* Start from the top */
+        justify-content: flex-start; 
         font-size: 12px; 
         font-weight: 800; 
-        padding: 15px 2px 2px 2px; /* Extra top padding to avoid overlapping the label */
+        padding: 15px 2px 2px 2px; 
         text-align: center; 
         border-radius: 8px;
         box-shadow: inset 0 0 5px rgba(0,0,0,0.02);
-        overflow-y: auto; /* Enables vertical scrolling */
+        overflow-y: auto; 
     }
     
-    /* Custom thin scrollbar for elegance */
     .box::-webkit-scrollbar { width: 3px; }
     .box::-webkit-scrollbar-track { background: transparent; }
     .box::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 10px; }
@@ -211,7 +209,6 @@ st.markdown("""
     .pd-node span { color: #319795 !important; }
     .date-label { font-size: 12px; opacity: 0.9; float: right; font-weight: normal; }
 
-    /* MOBILE SPECIFIC FIXES */
     @media (max-width: 600px) {
         .grid-container { gap: 2px; border-width: 2px; }
         .box { padding: 12px 2px 2px 2px; font-size: 9px; }
@@ -507,6 +504,7 @@ if 'name_input' not in st.session_state: st.session_state.name_input = ""
 if 'place_input' not in st.session_state: st.session_state.place_input = "Yellapur"
 if 'lat' not in st.session_state: st.session_state.lat = 14.98
 if 'lon' not in st.session_state: st.session_state.lon = 74.73
+if 'aroodhas' not in st.session_state: st.session_state.aroodhas = {} # Added to store Aroodhas
 
 if 'dob_input' not in st.session_state:
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30)))
@@ -589,14 +587,18 @@ elif st.session_state.page == "dashboard":
         save_db(st.session_state.name_input if st.session_state.name_input != "" else "ಅಜ್ಞಾತ_" + d_str, prof_data)
         st.success("ಉಳಿಸಲಾಗಿದೆ!")
     
-    t1, t2, t3, t4, t5, t6, t7, t8, t9 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"])
+    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ಆರೂಢ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
+    t1, t2, t3, t4, t5, t6, t7, t8, t9, t10 = st.tabs(tabs)
     
     with t1:
-        c_v, c_b, c_s = st.columns([2, 2, 2])
+        c_v, c_b = st.columns(2)
         d_names = {1: "ರಾಶಿ", 2: "ಹೋರಾ", 3: "ದ್ರೇಕ್ಕಾಣ", 9: "ನವಾಂಶ", 12: "ದ್ವಾದಶಾಂಶ", 30: "ತ್ರಿಂಶಾಂಶ"}
         v_opt_base = c_v.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True)
-        show_sphutas = c_s.checkbox("ಸ್ಫುಟಗಳನ್ನು ಸೇರಿಸಿ (Show Sphutas)", value=False, help="Toggle to display all 16 Sphutas inside the chart boxes.")
+        
+        # CHANGED: Full width toggle so text isn't cut off
+        show_sphutas = st.toggle("ಸ್ಫುಟಗಳನ್ನು ಸೇರಿಸಿ (Show Advanced Sphutas)", value=False)
+        st.markdown("<br>", unsafe_allow_html=True)
         
         v_opt = 1 if c_mode == "ಭಾವ" else (9 if c_mode == "ನವಾಂಶ" else v_opt_base)
         b_opt = True if c_mode == "ಭಾವ" else False
@@ -666,8 +668,46 @@ elif st.session_state.page == "dashboard":
             slines.append(f"<tr><td><b>{sp}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{fmt_deg(d)}</td><td style='text-align:right'>{KN_NAK[int(d / 13.333333333) % 27]}-{int((d % 13.333333333) / 3.333333333) + 1}</td></tr>")
         slines.append("</table></div>")
         st.markdown("".join(slines), unsafe_allow_html=True)
-        
+
+    # --- NEW AROODHA TAB ---
     with t3:
+        st.markdown("#### ಆರೂಢ ಚಕ್ರ (Aroodha Kundali)")
+        
+        c_aro1, c_aro2, c_aro3 = st.columns([2, 2, 1])
+        aro_options = ["ಆರೂಢ (Aroodha)", "ಉದಯ (Udaya)", "ಲಗ್ನಾಂಶ (Lagnamsha)", "ಛತ್ರ (Chatra)", "ಸ್ಪೃಷ್ಟಾಂಗ (Sprushthanga)", "ಚಂದ್ರ (Chandra)", "ತಾಂಬೂಲ (Tamboola)"]
+        selected_aro = c_aro1.selectbox("ಆರೂಢ ಆಯ್ಕೆಮಾಡಿ", aro_options, label_visibility="collapsed")
+        selected_rashi = c_aro2.selectbox("ರಾಶಿ ಆಯ್ಕೆಮಾಡಿ", KN_RASHI, label_visibility="collapsed")
+        
+        if c_aro3.button("ಸೇರಿಸಿ (Add)", use_container_width=True):
+            st.session_state.aroodhas[selected_aro] = KN_RASHI.index(selected_rashi)
+            st.rerun()
+
+        if len(st.session_state.aroodhas) > 0:
+            if st.button("ತೆರವುಗೊಳಿಸಿ (Clear All)", key="clear_aro"):
+                st.session_state.aroodhas = {}
+                st.rerun()
+
+        # Build Aroodha dedicated Grid
+        bxs_aro = {i: "" for i in range(12)}
+        for a_name, r_idx in st.session_state.aroodhas.items():
+            # Use split to only show the Kannada part inside the box to save space
+            display_name = a_name.split(" ")[0]
+            bxs_aro[r_idx] += f"<div class='hi'>{display_name}</div>"
+
+        grid_aro = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
+        alines = ["<div class='grid-container' style='margin-top:20px;'>"]
+        c_count_a = 0
+        for idx in grid_aro:
+            if idx is None:
+                if c_count_a == 0: 
+                    alines.append("<div class='center-box'>ಆರೂಢ<br>ಚಕ್ರ</div>")
+                    c_count_a = 1
+            else: 
+                alines.append(f"<div class='box'><span class='lbl'>{KN_RASHI[idx]}</span>{bxs_aro[idx]}</div>")
+        alines.append("</div>")
+        st.markdown("".join(alines), unsafe_allow_html=True)
+        
+    with t4:
         st.markdown(f"<div class='card' style='color:#DD6B20; font-weight:900;'>ಶಿಷ್ಟ ದಶೆ: {pan['lord_bal']} ಉಳಿಕೆ: {pan['d_bal']}</div>", unsafe_allow_html=True)
         dlines, cur_d, si = [], pan['date_obj'], pan['n_idx'] % 9
         for i in range(9):
@@ -692,21 +732,21 @@ elif st.session_state.page == "dashboard":
             cur_d = md_end
         st.markdown("".join(dlines), unsafe_allow_html=True)
     
-    with t4:
+    with t5:
         p_lines = ["<div class='card'><table class='key-val-table'>"]
         for k, v in [("ವಾರ", str(pan['v'])), ("ತಿಥಿ", str(pan['t'])), ("ನಕ್ಷತ್ರ", str(pan['n'])), ("ಯೋಗ", str(pan['y'])), ("ಕರಣ", str(pan['k'])), ("ಚಂದ್ರ ರಾಶಿ", str(pan['r'])), ("ಉದಯಾದಿ ಘಟಿ", str(pan['udayadi'])), ("ಗತ ಘಟಿ", str(pan['gata'])), ("ಪರಮ ಘಟಿ", str(pan['parama'])), ("ಶೇಷ ಘಟಿ", str(pan['rem']))]:
             p_lines.append(f"<tr><td class='key'>{k}</td><td>{v}</td></tr>")
         p_lines.append("</table></div>")
         st.markdown("".join(p_lines), unsafe_allow_html=True)
             
-    with t5:
+    with t6:
         blines = ["<div class='card'><table class='key-val-table'><tr><th>ಭಾವ</th><th>ಮಧ್ಯ (Sphuta)</th><th>ರಾಶಿ</th></tr>"]
         for i, deg in enumerate(bhavas):
             blines.append(f"<tr><td><b>{str(i + 1)}</b></td><td>{fmt_deg(deg)}</td><td>{KN_RASHI[int(deg/30)]}</td></tr>")
         blines.append("</table></div>")
         st.markdown("".join(blines), unsafe_allow_html=True)
         
-    with t6:
+    with t7:
         st.markdown("<h4 style='text-align:center; color:#DD6B20;'>ಸರ್ವಾಷ್ಟಕವರ್ಗ (SAV)</h4>", unsafe_allow_html=True)
         slines, c_count = ["<div class='grid-container'>"], 0
         for idx in [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]:
@@ -729,12 +769,12 @@ elif st.session_state.page == "dashboard":
         t_arr.append("</table></div>")
         st.markdown("".join(t_arr), unsafe_allow_html=True)
 
-    with t7: st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300)
+    with t8: st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=st.session_state.notes, height=300)
 
-    with t8:
+    with t9:
         st.markdown("<div class='card' style='text-align:center;'>### 🚫 ಜಾಹೀರಾತು-ಮುಕ್ತ<p style='color:#718096; font-weight:600;'>ಜಾಹೀರಾತುಗಳಿಲ್ಲದೆ ನಿರಂತರವಾಗಿ ಆ್ಯಪ್ ಬಳಸಿ.<br></p><br></div>", unsafe_allow_html=True)
         st.button("ಜಾಹೀರಾತು ತೆಗೆಯಿರಿ (₹99)", type="primary", use_container_width=True)
 
-    with t9:
+    with t10:
         st.markdown("<div class='card'>#### ಭಾರತೀಯಮ್<p style='color:#4A5568; font-size:14px; line-height:1.6;'><b>ಆವೃತ್ತಿ: 1.0.0</b><br><br>ನಿಖರವಾದ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಲೆಕ್ಕಾಚಾರಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.</p><br></div>", unsafe_allow_html=True)
         st.link_button("</> Source Code", "https://github.com/your-username/bharatheeyam", use_container_width=True)
