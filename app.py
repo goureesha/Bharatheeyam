@@ -92,19 +92,14 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
-    /* RESTORED RADIO BUTTON TEXT STYLING */
-    div[data-testid="stRadio"] label p {
-        font-weight: 800 !important;
-        color: #2B6CB0 !important;
-        font-size: 15px !important;
-    }
-
-    /* MATCHED TOGGLE TEXT STYLING + MOBILE WRAP FIX */
+    /* UNIFIED CSS FOR RADIO BUTTONS AND TOGGLE TEXT */
+    div[data-testid="stRadio"] label p,
     div[data-testid="stToggle"] label p {
         font-weight: 800 !important;
         color: #2B6CB0 !important;
         font-size: 15px !important;
         white-space: normal !important;
+        overflow: visible !important;
     }
     
     .grid-container { 
@@ -606,7 +601,7 @@ elif st.session_state.page == "dashboard":
         v_opt_base = c_v.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True)
         
-        # RESTORED TOGGLE PROPERLY
+        # RESTORED TOGGLE NATIVELY
         show_sphutas = st.toggle("ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ", value=False)
         st.markdown("<br>", unsafe_allow_html=True)
         
