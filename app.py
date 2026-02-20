@@ -147,8 +147,9 @@ st.markdown("""
         font-weight: 900; 
     }
     
-    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; font-size: 14px; } 
-    .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; font-size: 14px; } 
+    /* VERY LARGE FONTS FOR KUNDALI */
+    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; font-size: 15px; } 
+    .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; font-size: 15px; } 
     .sp { color: #805AD5 !important; font-weight: 800; white-space: nowrap; font-size: 13px; } 
     .bindu { font-size: 22px; color: #DD6B20 !important; font-weight: 900; }
     
@@ -209,8 +210,9 @@ st.markdown("""
         .box { padding: 14px 2px 2px 2px; font-size: 12px; }
         .center-box { font-size: 14px; }
         .lbl { font-size: 9px; top: 1px; left: 2px; }
-        .hi, .pl { font-size: 12px; line-height: 1.3; letter-spacing: 0px; }
-        .sp { font-size: 11px; line-height: 1.3; letter-spacing: 0px; font-weight: 800;}
+        /* VERY LARGE FONTS FOR MOBILE TOO */
+        .hi, .pl { font-size: 13px; line-height: 1.3; letter-spacing: 0px; }
+        .sp { font-size: 12px; line-height: 1.3; letter-spacing: 0px; font-weight: 800;}
         .header-box { font-size: 20px; padding: 15px; }
     }
 </style>
@@ -516,7 +518,8 @@ if st.session_state.page == "input":
         if len(saved_db) > 0:
             st.markdown("<div class='card'>#### 📂 ಉಳಿಸಿದ ಜಾತಕ", unsafe_allow_html=True)
             c_sel, c_btn = st.columns([3, 1])
-            sel_n = c_sel.selectbox("ಆಯ್ಕೆಮಾಡಿ", [""] + list(saved_db.keys()), label_visibility="collapsed")
+            # Removed hidden label to prevent any layout breaking
+            sel_n = c_sel.selectbox("ಆಯ್ಕೆಮಾಡಿ", [""] + list(saved_db.keys()))
             if c_btn.button("ತೆಗೆಯಿರಿ", use_container_width=True) and sel_n != "":
                 prof = saved_db[sel_n]
                 st.session_state.update({
@@ -589,23 +592,18 @@ elif st.session_state.page == "dashboard":
         c_v, c_b = st.columns(2)
         d_names = {1: "ರಾಶಿ", 2: "ಹೋರಾ", 3: "ದ್ರೇಕ್ಕಾಣ", 9: "ನವಾಂಶ", 12: "ದ್ವಾದಶಾಂಶ", 30: "ತ್ರಿಂಶಾಂಶ"}
         
-        # HTML titles so they NEVER break Streamlit Native Text
+        # PURE NATIVE STREAMLIT WIDGETS
         with c_v:
-            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:5px;'>ವರ್ಗ</div>", unsafe_allow_html=True)
-            v_opt_base = st.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x], label_visibility="collapsed")
+            v_opt_base = st.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
             
         with c_b:
-            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:5px;'>ಚಾರ್ಟ್ ವಿಧ</div>", unsafe_allow_html=True)
-            c_mode = st.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True, label_visibility="collapsed")
+            c_mode = st.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True)
         
         st.markdown("<hr style='margin: 10px 0px; border-color: #E2E8F0;'>", unsafe_allow_html=True)
         
-        # Toggle isolated perfectly
-        c_tog_txt, c_tog_btn = st.columns([3, 1])
-        with c_tog_txt:
-            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-top:8px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</div>", unsafe_allow_html=True)
-        with c_tog_btn:
-            show_sphutas = st.toggle("Show Sphutas", value=False, label_visibility="collapsed")
+        # UNBREAKABLE TEXT HEADER FOR TOGGLE
+        st.markdown("<h4 style='color:#2B6CB0; font-weight:800; font-size:16px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</h4>", unsafe_allow_html=True)
+        show_sphutas = st.toggle("ಆನ್ / ಆಫ್", value=False)
             
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -683,9 +681,13 @@ elif st.session_state.page == "dashboard":
         
         c_aro1, c_aro2, c_aro3 = st.columns([2, 2, 1])
         aro_options = ["ಆರೂಢ", "ಉದಯ", "ಲಗ್ನಾಂಶ", "ಛತ್ರ", "ಸ್ಪೃಷ್ಟಾಂಗ", "ಚಂದ್ರ", "ತಾಂಬೂಲ"]
-        selected_aro = c_aro1.selectbox("ಆರೂಢ ಆಯ್ಕೆಮಾಡಿ", aro_options, label_visibility="collapsed")
-        selected_rashi = c_aro2.selectbox("ರಾಶಿ ಆಯ್ಕೆಮಾಡಿ", KN_RASHI, label_visibility="collapsed")
         
+        # PURE NATIVE STREAMLIT WIDGETS
+        selected_aro = c_aro1.selectbox("ಆರೂಢ ಆಯ್ಕೆಮಾಡಿ", aro_options)
+        selected_rashi = c_aro2.selectbox("ರಾಶಿ ಆಯ್ಕೆಮಾಡಿ", KN_RASHI)
+        
+        # ADD BUTTON PUSHED DOWN SLIGHTLY TO ALIGN WITH SELECTBOXES
+        st.markdown("""<style>div[data-testid="column"]:nth-of-type(3) { display: flex; align-items: flex-end; padding-bottom: 2px; }</style>""", unsafe_allow_html=True)
         if c_aro3.button("ಸೇರಿಸಿ", use_container_width=True):
             st.session_state.aroodhas[selected_aro] = KN_RASHI.index(selected_rashi)
             st.rerun()
