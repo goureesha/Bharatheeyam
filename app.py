@@ -147,8 +147,8 @@ st.markdown("""
         font-weight: 900; 
     }
     
-    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; font-size: 15px; } 
-    .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; font-size: 15px; } 
+    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; font-size: 14px; } 
+    .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; font-size: 14px; } 
     .sp { color: #805AD5 !important; font-weight: 800; white-space: nowrap; font-size: 13px; } 
     .bindu { font-size: 22px; color: #DD6B20 !important; font-weight: 900; }
     
@@ -157,7 +157,7 @@ st.markdown("""
         margin-bottom: 16px; border: 1px solid #E2E8F0; 
         box-shadow: 0 4px 16px rgba(0,0,0,0.03); 
     }
-    .key { color: #4A5568 !important; font-weight: 800; width: 45%; }
+    .key { color: #4A5568 !important; font-weight: 800; width: 50%; }
     .key-val-table td { 
         border-bottom: 1px solid #EDF2F7; 
         padding: 12px 6px; color: #2D3748 !important; 
@@ -453,38 +453,36 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     asta_text = "ಹೌದು" if is_asta else "ಇಲ್ಲ"
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    # --- FLOAT SAFE MATH FOR UPA DREKKANA ---
+    # --- FLOAT SAFE MATH ---
     c_deg = round(deg, 6)
     d1_idx = int(c_deg / 30)
     dr_val = c_deg % 30
+    
     is_odd = ((d1_idx) % 2 == 0)
     d2_idx = (4 if dr_val < 15 else 3) if is_odd else (3 if dr_val < 15 else 4)
-    
-    d30_idx = (0 if dr_val < 5 else (10 if dr_val < 10 else (8 if dr_val < 18 else (2 if dr_val < 25 else 6)))) if is_odd else (5 if dr_val < 5 else (2 if dr_val < 12 else (8 if dr_val < 20 else (10 if dr_val < 25 else 0))))
-    
-    # 1. Rashi Drekkana (D3 of D1)
-    rashi_drek_num = int(dr_val / 10) + 1
-    if rashi_drek_num > 3: rashi_drek_num = 3
-    true_d3_idx = (d1_idx + (rashi_drek_num - 1) * 4) % 12
-    
-    # 2. Navamsha Drekkana (D3 of D9)
+    true_d3_idx = d1_idx if dr_val < 10 else ((d1_idx + 4) % 12 if dr_val < 20 else (d1_idx + 8) % 12)
     d9_exact = round((c_deg * 9) % 360, 6)
     d9_idx = int(d9_exact / 30)
-    d9_rem = d9_exact % 30
-    nav_drek_num = int(d9_rem / 10) + 1
-    if nav_drek_num > 3: nav_drek_num = 3
-    nav_drek_idx = (d9_idx + (nav_drek_num - 1) * 4) % 12
-    
-    # 3. Dwadashamsha Drekkana (D3 of D12) - FLOAT SAFE
     d12_part = int(dr_val / 2.5)
     if d12_part > 11: d12_part = 11
     d12_idx = (d1_idx + d12_part) % 12
+    d30_idx = (0 if dr_val < 5 else (10 if dr_val < 10 else (8 if dr_val < 18 else (2 if dr_val < 25 else 6)))) if is_odd else (5 if dr_val < 5 else (2 if dr_val < 12 else (8 if dr_val < 20 else (10 if dr_val < 25 else 0))))
     
+    # --- ಉಪ ದ್ರೇಕ್ಕಾಣ ಲೆಕ್ಕಾಚಾರಗಳು ---
+    # 1. ರಾಶಿ ದ್ರೇಕ್ಕಾಣ 
+    rashi_drek_num = int(dr_val / 10) + 1
+    if rashi_drek_num > 3: rashi_drek_num = 3
+    
+    # 2. ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ
+    d9_rem = d9_exact % 30
+    nav_drek_num = int(d9_rem / 10) + 1
+    if nav_drek_num > 3: nav_drek_num = 3
+    
+    # 3. ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ (FLOAT SAFE)
     slice_rem = round(dr_val - (d12_part * 2.5), 6)
     d12_deg = round(slice_rem * 12, 6)
     dwa_drek_num = int(d12_deg / 10) + 1
     if dwa_drek_num > 3: dwa_drek_num = 3
-    dwa_drek_idx = (d12_idx + (dwa_drek_num - 1) * 4) % 12
 
     h_arr = [
         "<div class='card'><table class='key-val-table'>",
@@ -506,12 +504,14 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     ]
     st.markdown("".join(v_arr), unsafe_allow_html=True)
 
+    # --- ಉಪ ದ್ರೇಕ್ಕಾಣ ವಿಭಾಗ ---
+    # Rashi stays original, just appended with the Drekkana part number
     st.markdown("#### 📊 ಉಪ ದ್ರೇಕ್ಕಾಣ")
     upa_arr = [
         "<div class='card'><table class='key-val-table'>",
-        f"<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[true_d3_idx]} ({rashi_drek_num})</td></tr>",
-        f"<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[nav_drek_idx]} ({nav_drek_num})</td></tr>",
-        f"<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[dwa_drek_idx]} ({dwa_drek_num})</td></tr></table></div>"
+        f"<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[d1_idx]} ({rashi_drek_num})</td></tr>",
+        f"<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[d9_idx]} ({nav_drek_num})</td></tr>",
+        f"<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[d12_idx]} ({dwa_drek_num})</td></tr></table></div>"
     ]
     st.markdown("".join(upa_arr), unsafe_allow_html=True)
 
