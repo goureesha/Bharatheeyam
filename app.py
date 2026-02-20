@@ -97,6 +97,13 @@ st.markdown("""
         color: #2B6CB0 !important;
         font-size: 15px !important;
     }
+
+    div[data-testid="stToggle"] label p {
+        font-weight: 800 !important;
+        color: #2B6CB0 !important;
+        font-size: 15px !important;
+        white-space: normal !important;
+    }
     
     .grid-container { 
         display: grid; 
@@ -148,6 +155,7 @@ st.markdown("""
     }
     .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; } 
     .pl { color: #2B6CB0 !important; font-weight: 800; } 
+    .sp { color: #805AD5 !important; font-weight: 800; font-size: 11px; } 
     .bindu { font-size: 22px; color: #DD6B20 !important; font-weight: 900; }
     
     .card { 
@@ -582,8 +590,15 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
     
     sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
-    # --- UPAGRAHAS ONLY ---
+    # --- UPAGRAHAS & 16 ADVANCED SPHUTAS ---
     S = positions["ರವಿ"]
+    M = positions["ಚಂದ್ರ"]
+    J = positions["ಗುರು"]
+    V = positions["ಶುಕ್ರ"]
+    Ma = positions["ಕುಜ"]
+    R = positions[KN_PLANETS[101]]
+    Asc = positions["ಲಗ್ನ"]
+    Md = positions["ಮಾಂದಿ"]
     
     dhooma = (S + 133.333333) % 360
     vyatipata = (360 - dhooma) % 360
@@ -591,12 +606,25 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
     indrachapa = (360 - parivesha) % 360
     upaketu = (indrachapa + 16.666667) % 360
     
+    bhrigu = (M + R) / 2
+    beeja = (S + V + J) % 360
+    kshetra = (M + Ma + J) % 360
+    yogi = (S + M + 93.333333) % 360
+    trisphuta = (Asc + M + Md) % 360
+    chatusphuta = (trisphuta + S) % 360
+    panchasphuta = (chatusphuta + R) % 360
+    prana = (Asc * 5 + Md) % 360
+    deha = (M * 8 + Md) % 360
+    mrityu = (Md * 7 + S) % 360
+    sookshma = (prana + deha + mrityu) % 360
+    
     adv_sphutas = {
-        "ಧೂಮ (Dhooma)": dhooma,
-        "ವ್ಯತೀಪಾತ (Vyatipata)": vyatipata,
-        "ಪರಿವೇಷ (Parivesha)": parivesha,
-        "ಇಂದ್ರಚಾಪ (Indrachapa)": indrachapa,
-        "ಉಪಕೇತು (Upaketu)": upaketu
+        "ಧೂಮ": dhooma, "ವ್ಯತೀಪಾತ": vyatipata, "ಪರಿವೇಷ": parivesha,
+        "ಇಂದ್ರಚಾಪ": indrachapa, "ಉಪಕೇತು": upaketu, "ಭೃಗು ಬಿ.": bhrigu,
+        "ಬೀಜ": beeja, "ಕ್ಷೇತ್ರ": kshetra, "ಯೋಗಿ": yogi,
+        "ತ್ರಿಸ್ಫುಟ": trisphuta, "ಚತುಃಸ್ಫುಟ": chatusphuta,
+        "ಪಂಚಸ್ಫುಟ": panchasphuta, "ಪ್ರಾಣ": prana, "ದೇಹ": deha,
+        "ಮೃತ್ಯು": mrityu, "ಸೂಕ್ಷ್ಮ ತ್ರಿ.": sookshma
     }
     
     pan = {
@@ -741,6 +769,8 @@ if 'data' not in st.session_state:
     st.session_state.data = {}
 if 'notes' not in st.session_state: 
     st.session_state.notes = ""
+if 'aroodhas' not in st.session_state: 
+    st.session_state.aroodhas = {}
     
 if 'name_input' not in st.session_state: 
     st.session_state.name_input = ""
@@ -782,9 +812,9 @@ if st.session_state.page == "input":
             c_sel, c_btn = st.columns([3, 1])
             k_list = [""] + list(saved_db.keys())
             
-            sel_n = c_sel.selectbox("Select", k_list, label_visibility="collapsed")
+            sel_n = c_sel.selectbox("ಆಯ್ಕೆಮಾಡಿ", k_list, label_visibility="collapsed")
             
-            if c_btn.button("Open", use_container_width=True):
+            if c_btn.button("ತೆಗೆಯಿರಿ", use_container_width=True):
                 if sel_n != "":
                     prof = saved_db[sel_n]
                     st.session_state.name_input = sel_n
@@ -819,7 +849,7 @@ if st.session_state.page == "input":
         c1, c2, c3 = st.columns(3)
         h = c1.number_input("ಗಂಟೆ", 1, 12, key="h_input")
         m = c2.number_input("ನಿಮಿಷ", 0, 59, key="m_input")
-        ampm = c3.selectbox("M", ["AM", "PM"], key="ampm_input")
+        ampm = c3.selectbox("ಬೆಳಿಗ್ಗೆ/ಮಧ್ಯಾಹ್ನ", ["AM", "PM"], key="ampm_input")
         
         place_q = st.text_input("ಊರು ಹುಡುಕಿ", key="place_input")
         if st.button("ಹುಡುಕಿ"):
@@ -830,17 +860,17 @@ if st.session_state.page == "input":
                     st.session_state.lon = loc.longitude
                     st.success("📍 " + loc.address)
             except: 
-                st.error("Error connecting to location service.")
+                st.error("ಸ್ಥಳ ಸಂಪರ್ಕಿಸುವಲ್ಲಿ ದೋಷ.")
                 
-        lat = st.number_input("Latitude", key="lat", format="%.4f")
-        lon = st.number_input("Longitude", key="lon", format="%.4f")
+        lat = st.number_input("ಅಕ್ಷಾಂಶ", key="lat", format="%.4f")
+        lon = st.number_input("ರೇಖಾಂಶ", key="lon", format="%.4f")
         
-        with st.expander("⚙️ ಸುಧಾರಿತ ಆಯ್ಕೆಗಳು (Advanced Settings)"):
+        with st.expander("⚙️ ಸುಧಾರಿತ ಆಯ್ಕೆಗಳು"):
             ca, cn = st.columns(2)
-            ayan_opts = ["ಲಾಹಿರಿ (Lahiri)", "ರಾಮನ್ (Raman)", "ಕೆ.ಪಿ (KP)"]
+            ayan_opts = ["ಲಾಹಿರಿ", "ರಾಮನ್", "ಕೆ.ಪಿ"]
             ayan_sel = ca.selectbox("ಅಯನಾಂಶ", ayan_opts)
             
-            node_opts = ["True Rahu", "Mean Rahu"]
+            node_opts = ["ನಿಜ ರಾಹು", "ಸರಾಸರಿ ರಾಹು"]
             node_sel = cn.selectbox("ರಾಹು ಗಣನೆ", node_opts)
             
         st.markdown("<br>", unsafe_allow_html=True)
@@ -851,13 +881,13 @@ if st.session_state.page == "input":
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
             
             ayan_map = {
-                "ಲಾಹಿರಿ (Lahiri)": swe.SIDM_LAHIRI, 
-                "ರಾಮನ್ (Raman)": swe.SIDM_RAMAN, 
-                "ಕೆ.ಪಿ (KP)": swe.SIDM_KRISHNAMURTI
+                "ಲಾಹಿರಿ": swe.SIDM_LAHIRI, 
+                "ರಾಮನ್": swe.SIDM_RAMAN, 
+                "ಕೆ.ಪಿ": swe.SIDM_KRISHNAMURTI
             }
             ayan_mode = ayan_map[ayan_sel]
             
-            node_mode = swe.TRUE_NODE if node_sel == "True Rahu" else swe.MEAN_NODE
+            node_mode = swe.TRUE_NODE if node_sel == "ನಿಜ ರಾಹು" else swe.MEAN_NODE
             
             p1, p2, p3, p4, p5 = get_full_calculations(jd, lat, lon, dob, ayan_mode, node_mode)
             
@@ -902,10 +932,10 @@ elif st.session_state.page == "dashboard":
             n_val = "Unknown_" + d_str
             
         save_db(n_val, prof_data)
-        st.success("ಉಳಿಸಲಾಗಿದೆ! (Saved successfully)")
+        st.success("ಉಳಿಸಲಾಗಿದೆ!")
     
-    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
-    t1, t2, t3, t4, t5, t6, t7, t8, t9 = st.tabs(tabs)
+    tabs = ["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ಆರೂಢ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
+    t1, t2, t3, t4, t5, t6, t7, t8, t9, t10 = st.tabs(tabs)
     
     with t1:
         c_v, c_b = st.columns(2)
@@ -925,6 +955,9 @@ elif st.session_state.page == "dashboard":
         mode_opts = ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"]
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", mode_opts, horizontal=True)
         
+        show_sphutas = st.toggle("ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ", value=False)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
         if c_mode == "ಭಾವ":
             v_opt = 1
             b_opt = True
@@ -938,8 +971,16 @@ elif st.session_state.page == "dashboard":
         bxs = {i: "" for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
         
-        for n in PLANET_ORDER:
-            d = pos[n]
+        render_items = list(PLANET_ORDER)
+        render_pos = dict(pos)
+        
+        if show_sphutas:
+            for k, v in pan['adv_sphutas'].items():
+                render_items.append(k)
+                render_pos[k] = v
+        
+        for n in render_items:
+            d = render_pos[n]
             if v_opt == 1: 
                 if not b_opt:
                     ri = int(d/30)
@@ -985,6 +1026,8 @@ elif st.session_state.page == "dashboard":
                 
             if n in ["ಲಗ್ನ", "ಮಾಂದಿ"]:
                 cls = "hi"
+            elif n in pan['adv_sphutas']:
+                cls = "sp"
             else:
                 cls = "pl"
                 
@@ -1025,7 +1068,6 @@ elif st.session_state.page == "dashboard":
                 show_planet_popup(p_n, pos[p_n], speeds.get(p_n, 0), pos["ರವಿ"])
     
     with t2:
-        # PURE UPAGRAHAS TAB
         slines = []
         slines.append("<div class='card'><table class='key-val-table'>")
         slines.append("<tr><th>ಉಪಗ್ರಹ ಸ್ಫುಟ</th><th>ರಾಶಿ</th>")
@@ -1033,8 +1075,10 @@ elif st.session_state.page == "dashboard":
         slines.append("<th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>")
         
         sphuta_order = [
-            "ಧೂಮ (Dhooma)", "ವ್ಯತೀಪಾತ (Vyatipata)", "ಪರಿವೇಷ (Parivesha)",
-            "ಇಂದ್ರಚಾಪ (Indrachapa)", "ಉಪಕೇತು (Upaketu)"
+            "ಧೂಮ", "ವ್ಯತೀಪಾತ", "ಪರಿವೇಷ", "ಇಂದ್ರಚಾಪ", "ಉಪಕೇತು",
+            "ಭೃಗು ಬಿ.", "ಬೀಜ", "ಕ್ಷೇತ್ರ", "ಯೋಗಿ",
+            "ತ್ರಿಸ್ಫುಟ", "ಚತುಃಸ್ಫುಟ", "ಪಂಚಸ್ಫುಟ",
+            "ಪ್ರಾಣ", "ದೇಹ", "ಮೃತ್ಯು", "ಸೂಕ್ಷ್ಮ ತ್ರಿ."
         ]
         
         for sp in sphuta_order:
@@ -1047,10 +1091,7 @@ elif st.session_state.page == "dashboard":
             nak_name = KN_NAK[nak_idx % 27]
             pada_num = str(pada)
             
-            # Shorten label for clean table view
-            sp_short = sp.split(" ")[0]
-            
-            sr = "<tr><td><b>" + sp_short + "</b></td><td>" + r_name + "</td>"
+            sr = "<tr><td><b>" + sp + "</b></td><td>" + r_name + "</td>"
             sr += "<td style='text-align:right'>" + deg_fmt + "</td>"
             sr += "<td style='text-align:right'>" + nak_name + "-" + pada_num + "</td></tr>"
             slines.append(sr)
@@ -1059,6 +1100,42 @@ elif st.session_state.page == "dashboard":
         st.markdown("".join(slines), unsafe_allow_html=True)
         
     with t3:
+        st.markdown("#### ಆರೂಢ ಚಕ್ರ")
+        
+        c_aro1, c_aro2, c_aro3 = st.columns([2, 2, 1])
+        aro_options = ["ಆರೂಢ", "ಉದಯ", "ಲಗ್ನಾಂಶ", "ಛತ್ರ", "ಸ್ಪೃಷ್ಟಾಂಗ", "ಚಂದ್ರ", "ತಾಂಬೂಲ"]
+        
+        selected_aro = c_aro1.selectbox("ಆರೂಢ ಆಯ್ಕೆಮಾಡಿ", aro_options)
+        selected_rashi = c_aro2.selectbox("ರಾಶಿ ಆಯ್ಕೆಮಾಡಿ", KN_RASHI)
+        
+        st.markdown("""<style>div[data-testid="column"]:nth-of-type(3) { display: flex; align-items: flex-end; padding-bottom: 2px; }</style>""", unsafe_allow_html=True)
+        if c_aro3.button("ಸೇರಿಸಿ", use_container_width=True):
+            st.session_state.aroodhas[selected_aro] = KN_RASHI.index(selected_rashi)
+            st.rerun()
+
+        if len(st.session_state.aroodhas) > 0:
+            if st.button("ತೆರವುಗೊಳಿಸಿ", key="clear_aro"):
+                st.session_state.aroodhas = {}
+                st.rerun()
+
+        bxs_aro = {i: "" for i in range(12)}
+        for a_name, r_idx in st.session_state.aroodhas.items():
+            bxs_aro[r_idx] += f"<div class='hi'>{a_name}</div>"
+
+        grid_aro = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
+        alines = ["<div class='grid-container' style='margin-top:20px;'>"]
+        c_count_a = 0
+        for idx in grid_aro:
+            if idx is None:
+                if c_count_a == 0: 
+                    alines.append("<div class='center-box'>ಆರೂಢ<br>ಚಕ್ರ</div>")
+                    c_count_a = 1
+            else: 
+                alines.append(f"<div class='box'><span class='lbl'>{KN_RASHI[idx]}</span>{bxs_aro[idx]}</div>")
+        alines.append("</div>")
+        st.markdown("".join(alines), unsafe_allow_html=True)
+
+    with t4:
         bal_txt = "ಶಿಷ್ಟ ದಶೆ: " + pan['lord_bal'] + " ಉಳಿಕೆ: " + pan['d_bal']
         ht = "<div class='card' style='color:#DD6B20; font-weight:900;'>"
         ht += bal_txt + "</div>"
@@ -1110,7 +1187,13 @@ elif st.session_state.page == "dashboard":
             
         st.markdown("".join(dlines), unsafe_allow_html=True)
     
-    with t4:
+    with t5:
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#2B6CB0; font-weight:800; margin:0;'>ಸ್ಥಳ: <span style='color:#2D3748;'>{st.session_state.place_input}</span></p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#2B6CB0; font-weight:800; margin:0;'>ದಿನಾಂಕ: <span style='color:#2D3748;'>{st.session_state.dob_input.strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#2B6CB0; font-weight:800; margin:0;'>ಸಮಯ: <span style='color:#2D3748;'>{st.session_state.h_input}:{str(st.session_state.m_input).zfill(2)} {st.session_state.ampm_input}</span></p>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        
         p_lines = []
         p_lines.append("<div class='card'><table class='key-val-table'>")
         
@@ -1134,7 +1217,7 @@ elif st.session_state.page == "dashboard":
         p_lines.append("</table></div>")
         st.markdown("".join(p_lines), unsafe_allow_html=True)
             
-    with t5:
+    with t6:
         blines = []
         blines.append("<div class='card'><table class='key-val-table'>")
         blines.append("<tr><th>ಭಾವ</th><th>ಮಧ್ಯ (Sphuta)</th>")
@@ -1152,7 +1235,7 @@ elif st.session_state.page == "dashboard":
         blines.append("</table></div>")
         st.markdown("".join(blines), unsafe_allow_html=True)
         
-    with t6:
+    with t7:
         st.markdown("<h4 style='text-align:center; color:#DD6B20;'>ಸರ್ವಾಷ್ಟಕವರ್ಗ (SAV)</h4>", unsafe_allow_html=True)
         
         grid_sav = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
@@ -1194,11 +1277,11 @@ elif st.session_state.page == "dashboard":
         t_arr.append("</table></div>")
         st.markdown("".join(t_arr), unsafe_allow_html=True)
 
-    with t7:
+    with t8:
         val = st.session_state.notes
         st.session_state.notes = st.text_area("ಟಿಪ್ಪಣಿಗಳು", value=val, height=300)
 
-    with t8:
+    with t9:
         st.markdown("<div class='card' style='text-align:center;'>", unsafe_allow_html=True)
         st.markdown("### 🚫 ಜಾಹೀರಾತು-ಮುಕ್ತ")
         
@@ -1206,10 +1289,10 @@ elif st.session_state.page == "dashboard":
         st.markdown(info_text, unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
-        st.button("Remove Ads (₹99)", type="primary", use_container_width=True)
+        st.button("ಜಾಹೀರಾತು ತೆಗೆಯಿರಿ (₹99)", type="primary", use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with t9:
+    with t10:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.markdown("#### ಭಾರತೀಯಮ್")
         
@@ -1220,6 +1303,6 @@ elif st.session_state.page == "dashboard":
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        st.link_button("</> Source Code", "https://github.com/your-username/bharatheeyam", use_container_width=True)
+        st.link_button("</> ಮೂಲ ಕೋಡ್", "https://github.com/your-username/bharatheeyam", use_container_width=True)
         
         st.markdown("</div>", unsafe_allow_html=True)
