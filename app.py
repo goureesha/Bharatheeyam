@@ -97,6 +97,13 @@ st.markdown("""
         color: #2B6CB0 !important;
         font-size: 15px !important;
     }
+
+    /* FIX FOR TOGGLE TEXT CUTTING OFF ON MOBILE */
+    div[data-testid="stToggle"] label p {
+        white-space: normal !important;
+        font-weight: 800 !important;
+        color: #2D3748 !important;
+    }
     
     .grid-container { 
         display: grid; 
@@ -504,7 +511,7 @@ if 'name_input' not in st.session_state: st.session_state.name_input = ""
 if 'place_input' not in st.session_state: st.session_state.place_input = "Yellapur"
 if 'lat' not in st.session_state: st.session_state.lat = 14.98
 if 'lon' not in st.session_state: st.session_state.lon = 74.73
-if 'aroodhas' not in st.session_state: st.session_state.aroodhas = {} # Added to store Aroodhas
+if 'aroodhas' not in st.session_state: st.session_state.aroodhas = {} 
 
 if 'dob_input' not in st.session_state:
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=5, minutes=30)))
@@ -521,8 +528,8 @@ if st.session_state.page == "input":
         if len(saved_db) > 0:
             st.markdown("<div class='card'>#### 📂 ಉಳಿಸಿದ ಜಾತಕ", unsafe_allow_html=True)
             c_sel, c_btn = st.columns([3, 1])
-            sel_n = c_sel.selectbox("Select", [""] + list(saved_db.keys()), label_visibility="collapsed")
-            if c_btn.button("ತೆಗೆಯಿರಿ (Open)", use_container_width=True) and sel_n != "":
+            sel_n = c_sel.selectbox("ಆಯ್ಕೆಮಾಡಿ", [""] + list(saved_db.keys()), label_visibility="collapsed")
+            if c_btn.button("ತೆಗೆಯಿರಿ", use_container_width=True) and sel_n != "":
                 prof = saved_db[sel_n]
                 st.session_state.update({
                     "name_input": sel_n, "dob_input": datetime.datetime.strptime(prof['d'], "%Y-%m-%d").date(),
@@ -539,7 +546,7 @@ if st.session_state.page == "input":
         c1, c2, c3 = st.columns(3)
         h = c1.number_input("ಗಂಟೆ", 1, 12, key="h_input")
         m = c2.number_input("ನಿಮಿಷ", 0, 59, key="m_input")
-        ampm = c3.selectbox("M", ["AM", "PM"], key="ampm_input")
+        ampm = c3.selectbox("ಬೆಳಿಗ್ಗೆ/ಮಧ್ಯಾಹ್ನ", ["AM", "PM"], key="ampm_input")
         
         place_q = st.text_input("ಊರು ಹುಡುಕಿ", key="place_input")
         if st.button("ಹುಡುಕಿ"):
@@ -548,15 +555,15 @@ if st.session_state.page == "input":
                 if loc: 
                     st.session_state.lat, st.session_state.lon = loc.latitude, loc.longitude
                     st.success("📍 " + loc.address)
-            except: st.error("Error connecting to location service.")
+            except: st.error("ಲೋಪ: ಸ್ಥಳ ಕಂಡುಬಂದಿಲ್ಲ.")
                 
-        lat = st.number_input("ಅಕ್ಷಾಂಶ (Latitude)", key="lat", format="%.4f")
-        lon = st.number_input("ರೇಖಾಂಶ (Longitude)", key="lon", format="%.4f")
+        lat = st.number_input("ಅಕ್ಷಾಂಶ", key="lat", format="%.4f")
+        lon = st.number_input("ರೇಖಾಂಶ", key="lon", format="%.4f")
         
         with st.expander("⚙️ ಸುಧಾರಿತ ಆಯ್ಕೆಗಳು"):
             ca, cn = st.columns(2)
             ayan_sel = ca.selectbox("ಅಯನಾಂಶ", ["ಲಾಹಿರಿ", "ರಾಮನ್", "ಕೆ.ಪಿ"])
-            node_sel = cn.selectbox("ರಾಹು ಗಣನೆ", ["True Rahu", "Mean Rahu"])
+            node_sel = cn.selectbox("ರಾಹು ಗಣನೆ", ["ನಿಜ ರಾಹು", "ಸರಾಸರಿ ರಾಹು"])
             
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -566,7 +573,7 @@ if st.session_state.page == "input":
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
             
             ayan_mode = {"ಲಾಹಿರಿ": swe.SIDM_LAHIRI, "ರಾಮನ್": swe.SIDM_RAMAN, "ಕೆ.ಪಿ": swe.SIDM_KRISHNAMURTI}[ayan_sel]
-            node_mode = swe.TRUE_NODE if node_sel == "True Rahu" else swe.MEAN_NODE
+            node_mode = swe.TRUE_NODE if node_sel == "ನಿಜ ರಾಹು" else swe.MEAN_NODE
             
             p1, p2, p3, p4, p5 = get_full_calculations(jd, lat, lon, dob, ayan_mode, node_mode)
             st.session_state.data = {"pos": p1, "pan": p2, "details": p3, "bhavas": p4, "speeds": p5}
@@ -596,8 +603,7 @@ elif st.session_state.page == "dashboard":
         v_opt_base = c_v.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True)
         
-        # CHANGED: Full width toggle so text isn't cut off
-        show_sphutas = st.toggle("ಸ್ಫುಟಗಳನ್ನು ಸೇರಿಸಿ (Show Advanced Sphutas)", value=False)
+        show_sphutas = st.toggle("ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ", value=False)
         st.markdown("<br>", unsafe_allow_html=True)
         
         v_opt = 1 if c_mode == "ಭಾವ" else (9 if c_mode == "ನವಾಂಶ" else v_opt_base)
@@ -669,30 +675,26 @@ elif st.session_state.page == "dashboard":
         slines.append("</table></div>")
         st.markdown("".join(slines), unsafe_allow_html=True)
 
-    # --- NEW AROODHA TAB ---
     with t3:
-        st.markdown("#### ಆರೂಢ ಚಕ್ರ (Aroodha Kundali)")
+        st.markdown("#### ಆರೂಢ ಚಕ್ರ")
         
         c_aro1, c_aro2, c_aro3 = st.columns([2, 2, 1])
-        aro_options = ["ಆರೂಢ (Aroodha)", "ಉದಯ (Udaya)", "ಲಗ್ನಾಂಶ (Lagnamsha)", "ಛತ್ರ (Chatra)", "ಸ್ಪೃಷ್ಟಾಂಗ (Sprushthanga)", "ಚಂದ್ರ (Chandra)", "ತಾಂಬೂಲ (Tamboola)"]
+        aro_options = ["ಆರೂಢ", "ಉದಯ", "ಲಗ್ನಾಂಶ", "ಛತ್ರ", "ಸ್ಪೃಷ್ಟಾಂಗ", "ಚಂದ್ರ", "ತಾಂಬೂಲ"]
         selected_aro = c_aro1.selectbox("ಆರೂಢ ಆಯ್ಕೆಮಾಡಿ", aro_options, label_visibility="collapsed")
         selected_rashi = c_aro2.selectbox("ರಾಶಿ ಆಯ್ಕೆಮಾಡಿ", KN_RASHI, label_visibility="collapsed")
         
-        if c_aro3.button("ಸೇರಿಸಿ (Add)", use_container_width=True):
+        if c_aro3.button("ಸೇರಿಸಿ", use_container_width=True):
             st.session_state.aroodhas[selected_aro] = KN_RASHI.index(selected_rashi)
             st.rerun()
 
         if len(st.session_state.aroodhas) > 0:
-            if st.button("ತೆರವುಗೊಳಿಸಿ (Clear All)", key="clear_aro"):
+            if st.button("ತೆರವುಗೊಳಿಸಿ", key="clear_aro"):
                 st.session_state.aroodhas = {}
                 st.rerun()
 
-        # Build Aroodha dedicated Grid
         bxs_aro = {i: "" for i in range(12)}
         for a_name, r_idx in st.session_state.aroodhas.items():
-            # Use split to only show the Kannada part inside the box to save space
-            display_name = a_name.split(" ")[0]
-            bxs_aro[r_idx] += f"<div class='hi'>{display_name}</div>"
+            bxs_aro[r_idx] += f"<div class='hi'>{a_name}</div>"
 
         grid_aro = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
         alines = ["<div class='grid-container' style='margin-top:20px;'>"]
@@ -733,6 +735,13 @@ elif st.session_state.page == "dashboard":
         st.markdown("".join(dlines), unsafe_allow_html=True)
     
     with t5:
+        # Added Birth Details at the top of the Panchanga Tab
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#2B6CB0; font-weight:800; margin:0;'>ಸ್ಥಳ: <span style='color:#2D3748;'>{st.session_state.place_input}</span></p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#2B6CB0; font-weight:800; margin:0;'>ದಿನಾಂಕ: <span style='color:#2D3748;'>{st.session_state.dob_input.strftime('%d-%m-%Y')}</span></p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#2B6CB0; font-weight:800; margin:0;'>ಸಮಯ: <span style='color:#2D3748;'>{st.session_state.h_input}:{str(st.session_state.m_input).zfill(2)} {st.session_state.ampm_input}</span></p>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
         p_lines = ["<div class='card'><table class='key-val-table'>"]
         for k, v in [("ವಾರ", str(pan['v'])), ("ತಿಥಿ", str(pan['t'])), ("ನಕ್ಷತ್ರ", str(pan['n'])), ("ಯೋಗ", str(pan['y'])), ("ಕರಣ", str(pan['k'])), ("ಚಂದ್ರ ರಾಶಿ", str(pan['r'])), ("ಉದಯಾದಿ ಘಟಿ", str(pan['udayadi'])), ("ಗತ ಘಟಿ", str(pan['gata'])), ("ಪರಮ ಘಟಿ", str(pan['parama'])), ("ಶೇಷ ಘಟಿ", str(pan['rem']))]:
             p_lines.append(f"<tr><td class='key'>{k}</td><td>{v}</td></tr>")
@@ -773,8 +782,8 @@ elif st.session_state.page == "dashboard":
 
     with t9:
         st.markdown("<div class='card' style='text-align:center;'>### 🚫 ಜಾಹೀರಾತು-ಮುಕ್ತ<p style='color:#718096; font-weight:600;'>ಜಾಹೀರಾತುಗಳಿಲ್ಲದೆ ನಿರಂತರವಾಗಿ ಆ್ಯಪ್ ಬಳಸಿ.<br></p><br></div>", unsafe_allow_html=True)
-        st.button("ಜಾಹೀರಾತು ತೆಗೆಯಿರಿ (₹99)", type="primary", use_container_width=True)
+        st.button("ಜಾಹೀರಾತು ತೆಗೆಯಿರಿ", type="primary", use_container_width=True)
 
     with t10:
         st.markdown("<div class='card'>#### ಭಾರತೀಯಮ್<p style='color:#4A5568; font-size:14px; line-height:1.6;'><b>ಆವೃತ್ತಿ: 1.0.0</b><br><br>ನಿಖರವಾದ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಲೆಕ್ಕಾಚಾರಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.</p><br></div>", unsafe_allow_html=True)
-        st.link_button("</> Source Code", "https://github.com/your-username/bharatheeyam", use_container_width=True)
+        st.link_button("</> ಮೂಲ ಕೋಡ್", "https://github.com/your-username/bharatheeyam", use_container_width=True)
