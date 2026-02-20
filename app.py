@@ -110,21 +110,28 @@ st.markdown("""
         border-radius: 12px; 
         box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
+    
+    /* UPDATED: Scrollable boxes so they don't crash the layout */
     .box { 
         background: #FFFFFF; 
         position: relative; 
         display: flex; 
         flex-direction: column; 
         align-items: center; 
-        justify-content: center; 
+        justify-content: flex-start; /* Start from the top */
         font-size: 12px; 
         font-weight: 800; 
-        padding: 4px; 
+        padding: 15px 2px 2px 2px; /* Extra top padding to avoid overlapping the label */
         text-align: center; 
         border-radius: 8px;
         box-shadow: inset 0 0 5px rgba(0,0,0,0.02);
-        overflow: hidden;
+        overflow-y: auto; /* Enables vertical scrolling */
     }
+    
+    /* Custom thin scrollbar for elegance */
+    .box::-webkit-scrollbar { width: 3px; }
+    .box::-webkit-scrollbar-track { background: transparent; }
+    .box::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 10px; }
     
     .center-box { 
         grid-column: 2/4; 
@@ -207,7 +214,7 @@ st.markdown("""
     /* MOBILE SPECIFIC FIXES */
     @media (max-width: 600px) {
         .grid-container { gap: 2px; border-width: 2px; }
-        .box { padding: 2px; font-size: 9px; }
+        .box { padding: 12px 2px 2px 2px; font-size: 9px; }
         .center-box { font-size: 12px; }
         .lbl { font-size: 8px; top: 1px; left: 2px; }
         .hi, .pl { font-size: 9px; line-height: 1.1; letter-spacing: -0.5px; }
@@ -589,7 +596,7 @@ elif st.session_state.page == "dashboard":
         d_names = {1: "ರಾಶಿ", 2: "ಹೋರಾ", 3: "ದ್ರೇಕ್ಕಾಣ", 9: "ನವಾಂಶ", 12: "ದ್ವಾದಶಾಂಶ", 30: "ತ್ರಿಂಶಾಂಶ"}
         v_opt_base = c_v.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True)
-        show_sphutas = c_s.checkbox("ಸ್ಫುಟಗಳನ್ನು ಸೇರಿಸಿ", value=False)
+        show_sphutas = c_s.checkbox("ಸ್ಫುಟಗಳನ್ನು ಸೇರಿಸಿ (Show Sphutas)", value=False, help="Toggle to display all 16 Sphutas inside the chart boxes.")
         
         v_opt = 1 if c_mode == "ಭಾವ" else (9 if c_mode == "ನವಾಂಶ" else v_opt_base)
         b_opt = True if c_mode == "ಭಾವ" else False
@@ -597,7 +604,6 @@ elif st.session_state.page == "dashboard":
         bxs_list = {i: [] for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
         
-        # Merge planets and sphutas for chart rendering
         render_items = list(PLANET_ORDER)
         render_pos = dict(pos)
         
