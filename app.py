@@ -220,7 +220,7 @@ st.markdown("""
 # 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
-geolocator = Nominatim(user_agent="bharatheeyam_app_sphutas")
+geolocator = Nominatim(user_agent="bharatheeyam_app_final")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -589,22 +589,23 @@ elif st.session_state.page == "dashboard":
         c_v, c_b = st.columns(2)
         d_names = {1: "ರಾಶಿ", 2: "ಹೋರಾ", 3: "ದ್ರೇಕ್ಕಾಣ", 9: "ನವಾಂಶ", 12: "ದ್ವಾದಶಾಂಶ", 30: "ತ್ರಿಂಶಾಂಶ"}
         
+        # HTML titles so they NEVER break Streamlit Native Text
         with c_v:
-            st.markdown("<p style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:-10px;'>ವರ್ಗ</p>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:5px;'>ವರ್ಗ</div>", unsafe_allow_html=True)
             v_opt_base = st.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x], label_visibility="collapsed")
             
         with c_b:
-            st.markdown("<p style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:-10px;'>ಚಾರ್ಟ್ ವಿಧ</p>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:5px;'>ಚಾರ್ಟ್ ವಿಧ</div>", unsafe_allow_html=True)
             c_mode = st.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True, label_visibility="collapsed")
         
         st.markdown("<hr style='margin: 10px 0px; border-color: #E2E8F0;'>", unsafe_allow_html=True)
         
-        # FOOLPROOF TOGGLE RENDERING: Explicitly separated from CSS
+        # Toggle isolated perfectly
         c_tog_txt, c_tog_btn = st.columns([3, 1])
         with c_tog_txt:
-            st.markdown("<p style='color:#2B6CB0; font-weight:800; font-size:16px; margin-top:8px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</p>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-top:8px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</div>", unsafe_allow_html=True)
         with c_tog_btn:
-            show_sphutas = st.toggle("Sphutas", value=False, label_visibility="collapsed")
+            show_sphutas = st.toggle("Show Sphutas", value=False, label_visibility="collapsed")
             
         st.markdown("<br>", unsafe_allow_html=True)
         
