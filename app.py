@@ -92,15 +92,7 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
-    div[data-testid="stRadio"] label p {
-        font-weight: 800 !important;
-        color: #2B6CB0 !important;
-        font-size: 15px !important;
-    }
-
-    /* FIX FOR TOGGLE TEXT CUTTING OFF ON MOBILE & MATCHING RADIO COLOR */
-    div[data-testid="stToggle"] label p {
-        white-space: normal !important;
+    label[data-testid="stWidgetLabel"] p {
         font-weight: 800 !important;
         color: #2B6CB0 !important;
         font-size: 15px !important;
@@ -126,7 +118,7 @@ st.markdown("""
         flex-direction: column; 
         align-items: center; 
         justify-content: flex-start; 
-        font-size: 12px; 
+        font-size: 14px; /* INCREASED BASE SIZE */
         font-weight: 800; 
         padding: 15px 2px 2px 2px; 
         text-align: center; 
@@ -150,7 +142,7 @@ st.markdown("""
         color: #742A2A !important; 
         font-weight: 900; 
         text-align: center; 
-        font-size: 15px; 
+        font-size: 16px; 
         border-radius: 8px;
         border: 2px solid #FFFFFF;
     }
@@ -160,9 +152,10 @@ st.markdown("""
         font-size: 10px; color: #2F855A !important; 
         font-weight: 900; 
     }
-    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; } 
-    .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; } 
-    .sp { color: #805AD5 !important; font-weight: 700; font-size: 10px; white-space: nowrap; } 
+    /* INCREASED SIZES FOR GRAHAS AND SPHUTAS */
+    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; font-size: 14px; } 
+    .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; font-size: 14px; } 
+    .sp { color: #805AD5 !important; font-weight: 800; white-space: nowrap; font-size: 13px; } 
     .bindu { font-size: 22px; color: #DD6B20 !important; font-weight: 900; }
     
     .card { 
@@ -219,11 +212,12 @@ st.markdown("""
 
     @media (max-width: 600px) {
         .grid-container { gap: 2px; border-width: 2px; }
-        .box { padding: 12px 2px 2px 2px; font-size: 9px; }
-        .center-box { font-size: 12px; }
-        .lbl { font-size: 8px; top: 1px; left: 2px; }
-        .hi, .pl { font-size: 9px; line-height: 1.1; letter-spacing: -0.5px; }
-        .sp { font-size: 8px; line-height: 1.1; letter-spacing: -0.5px; }
+        .box { padding: 14px 2px 2px 2px; font-size: 12px; }
+        .center-box { font-size: 14px; }
+        .lbl { font-size: 9px; top: 1px; left: 2px; }
+        /* MUCH BIGGER MOBILE FONTS FOR READABILITY */
+        .hi, .pl { font-size: 12px; line-height: 1.3; letter-spacing: 0px; }
+        .sp { font-size: 11px; line-height: 1.3; letter-spacing: 0px; font-weight: 800;}
         .header-box { font-size: 20px; padding: 15px; }
     }
 </style>
@@ -260,7 +254,7 @@ KN_TITHI = [
 ]
 KN_NAK = [
     "ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಘ", "ಪೂರ್ವ ಫಾಲ್ಗುಣಿ",
-    "ಉತ್ತರ ಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖ", "ಅನುರಾಧ", "ಜ್ಯೇಷ್ಠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ",
+    "ಉತ್ತರ ಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖ", "ಅನುರಾಧ", "ಜ್ಯೇಷষ্ঠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ",
     "ಶ್ರವಣ", "ಧನಿಷ್ಠ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರ", "ಉತ್ತರಾಭಾದ್ರ", "ರೇವತಿ"
 ]
 KN_YOGA = [
@@ -604,7 +598,9 @@ elif st.session_state.page == "dashboard":
         v_opt_base = c_v.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True)
         
-        show_sphutas = st.toggle("ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ", value=False)
+        # CHANGED: Explicit markdown text to avoid Streamlit label truncation issues
+        st.markdown("<p style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom: -10px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</p>", unsafe_allow_html=True)
+        show_sphutas = st.toggle(" ", value=False, label_visibility="collapsed")
         st.markdown("<br>", unsafe_allow_html=True)
         
         v_opt = 1 if c_mode == "ಭಾವ" else (9 if c_mode == "ನವಾಂಶ" else v_opt_base)
