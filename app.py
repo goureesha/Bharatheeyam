@@ -149,6 +149,7 @@ st.markdown("""
     }
     .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; } 
     .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; } 
+    .sp { color: #805AD5 !important; font-weight: 700; font-size: 10px; white-space: nowrap; } 
     .bindu { font-size: 22px; color: #DD6B20 !important; font-weight: 900; }
     
     .card { 
@@ -210,6 +211,7 @@ st.markdown("""
         .center-box { font-size: 12px; }
         .lbl { font-size: 8px; top: 1px; left: 2px; }
         .hi, .pl { font-size: 9px; line-height: 1.1; letter-spacing: -0.5px; }
+        .sp { font-size: 8px; line-height: 1.1; letter-spacing: -0.5px; }
         .header-box { font-size: 20px; padding: 15px; }
     }
 </style>
@@ -219,7 +221,7 @@ st.markdown("""
 # 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
-geolocator = Nominatim(user_agent="bharatheeyam_app")
+geolocator = Nominatim(user_agent="bharatheeyam_app_sphutas")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -239,38 +241,27 @@ KN_RASHI = [
 
 KN_VARA = ["ಭಾನುವಾರ", "ಸೋಮವಾರ", "ಮಂಗಳವಾರ", "ಬುಧವಾರ", "ಗುರುವಾರ", "ಶುಕ್ರವಾರ", "ಶನಿವಾರ"]
 KN_TITHI = [
-    "ಶುಕ್ಲ ಪಾಡ್ಯಮಿ", "ಶುಕ್ಲ ದ್ವಿತೀಯ", "ಶುಕ್ಲ ತೃತೀಯ", "ಶುಕ್ಲ ಚತುರ್ಥಿ",
-    "ಶುಕ್ಲ ಪಂಚಮಿ", "ಶುಕ್ಲ ಷಷ್ಠಿ", "ಶುಕ್ಲ ಸಪ್ತಮಿ", "ಶುಕ್ಲ ಅಷ್ಟಮಿ",
-    "ಶುಕ್ಲ ನವಮಿ", "ಶುಕ್ಲ ದಶಮಿ", "ಶುಕ್ಲ ಏಕಾದಶಿ", "ಶುಕ್ಲ ದ್ವಾದಶಿ",
-    "ಶುಕ್ಲ ತ್ರಯೋದಶಿ", "ಶುಕ್ಲ ಚತುರ್ದಶಿ", "ಹುಣ್ಣಿಮೆ", "ಕೃಷ್ಣ ಪಾಡ್ಯಮಿ",
-    "ಕೃಷ್ಣ ದ್ವಿತೀಯ", "ಕೃಷ್ಣ ತೃತೀಯ", "ಕೃಷ್ಣ ಚತುರ್ಥಿ", "ಕೃಷ್ಣ ಪಂಚಮಿ",
-    "ಕೃಷ್ಣ ಷಷ್ಠಿ", "ಕೃಷ್ಣ ಸಪ್ತಮಿ", "ಕೃಷ್ಣ ಅಷ್ಟಮಿ", "ಕೃಷ್ಣ ನವಮಿ",
-    "ಕೃಷ್ಣ ದಶಮಿ", "ಕೃಷ್ಣ ಏಕಾದಶಿ", "ಕೃಷ್ಣ ದ್ವಾದಶಿ", "ಕೃಷ್ಣ ತ್ರಯೋದಶಿ",
-    "ಕೃಷ್ಣ ಚತುರ್ದಶಿ", "ಅಮಾವಾಸ್ಯೆ"
+    "ಶುಕ್ಲ ಪಾಡ್ಯಮಿ", "ಶುಕ್ಲ ದ್ವಿತೀಯ", "ಶುಕ್ಲ ತೃತೀಯ", "ಶುಕ್ಲ ಚತುರ್ಥಿ", "ಶುಕ್ಲ ಪಂಚಮಿ", "ಶುಕ್ಲ ಷಷ್ಠಿ", "ಶುಕ್ಲ ಸಪ್ತಮಿ", "ಶುಕ್ಲ ಅಷ್ಟಮಿ",
+    "ಶುಕ್ಲ ನವಮಿ", "ಶುಕ್ಲ ದಶಮಿ", "ಶುಕ್ಲ ಏಕಾದಶಿ", "ಶುಕ್ಲ ದ್ವಾದಶಿ", "ಶುಕ್ಲ ತ್ರಯೋದಶಿ", "ಶುಕ್ಲ ಚತುರ್ದಶಿ", "ಹುಣ್ಣಿಮೆ", 
+    "ಕೃಷ್ಣ ಪಾಡ್ಯಮಿ", "ಕೃಷ್ಣ ದ್ವಿತೀಯ", "ಕೃಷ್ಣ ತೃತೀಯ", "ಕೃಷ್ಣ ಚತುರ್ಥಿ", "ಕೃಷ್ಣ ಪಂಚಮಿ", "ಕೃಷ್ಣ ಷಷ್ಠಿ", "ಕೃಷ್ಣ ಸಪ್ತಮಿ", "ಕೃಷ್ಣ ಅಷ್ಟಮಿ", 
+    "ಕೃಷ್ಣ ನವಮಿ", "ಕೃಷ್ಣ ದಶಮಿ", "ಕೃಷ್ಣ ಏಕಾದಶಿ", "ಕೃಷ್ಣ ದ್ವಾದಶಿ", "ಕೃಷ್ಣ ತ್ರಯೋದಶಿ", "ಕೃಷ್ಣ ಚತುರ್ದಶಿ", "ಅಮಾವಾಸ್ಯೆ"
 ]
 KN_NAK = [
-    "ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ",
-    "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಘ", "ಪೂರ್ವ ಫಾಲ್ಗುಣಿ",
-    "ಉತ್ತರ ಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖ",
-    "ಅನುರಾಧ", "ಜ್ಯೇಷ್ಠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ",
-    "ಶ್ರವಣ", "ಧನಿಷ್ಠ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರ", "ಉತ್ತರಾಭಾದ್ರ",
-    "ರೇವತಿ"
+    "ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ", "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಘ", "ಪೂರ್ವ ಫಾಲ್ಗುಣಿ",
+    "ಉತ್ತರ ಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖ", "ಅನುರಾಧ", "ಜ್ಯೇಷ್ಠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ",
+    "ಶ್ರವಣ", "ಧನಿಷ್ಠ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರ", "ಉತ್ತರಾಭಾದ್ರ", "ರೇವತಿ"
 ]
 KN_YOGA = [
-    "ವಿಷ್ಕಂಭ", "ಪ್ರೀತಿ", "ಆಯುಷ್ಮಾನ್", "ಸೌಭಾಗ್ಯ", "ಶೋಭನ",
-    "ಅತಿಗಂಡ", "ಸುಕರ್ಮ", "ಧೃತಿ", "ಶೂಲ", "ಗಂಡ",
-    "ವೃದ್ಧಿ", "ಧ್ರುವ", "ವ್ಯಾಘಾತ", "ಹರ್ಷಣ", "ವಜ್ರ",
-    "ಸಿದ್ಧಿ", "ವ್ಯತೀಪಾತ", "ವರೀಯಾನ್", "ಪರಿಘ", "ಶಿವ",
-    "ಸಿದ್ಧ", "ಸಾಧ್ಯ", "ಶುಭ", "ಶುಕ್ಲ", "ಬ್ರಹ್ಮ",
-    "ಇಂದ್ರ", "ವೈಧೃತಿ"
+    "ವಿಷ್ಕಂಭ", "ಪ್ರೀತಿ", "ಆಯುಷ್ಮಾನ್", "ಸೌಭಾಗ್ಯ", "ಶೋಭನ", "ಅತಿಗಂಡ", "ಸುಕರ್ಮ", "ಧೃತಿ", "ಶೂಲ", "ಗಂಡ",
+    "ವೃದ್ಧಿ", "ಧ್ರುವ", "ವ್ಯಾಘಾತ", "ಹರ್ಷಣ", "ವಜ್ರ", "ಸಿದ್ಧಿ", "ವ್ಯತೀಪಾತ", "ವರೀಯಾನ್", "ಪರಿಘ", "ಶಿವ",
+    "ಸಿದ್ಧ", "ಸಾಧ್ಯ", "ಶುಭ", "ಶುಕ್ಲ", "ಬ್ರಹ್ಮ", "ಇಂದ್ರ", "ವೈಧೃತಿ"
 ]
 LORDS = ["ಕೇತು","ಶುಕ್ರ","ರವಿ","ಚಂದ್ರ","ಕುಜ","ರಾಹು","ಗುರು","ಶನಿ","ಬುಧ"]
 YEARS = [7, 20, 6, 10, 7, 18, 16, 19, 17]
 
 def get_altitude_manual(jd, lat, lon):
     res = swe.calc_ut(jd, swe.SUN, swe.FLG_EQUATORIAL | swe.FLG_SWIEPH)
-    ra = res[0][0]
-    dec = res[0][1]
+    ra, dec = res[0][0], res[0][1]
     gmst = swe.sidtime(jd)
     lst = gmst + (lon / 15.0)
     ha_deg = ((lst * 15.0) - ra + 360) % 360
@@ -319,19 +310,15 @@ def fmt_ghati(decimal_val):
     g = int(decimal_val)
     rem = decimal_val - g
     v = int(round(rem * 60))
-    if v == 60: 
-        g += 1
-        v = 0
+    if v == 60: g, v = g + 1, 0
     return str(g) + "." + str(v).zfill(2)
 
 def fmt_deg(dec_deg):
     rem = dec_deg % 30
     t_sec = int(round(rem * 3600))
-    dg = int(t_sec / 3600)
-    mn = int((t_sec % 3600) / 60)
-    sc = int(t_sec % 60)
+    dg, mn, sc = int(t_sec / 3600), int((t_sec % 3600) / 60), int(t_sec % 60)
     if dg == 30: dg, mn, sc = 29, 59, 59
-    return str(dg) + "° " + str(mn).zfill(2) + "' " + str(sc).zfill(2) + '"'
+    return f"{dg}° {str(mn).zfill(2)}' {str(sc).zfill(2)}\""
 
 def calculate_ashtakavarga(positions):
     P_KEYS = ["ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ", "ಲಗ್ನ"]
@@ -350,25 +337,19 @@ def calculate_ashtakavarga(positions):
     for target in ["ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ"]:
         rules = BAV_RULES[target]
         for ref_idx, ref_planet in enumerate(P_KEYS):
-            ref_rashi = r_idx[ref_planet]
             for h in rules[ref_idx]:
-                sign_idx = (ref_rashi + h - 1) % 12
+                sign_idx = (r_idx[ref_planet] + h - 1) % 12
                 bav[target][sign_idx] += 1
                 sav[sign_idx] += 1
     return sav, bav
 
 def calculate_mandi(jd_birth, lat, lon, dob_obj):
-    y, m, d = dob_obj.year, dob_obj.month, dob_obj.day
-    sr_civil, ss_civil = find_sunrise_set_for_date(y, m, d, lat, lon)
+    sr_civil, ss_civil = find_sunrise_set_for_date(dob_obj.year, dob_obj.month, dob_obj.day, lat, lon)
     civil_weekday_idx = (dob_obj.weekday() + 1) % 7 
-    is_night = False if (jd_birth >= sr_civil and jd_birth < ss_civil) else True
+    is_night = not (jd_birth >= sr_civil and jd_birth < ss_civil)
         
-    start_base, duration, vedic_wday, panch_sr = 0.0, 0.0, 0, 0.0
-    
     if not is_night:
-        vedic_wday = civil_weekday_idx
-        panch_sr, start_base = sr_civil, sr_civil
-        duration = ss_civil - sr_civil
+        vedic_wday, panch_sr, start_base, duration = civil_weekday_idx, sr_civil, sr_civil, ss_civil - sr_civil
     else:
         if jd_birth < sr_civil:
             vedic_wday = (civil_weekday_idx - 1) % 7
@@ -381,7 +362,7 @@ def calculate_mandi(jd_birth, lat, lon, dob_obj):
             n_sr, n_ss = find_sunrise_set_for_date(next_d.year, next_d.month, next_d.day, lat, lon)
             start_base, duration, panch_sr = ss_civil, n_sr - ss_civil, sr_civil
 
-    factors = [26, 22, 18, 14, 10, 6, 2] if not is_night else [10, 6, 2, 26, 22, 18, 14] 
+    factors = [10, 6, 2, 26, 22, 18, 14] if is_night else [26, 22, 18, 14, 10, 6, 2]
     mandi_jd = start_base + (duration * factors[vedic_wday] / 30.0)
     return mandi_jd, is_night, panch_sr, vedic_wday, start_base
 
@@ -395,10 +376,8 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
         flag = swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED
         res = swe.calc_ut(jd_birth, pid, flag)
         deg = res[0][0] % 360
-        positions[KN_PLANETS[pid]] = deg
-        speeds[KN_PLANETS[pid]] = res[0][3]
-        nak_idx = int(deg / 13.333333333)
-        extra_details[KN_PLANETS[pid]] = {"nak": KN_NAK[nak_idx % 27], "pada": int((deg % 13.333333333) / 3.333333333) + 1}
+        positions[KN_PLANETS[pid]], speeds[KN_PLANETS[pid]] = deg, res[0][3]
+        extra_details[KN_PLANETS[pid]] = {"nak": KN_NAK[int(deg / 13.333333333) % 27], "pada": int((deg % 13.333333333) / 3.333333333) + 1}
 
     rahu_res = swe.calc_ut(jd_birth, node_mode, swe.FLG_SWIEPH | swe.FLG_SIDEREAL | swe.FLG_SPEED)
     rahu_deg = rahu_res[0][0] % 360
@@ -409,101 +388,58 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
         extra_details[p] = {"nak": KN_NAK[int(d / 13.333333333) % 27], "pada": int((d % 13.333333333) / 3.333333333) + 1}
 
     cusps = swe.houses(jd_birth, float(lat), float(lon), b'P')[0]
-    if len(cusps) == 13:
-        asc_deg = (cusps[1] - ayan) % 360
-        bhava_sphutas = [(cusps[i] - ayan) % 360 for i in range(1, 13)]
-    else:
-        asc_deg = (cusps[0] - ayan) % 360
-        bhava_sphutas = [(cusps[i] - ayan) % 360 for i in range(0, 12)]
+    bhava_sphutas = [(cusps[i] - ayan) % 360 for i in range(1, 13)] if len(cusps) == 13 else [(cusps[i] - ayan) % 360 for i in range(0, 12)]
+    asc_deg = bhava_sphutas[0]
 
     positions[KN_PLANETS["Lagna"]], speeds[KN_PLANETS["Lagna"]] = asc_deg, 0
     extra_details[KN_PLANETS["Lagna"]] = {"nak": KN_NAK[int(asc_deg / 13.333333333) % 27], "pada": int((asc_deg % 13.333333333) / 3.333333333) + 1}
 
-    res = calculate_mandi(jd_birth, lat, lon, dob_obj)
-    mandi_time_jd, panch_sr, w_idx = res[0], res[2], res[3]
-    
+    mandi_time_jd, _, panch_sr, w_idx, _ = calculate_mandi(jd_birth, lat, lon, dob_obj)
     mandi_deg = (swe.houses(mandi_time_jd, float(lat), float(lon), b'P')[1][0] - swe.get_ayanamsa(mandi_time_jd)) % 360
     positions[KN_PLANETS["Ma"]], speeds[KN_PLANETS["Ma"]] = mandi_deg, 0
     extra_details[KN_PLANETS["Ma"]] = {"nak": KN_NAK[int(mandi_deg / 13.333333333) % 27], "pada": int((mandi_deg % 13.333333333) / 3.333333333) + 1}
 
-    # --- ADVANCED SPHUTAS & PRASHNA SPHUTAS ---
-    lagna_deg = positions[KN_PLANETS["Lagna"]]
-    moon_deg = positions["ಚಂದ್ರ"]
-    sun_deg = positions["ರವಿ"]
-    rahu_deg = positions[KN_PLANETS[101]]
-    mandi_deg = positions[KN_PLANETS["Ma"]]
-    jup_deg = positions["ಗುರು"]
-    ven_deg = positions["ಶುಕ್ರ"]
-    mars_deg = positions["ಕುಜ"]
-
-    # Basic Upagrahas
+    # --- ADVANCED SPHUTAS ---
+    sun_deg, moon_deg, jup_deg, ven_deg, mars_deg, rahu_deg = positions["ರವಿ"], positions["ಚಂದ್ರ"], positions["ಗುರು"], positions["ಶುಕ್ರ"], positions["ಕುಜ"], positions[KN_PLANETS[101]]
+    
     dhooma = (sun_deg + 133.333333) % 360
     vyatipata = (360 - dhooma) % 360
     parivesha = (vyatipata + 180) % 360
     indrachapa = (360 - parivesha) % 360
     upaketu = (indrachapa + 16.666667) % 360
-
-    # Progeny & Destiny Points
-    bhrigu_bindu = (moon_deg + rahu_deg) / 2
-    beeja_sphuta = (sun_deg + ven_deg + jup_deg) % 360
-    kshetra_sphuta = (moon_deg + mars_deg + jup_deg) % 360
-    yogi_point = (sun_deg + moon_deg + 93.333333) % 360
-
-    # Prashna / Ashtamangala Sphutas
-    trisphuta = (lagna_deg + moon_deg + mandi_deg) % 360
-    chatusphuta = (trisphuta + sun_deg) % 360
-    panchasphuta = (chatusphuta + rahu_deg) % 360
     
-    prana_sphuta = ((lagna_deg * 5) + mandi_deg) % 360
+    trisphuta = (asc_deg + moon_deg + mandi_deg) % 360
+    chatusphuta = (trisphuta + sun_deg) % 360
+    prana_sphuta = ((asc_deg * 5) + mandi_deg) % 360
     deha_sphuta = ((moon_deg * 8) + mandi_deg) % 360
     mrityu_sphuta = ((mandi_deg * 7) + sun_deg) % 360
-    sookshma_trisphuta = (prana_sphuta + deha_sphuta + mrityu_sphuta) % 360
 
     adv_sphutas = {
-        "ಧೂಮ": dhooma,
-        "ವ್ಯತೀಪಾತ": vyatipata,
-        "ಪರಿವೇಷ": parivesha,
-        "ಇಂದ್ರಚಾಪ": indrachapa,
-        "ಉಪಕೇತು": upaketu,
-        "ಭೃಗು ಬಿಂದು": bhrigu_bindu,
-        "ಬೀಜ ಸ್ಫುಟ": beeja_sphuta,
-        "ಕ್ಷೇತ್ರ ಸ್ಫುಟ": kshetra_sphuta,
-        "ಯೋಗಿ ಬಿಂದು": yogi_point,
-        "ತ್ರಿಸ್ಫುಟ": trisphuta,
-        "ಚತುಃಸ್ಫುಟ": chatusphuta,
-        "ಪಂಚಸ್ಫುಟ": panchasphuta,
-        "ಪ್ರಾಣ ಸ್ಫುಟ": prana_sphuta,
-        "ದೇಹ ಸ್ಫುಟ": deha_sphuta,
-        "ಮೃತ್ಯು ಸ್ಫುಟ": mrityu_sphuta,
-        "ಸೂಕ್ಷ್ಮ ತ್ರಿಸ್ಫುಟ": sookshma_trisphuta
+        "ಧೂಮ": dhooma, "ವ್ಯತೀಪಾತ": vyatipata, "ಪರಿವೇಷ": parivesha, "ಇಂದ್ರಚಾಪ": indrachapa, "ಉಪಕೇತು": upaketu,
+        "ಭೃಗು ಬಿ.": (moon_deg + rahu_deg) / 2, "ಬೀಜ": (sun_deg + ven_deg + jup_deg) % 360, "ಕ್ಷೇತ್ರ": (moon_deg + mars_deg + jup_deg) % 360,
+        "ಯೋಗಿ": (sun_deg + moon_deg + 93.333333) % 360, "ತ್ರಿಸ್ಫುಟ": trisphuta, "ಚತುಃಸ್ಫುಟ": chatusphuta, 
+        "ಪಂಚಸ್ಫುಟ": (chatusphuta + rahu_deg) % 360, "ಪ್ರಾಣ": prana_sphuta, "ದೇಹ": deha_sphuta, "ಮೃತ್ಯು": mrityu_sphuta, 
+        "ಸೂಕ್ಷ್ಮ ತ್ರಿ.": (prana_sphuta + deha_sphuta + mrityu_sphuta) % 360
     }
 
     t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12)
     n_idx = int(moon_deg / 13.333333333)
-    yoga_name = KN_YOGA[int(((moon_deg + sun_deg) % 360) / 13.333333333)]
-    
     k_idx = int(((moon_deg - sun_deg + 360) % 360) / 6)
-    if k_idx == 0: k_name = "ಕಿಂಸ್ತುಘ್ನ"
-    elif k_idx == 57: k_name = "ಶಕುನಿ"
-    elif k_idx == 58: k_name = "ಚತುಷ್ಪಾದ"
-    elif k_idx == 59: k_name = "ನಾಗ"
-    else: k_name = ["ಬವ", "ಬಾಲವ", "ಕೌಲವ", "ತೈತಿಲ", "ಗರ", "ವಣಿಜ", "ಭದ್ರಾ (ವಿಷ್ಟಿ)"][(k_idx - 1) % 7]
+    k_name = "ಕಿಂಸ್ತುಘ್ನ" if k_idx == 0 else ("ಶಕುನಿ" if k_idx == 57 else ("ಚತುಷ್ಪಾದ" if k_idx == 58 else ("ನಾಗ" if k_idx == 59 else ["ಬವ", "ಬಾಲವ", "ಕೌಲವ", "ತೈತಿಲ", "ಗರ", "ವಣಿಜ", "ಭದ್ರಾ (ವಿಷ್ಟಿ)"][(k_idx - 1) % 7])))
         
     js = find_nak_limit(jd_birth, n_idx * 13.333333333)
     je = find_nak_limit(jd_birth, (n_idx + 1) * 13.333333333)
     perc = (moon_deg % 13.333333333) / 13.333333333
-    bal = YEARS[n_idx % 9] * (1 - perc)
     sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx], "n": KN_NAK[n_idx % 27],
-        "y": yoga_name, "k": k_name, "r": KN_RASHI[int(moon_deg / 30)],
+        "y": KN_YOGA[int(((moon_deg + sun_deg) % 360) / 13.333333333)], "k": k_name, "r": KN_RASHI[int(moon_deg / 30)],
         "udayadi": fmt_ghati((jd_birth - panch_sr) * 60), "gata": fmt_ghati((jd_birth - js) * 60), 
         "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd_birth) * 60),
-        "d_bal": str(int(bal)) + "ವ " + str(int((bal%1)*12)) + "ತಿ",
+        "d_bal": f"{int(YEARS[n_idx % 9] * (1 - perc))}ವ {int(((YEARS[n_idx % 9] * (1 - perc))%1)*12)}ತಿ",
         "n_idx": n_idx, "perc": perc, "date_obj": datetime.datetime.fromtimestamp((jd_birth - 2440587.5) * 86400),
-        "lord_bal": LORDS[n_idx%9], "sav_bindus": sav_bindus, "bav_bindus": bav_bindus,
-        "adv_sphutas": adv_sphutas
+        "lord_bal": LORDS[n_idx%9], "sav_bindus": sav_bindus, "bav_bindus": bav_bindus, "adv_sphutas": adv_sphutas
     }
     return positions, pan, extra_details, bhava_sphutas, speeds
 
@@ -526,17 +462,13 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     asta_text = "ಹೌದು" if is_asta else "ಇಲ್ಲ"
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    d1_idx = int(deg/30)
-    dr_val = deg % 30
+    d1_idx, dr_val = int(deg/30), deg % 30
     is_odd = ((d1_idx) % 2 == 0)
     d2_idx = (4 if dr_val < 15 else 3) if is_odd else (3 if dr_val < 15 else 4)
     true_d3_idx = d1_idx if dr_val < 10 else ((d1_idx + 4) % 12 if dr_val < 20 else (d1_idx + 8) % 12)
-    d9_exact = (deg * 9) % 360
-    d9_idx = int(d9_exact / 30)
+    d9_idx = int(((deg * 9) % 360) / 30)
     d12_idx = (int(deg/30) + int((deg%30)/2.5)) % 12
-    
-    if is_odd: d30_idx = 0 if dr_val < 5 else (10 if dr_val < 10 else (8 if dr_val < 18 else (2 if dr_val < 25 else 6)))
-    else: d30_idx = 5 if dr_val < 5 else (2 if dr_val < 12 else (8 if dr_val < 20 else (10 if dr_val < 25 else 0)))
+    d30_idx = (0 if dr_val < 5 else (10 if dr_val < 10 else (8 if dr_val < 18 else (2 if dr_val < 25 else 6)))) if is_odd else (5 if dr_val < 5 else (2 if dr_val < 12 else (8 if dr_val < 20 else (10 if dr_val < 25 else 0))))
         
     h_arr = [
         "<div class='card'><table class='key-val-table'>",
@@ -653,10 +585,11 @@ elif st.session_state.page == "dashboard":
     t1, t2, t3, t4, t5, t6, t7, t8, t9 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"])
     
     with t1:
-        c_v, c_b = st.columns(2)
+        c_v, c_b, c_s = st.columns([2, 2, 2])
         d_names = {1: "ರಾಶಿ", 2: "ಹೋರಾ", 3: "ದ್ರೇಕ್ಕಾಣ", 9: "ನವಾಂಶ", 12: "ದ್ವಾದಶಾಂಶ", 30: "ತ್ರಿಂಶಾಂಶ"}
         v_opt_base = c_v.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
         c_mode = c_b.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True)
+        show_sphutas = c_s.checkbox("ಸ್ಫುಟಗಳನ್ನು ಸೇರಿಸಿ", value=False)
         
         v_opt = 1 if c_mode == "ಭಾವ" else (9 if c_mode == "ನವಾಂಶ" else v_opt_base)
         b_opt = True if c_mode == "ಭಾವ" else False
@@ -664,8 +597,17 @@ elif st.session_state.page == "dashboard":
         bxs_list = {i: [] for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
         
-        for n in PLANET_ORDER:
-            d = pos[n]
+        # Merge planets and sphutas for chart rendering
+        render_items = list(PLANET_ORDER)
+        render_pos = dict(pos)
+        
+        if show_sphutas:
+            for k, v in pan['adv_sphutas'].items():
+                render_items.append(k)
+                render_pos[k] = v
+        
+        for n in render_items:
+            d = render_pos[n]
             if v_opt == 1: ri = (int(ld/30) + int(((d - ld + 360)%360 + 15)/30)) % 12 if b_opt else int(d/30)
             elif v_opt == 2: ri = (4 if d % 30 < 15 else 3) if int(d/30) % 2 == 0 else (3 if d % 30 < 15 else 4)
             elif v_opt == 30: 
@@ -677,8 +619,8 @@ elif st.session_state.page == "dashboard":
             elif v_opt == 12: ri = (int(d/30) + int((d%30)/2.5)) % 12
             else: ri = int(d/30)
                 
-            cls = "hi" if n in ["ಲಗ್ನ", "ಮಾಂದಿ"] else "pl"
-            bxs_list[ri].append((PLANET_ORDER.index(n), f"<div class='{cls}'>{n}</div>"))
+            cls = "hi" if n in ["ಲಗ್ನ", "ಮಾಂದಿ"] else ("sp" if n in pan['adv_sphutas'] else "pl")
+            bxs_list[ri].append((render_items.index(n), f"<div class='{cls}'>{n}</div>"))
             
         bxs = {i: "".join([item[1] for item in sorted(bxs_list[i], key=lambda x: x[0])]) for i in range(12)}
         
@@ -709,9 +651,9 @@ elif st.session_state.page == "dashboard":
         ]
         sphuta_order = [
             "ಧೂಮ", "ವ್ಯತೀಪಾತ", "ಪರಿವೇಷ", "ಇಂದ್ರಚಾಪ", "ಉಪಕೇತು",
-            "ಭೃಗು ಬಿಂದು", "ಬೀಜ ಸ್ಫುಟ", "ಕ್ಷೇತ್ರ ಸ್ಫುಟ", "ಯೋಗಿ ಬಿಂದು",
+            "ಭೃಗು ಬಿ.", "ಬೀಜ", "ಕ್ಷೇತ್ರ", "ಯೋಗಿ",
             "ತ್ರಿಸ್ಫುಟ", "ಚತುಃಸ್ಫುಟ", "ಪಂಚಸ್ಫುಟ",
-            "ಪ್ರಾಣ ಸ್ಫುಟ", "ದೇಹ ಸ್ಫುಟ", "ಮೃತ್ಯು ಸ್ಫುಟ", "ಸೂಕ್ಷ್ಮ ತ್ರಿಸ್ಫುಟ"
+            "ಪ್ರಾಣ", "ದೇಹ", "ಮೃತ್ಯು", "ಸೂಕ್ಷ್ಮ ತ್ರಿ."
         ]
         for sp in sphuta_order:
             d = pan['adv_sphutas'][sp]
