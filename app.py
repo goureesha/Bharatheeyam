@@ -33,7 +33,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# STRIPPED OUT ALL CSS AFFECTING STREAMLIT NATIVE WIDGETS
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;800&display=swap');
@@ -56,6 +55,41 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3); 
         border-bottom: 4px solid #F6D365; 
         letter-spacing: 1px;
+    }
+    
+    div[data-testid="stInput"] { 
+        background-color: #FFFFFF; 
+        border-radius: 10px; 
+    }
+    
+    .stButton>button[kind="primary"] { 
+        background: linear-gradient(135deg, #DD6B20, #C05621) !important;
+        color: white !important; 
+        font-weight: 800; 
+        border-radius: 12px; 
+        border: none; 
+        padding: 12px; 
+        box-shadow: 0 4px 10px rgba(221, 107, 32, 0.3);
+    }
+    
+    .stButton>button[kind="secondary"] { 
+        background-color: #E6FFFA !important; 
+        color: #319795 !important; 
+        font-weight: 800; 
+        border: 2px solid #319795 !important; 
+        border-radius: 12px; 
+    }
+    
+    div[data-testid="stTabs"] button[aria-selected="false"] p { 
+        color: #718096 !important; 
+        font-weight: 600 !important; 
+    }
+    div[data-testid="stTabs"] button[aria-selected="true"] p { 
+        color: #047857 !important; 
+        font-weight: 800 !important; 
+    }
+    div[data-testid="stTabs"] button[aria-selected="true"] { 
+        border-bottom: 3px solid #047857 !important; 
     }
     
     .grid-container { 
@@ -113,8 +147,9 @@ st.markdown("""
         font-weight: 900; 
     }
     
-    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; font-size: 14px; } 
-    .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; font-size: 14px; } 
+    /* VERY LARGE FONTS FOR KUNDALI */
+    .hi { color: #E53E3E !important; font-weight: 900; text-decoration: underline; white-space: nowrap; font-size: 15px; } 
+    .pl { color: #2B6CB0 !important; font-weight: 800; white-space: nowrap; font-size: 15px; } 
     .sp { color: #805AD5 !important; font-weight: 800; white-space: nowrap; font-size: 13px; } 
     .bindu { font-size: 22px; color: #DD6B20 !important; font-weight: 900; }
     
@@ -175,8 +210,9 @@ st.markdown("""
         .box { padding: 14px 2px 2px 2px; font-size: 12px; }
         .center-box { font-size: 14px; }
         .lbl { font-size: 9px; top: 1px; left: 2px; }
-        .hi, .pl { font-size: 12px; line-height: 1.3; letter-spacing: 0px; }
-        .sp { font-size: 11px; line-height: 1.3; letter-spacing: 0px; font-weight: 800;}
+        /* VERY LARGE FONTS FOR MOBILE TOO */
+        .hi, .pl { font-size: 13px; line-height: 1.3; letter-spacing: 0px; }
+        .sp { font-size: 12px; line-height: 1.3; letter-spacing: 0px; font-weight: 800;}
         .header-box { font-size: 20px; padding: 15px; }
     }
 </style>
@@ -186,7 +222,7 @@ st.markdown("""
 # 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
-geolocator = Nominatim(user_agent="bharatheeyam_app_final_safe")
+geolocator = Nominatim(user_agent="bharatheeyam_app_final")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -482,6 +518,7 @@ if st.session_state.page == "input":
         if len(saved_db) > 0:
             st.markdown("<div class='card'>#### 📂 ಉಳಿಸಿದ ಜಾತಕ", unsafe_allow_html=True)
             c_sel, c_btn = st.columns([3, 1])
+            # Removed hidden label to prevent any layout breaking
             sel_n = c_sel.selectbox("ಆಯ್ಕೆಮಾಡಿ", [""] + list(saved_db.keys()))
             if c_btn.button("ತೆಗೆಯಿರಿ", use_container_width=True) and sel_n != "":
                 prof = saved_db[sel_n]
@@ -552,10 +589,10 @@ elif st.session_state.page == "dashboard":
     t1, t2, t3, t4, t5, t6, t7, t8, t9, t10 = st.tabs(tabs)
     
     with t1:
-        # ABSOLUTELY NO CSS HACKS HERE. JUST NATIVE STREAMLIT WIDGETS.
         c_v, c_b = st.columns(2)
         d_names = {1: "ರಾಶಿ", 2: "ಹೋರಾ", 3: "ದ್ರೇಕ್ಕಾಣ", 9: "ನವಾಂಶ", 12: "ದ್ವಾದಶಾಂಶ", 30: "ತ್ರಿಂಶಾಂಶ"}
         
+        # PURE NATIVE STREAMLIT WIDGETS
         with c_v:
             v_opt_base = st.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x])
             
@@ -564,7 +601,9 @@ elif st.session_state.page == "dashboard":
         
         st.markdown("<hr style='margin: 10px 0px; border-color: #E2E8F0;'>", unsafe_allow_html=True)
         
-        show_sphutas = st.toggle("ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ", value=False)
+        # UNBREAKABLE TEXT HEADER FOR TOGGLE
+        st.markdown("<h4 style='color:#2B6CB0; font-weight:800; font-size:16px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</h4>", unsafe_allow_html=True)
+        show_sphutas = st.toggle("ಆನ್ / ಆಫ್", value=False)
             
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -643,9 +682,11 @@ elif st.session_state.page == "dashboard":
         c_aro1, c_aro2, c_aro3 = st.columns([2, 2, 1])
         aro_options = ["ಆರೂಢ", "ಉದಯ", "ಲಗ್ನಾಂಶ", "ಛತ್ರ", "ಸ್ಪೃಷ್ಟಾಂಗ", "ಚಂದ್ರ", "ತಾಂಬೂಲ"]
         
+        # PURE NATIVE STREAMLIT WIDGETS
         selected_aro = c_aro1.selectbox("ಆರೂಢ ಆಯ್ಕೆಮಾಡಿ", aro_options)
         selected_rashi = c_aro2.selectbox("ರಾಶಿ ಆಯ್ಕೆಮಾಡಿ", KN_RASHI)
         
+        # ADD BUTTON PUSHED DOWN SLIGHTLY TO ALIGN WITH SELECTBOXES
         st.markdown("""<style>div[data-testid="column"]:nth-of-type(3) { display: flex; align-items: flex-end; padding-bottom: 2px; }</style>""", unsafe_allow_html=True)
         if c_aro3.button("ಸೇರಿಸಿ", use_container_width=True):
             st.session_state.aroodhas[selected_aro] = KN_RASHI.index(selected_rashi)
