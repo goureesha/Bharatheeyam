@@ -935,7 +935,9 @@ elif st.session_state.page == "dashboard":
             v_opt = v_opt_base
             b_opt = False
         
-        bxs = {i: "" for i in range(12)}
+        # CHANGED: We now use a list inside the dictionary to store planets 
+        # alongside their strict Vedic index for enforced sorting before joining.
+        bxs_list = {i: [] for i in range(12)}
         ld = pos[KN_PLANETS["Lagna"]] 
         
         for n in PLANET_ORDER:
@@ -987,8 +989,17 @@ elif st.session_state.page == "dashboard":
                 cls = "hi"
             else:
                 cls = "pl"
-                
-            bxs[ri] += "<div class='" + cls + "'>" + n + "</div>"
+            
+            # Record the Vedic hierarchy index along with the HTML string
+            vedic_index = PLANET_ORDER.index(n)
+            bxs_list[ri].append((vedic_index, f"<div class='{cls}'>{n}</div>"))
+            
+        # CHANGED: We now sort the list for each house based strictly on the 
+        # Vedic index, ensuring the visual output never varies from the standard rules.
+        bxs = {i: "" for i in range(12)}
+        for i in range(12):
+            bxs_list[i].sort(key=lambda x: x[0])
+            bxs[i] = "".join([item[1] for item in bxs_list[i]])
             
         grid = [11, 0, 1, 2, 10, None, None, 3, 9, None, None, 4, 8, 7, 6, 5]
         
