@@ -219,7 +219,7 @@ st.markdown("""
 # 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
-geolocator = Nominatim(user_agent="bharatheeyam_v45_upagrahas_only")
+geolocator = Nominatim(user_agent="bharatheeyam_app")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
@@ -426,12 +426,63 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
     positions[KN_PLANETS["Ma"]], speeds[KN_PLANETS["Ma"]] = mandi_deg, 0
     extra_details[KN_PLANETS["Ma"]] = {"nak": KN_NAK[int(mandi_deg / 13.333333333) % 27], "pada": int((mandi_deg % 13.333333333) / 3.333333333) + 1}
 
-    m_deg, s_deg = positions["ಚಂದ್ರ"], positions["ರವಿ"]
-    t_idx = int(((m_deg - s_deg + 360) % 360) / 12)
-    n_idx = int(m_deg / 13.333333333)
-    yoga_name = KN_YOGA[int(((m_deg + s_deg) % 360) / 13.333333333)]
+    # --- ADVANCED SPHUTAS & PRASHNA SPHUTAS ---
+    lagna_deg = positions[KN_PLANETS["Lagna"]]
+    moon_deg = positions["ಚಂದ್ರ"]
+    sun_deg = positions["ರವಿ"]
+    rahu_deg = positions[KN_PLANETS[101]]
+    mandi_deg = positions[KN_PLANETS["Ma"]]
+    jup_deg = positions["ಗುರು"]
+    ven_deg = positions["ಶುಕ್ರ"]
+    mars_deg = positions["ಕುಜ"]
+
+    # Basic Upagrahas
+    dhooma = (sun_deg + 133.333333) % 360
+    vyatipata = (360 - dhooma) % 360
+    parivesha = (vyatipata + 180) % 360
+    indrachapa = (360 - parivesha) % 360
+    upaketu = (indrachapa + 16.666667) % 360
+
+    # Progeny & Destiny Points
+    bhrigu_bindu = (moon_deg + rahu_deg) / 2
+    beeja_sphuta = (sun_deg + ven_deg + jup_deg) % 360
+    kshetra_sphuta = (moon_deg + mars_deg + jup_deg) % 360
+    yogi_point = (sun_deg + moon_deg + 93.333333) % 360
+
+    # Prashna / Ashtamangala Sphutas
+    trisphuta = (lagna_deg + moon_deg + mandi_deg) % 360
+    chatusphuta = (trisphuta + sun_deg) % 360
+    panchasphuta = (chatusphuta + rahu_deg) % 360
     
-    k_idx = int(((m_deg - s_deg + 360) % 360) / 6)
+    prana_sphuta = ((lagna_deg * 5) + mandi_deg) % 360
+    deha_sphuta = ((moon_deg * 8) + mandi_deg) % 360
+    mrityu_sphuta = ((mandi_deg * 7) + sun_deg) % 360
+    sookshma_trisphuta = (prana_sphuta + deha_sphuta + mrityu_sphuta) % 360
+
+    adv_sphutas = {
+        "ಧೂಮ": dhooma,
+        "ವ್ಯತೀಪಾತ": vyatipata,
+        "ಪರಿವೇಷ": parivesha,
+        "ಇಂದ್ರಚಾಪ": indrachapa,
+        "ಉಪಕೇತು": upaketu,
+        "ಭೃಗು ಬಿಂದು": bhrigu_bindu,
+        "ಬೀಜ ಸ್ಫುಟ": beeja_sphuta,
+        "ಕ್ಷೇತ್ರ ಸ್ಫುಟ": kshetra_sphuta,
+        "ಯೋಗಿ ಬಿಂದು": yogi_point,
+        "ತ್ರಿಸ್ಫುಟ": trisphuta,
+        "ಚತುಃಸ್ಫುಟ": chatusphuta,
+        "ಪಂಚಸ್ಫುಟ": panchasphuta,
+        "ಪ್ರಾಣ ಸ್ಫುಟ": prana_sphuta,
+        "ದೇಹ ಸ್ಫುಟ": deha_sphuta,
+        "ಮೃತ್ಯು ಸ್ಫುಟ": mrityu_sphuta,
+        "ಸೂಕ್ಷ್ಮ ತ್ರಿಸ್ಫುಟ": sookshma_trisphuta
+    }
+
+    t_idx = int(((moon_deg - sun_deg + 360) % 360) / 12)
+    n_idx = int(moon_deg / 13.333333333)
+    yoga_name = KN_YOGA[int(((moon_deg + sun_deg) % 360) / 13.333333333)]
+    
+    k_idx = int(((moon_deg - sun_deg + 360) % 360) / 6)
     if k_idx == 0: k_name = "ಕಿಂಸ್ತುಘ್ನ"
     elif k_idx == 57: k_name = "ಶಕುನಿ"
     elif k_idx == 58: k_name = "ಚತುಷ್ಪಾದ"
@@ -440,24 +491,19 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
         
     js = find_nak_limit(jd_birth, n_idx * 13.333333333)
     je = find_nak_limit(jd_birth, (n_idx + 1) * 13.333333333)
-    perc = (m_deg % 13.333333333) / 13.333333333
+    perc = (moon_deg % 13.333333333) / 13.333333333
     bal = YEARS[n_idx % 9] * (1 - perc)
     sav_bindus, bav_bindus = calculate_ashtakavarga(positions)
     
-    dhooma = (s_deg + 133.333333) % 360
-    vyatipata = (360 - dhooma) % 360
-    parivesha = (vyatipata + 180) % 360
-    indrachapa = (360 - parivesha) % 360
-    
     pan = {
         "t": KN_TITHI[min(t_idx, 29)], "v": KN_VARA[w_idx], "n": KN_NAK[n_idx % 27],
-        "y": yoga_name, "k": k_name, "r": KN_RASHI[int(m_deg / 30)],
+        "y": yoga_name, "k": k_name, "r": KN_RASHI[int(moon_deg / 30)],
         "udayadi": fmt_ghati((jd_birth - panch_sr) * 60), "gata": fmt_ghati((jd_birth - js) * 60), 
         "parama": fmt_ghati((je - js) * 60), "rem": fmt_ghati((je - jd_birth) * 60),
         "d_bal": str(int(bal)) + "ವ " + str(int((bal%1)*12)) + "ತಿ",
         "n_idx": n_idx, "perc": perc, "date_obj": datetime.datetime.fromtimestamp((jd_birth - 2440587.5) * 86400),
         "lord_bal": LORDS[n_idx%9], "sav_bindus": sav_bindus, "bav_bindus": bav_bindus,
-        "adv_sphutas": {"ಧೂಮ (Dhooma)": dhooma, "ವ್ಯತೀಪಾತ (Vyatipata)": vyatipata, "ಪರಿವೇಷ (Parivesha)": parivesha, "ಇಂದ್ರಚಾಪ (Indrachapa)": indrachapa, "ಉಪಕೇತು (Upaketu)": (indrachapa + 16.666667) % 360}
+        "adv_sphutas": adv_sphutas
     }
     return positions, pan, extra_details, bhava_sphutas, speeds
 
@@ -539,7 +585,7 @@ if st.session_state.page == "input":
             st.markdown("<div class='card'>#### 📂 ಉಳಿಸಿದ ಜಾತಕ", unsafe_allow_html=True)
             c_sel, c_btn = st.columns([3, 1])
             sel_n = c_sel.selectbox("Select", [""] + list(saved_db.keys()), label_visibility="collapsed")
-            if c_btn.button("Open", use_container_width=True) and sel_n != "":
+            if c_btn.button("ತೆಗೆಯಿರಿ (Open)", use_container_width=True) and sel_n != "":
                 prof = saved_db[sel_n]
                 st.session_state.update({
                     "name_input": sel_n, "dob_input": datetime.datetime.strptime(prof['d'], "%Y-%m-%d").date(),
@@ -567,12 +613,12 @@ if st.session_state.page == "input":
                     st.success("📍 " + loc.address)
             except: st.error("Error connecting to location service.")
                 
-        lat = st.number_input("Latitude", key="lat", format="%.4f")
-        lon = st.number_input("Longitude", key="lon", format="%.4f")
+        lat = st.number_input("ಅಕ್ಷಾಂಶ (Latitude)", key="lat", format="%.4f")
+        lon = st.number_input("ರೇಖಾಂಶ (Longitude)", key="lon", format="%.4f")
         
-        with st.expander("⚙️ ಸುಧಾರಿತ ಆಯ್ಕೆಗಳು (Advanced Settings)"):
+        with st.expander("⚙️ ಸುಧಾರಿತ ಆಯ್ಕೆಗಳು"):
             ca, cn = st.columns(2)
-            ayan_sel = ca.selectbox("ಅಯನಾಂಶ", ["ಲಾಹಿರಿ (Lahiri)", "ರಾಮನ್ (Raman)", "ಕೆ.ಪಿ (KP)"])
+            ayan_sel = ca.selectbox("ಅಯನಾಂಶ", ["ಲಾಹಿರಿ", "ರಾಮನ್", "ಕೆ.ಪಿ"])
             node_sel = cn.selectbox("ರಾಹು ಗಣನೆ", ["True Rahu", "Mean Rahu"])
             
         st.markdown("<br>", unsafe_allow_html=True)
@@ -582,7 +628,7 @@ if st.session_state.page == "input":
             h24 = 0 if ampm == "AM" and h == 12 else h24
             jd = swe.julday(dob.year, dob.month, dob.day, h24 + m/60.0 - 5.5)
             
-            ayan_mode = {"ಲಾಹಿರಿ (Lahiri)": swe.SIDM_LAHIRI, "ರಾಮನ್ (Raman)": swe.SIDM_RAMAN, "ಕೆ.ಪಿ (KP)": swe.SIDM_KRISHNAMURTI}[ayan_sel]
+            ayan_mode = {"ಲಾಹಿರಿ": swe.SIDM_LAHIRI, "ರಾಮನ್": swe.SIDM_RAMAN, "ಕೆ.ಪಿ": swe.SIDM_KRISHNAMURTI}[ayan_sel]
             node_mode = swe.TRUE_NODE if node_sel == "True Rahu" else swe.MEAN_NODE
             
             p1, p2, p3, p4, p5 = get_full_calculations(jd, lat, lon, dob, ayan_mode, node_mode)
@@ -601,8 +647,8 @@ elif st.session_state.page == "dashboard":
     if c_sv.button("💾 ಉಳಿಸಿ"):
         d_str = st.session_state.dob_input.strftime("%Y-%m-%d")
         prof_data = {"d": d_str, "h": st.session_state.h_input, "m": st.session_state.m_input, "ampm": st.session_state.ampm_input, "lat": st.session_state.lat, "lon": st.session_state.lon, "p": st.session_state.place_input}
-        save_db(st.session_state.name_input if st.session_state.name_input != "" else "Unknown_" + d_str, prof_data)
-        st.success("ಉಳಿಸಲಾಗಿದೆ! (Saved successfully)")
+        save_db(st.session_state.name_input if st.session_state.name_input != "" else "ಅಜ್ಞಾತ_" + d_str, prof_data)
+        st.success("ಉಳಿಸಲಾಗಿದೆ!")
     
     t1, t2, t3, t4, t5, t6, t7, t8, t9 = st.tabs(["ಕುಂಡಲಿ", "ಸ್ಫುಟ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"])
     
@@ -659,11 +705,17 @@ elif st.session_state.page == "dashboard":
     with t2:
         slines = [
             "<div class='card'><table class='key-val-table'>",
-            "<tr><th>ಉಪಗ್ರಹ ಸ್ಫುಟ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th><th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>"
+            "<tr><th>ಸ್ಫುಟ ಬಿಂದು</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th><th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>"
         ]
-        for sp in ["ಧೂಮ (Dhooma)", "ವ್ಯತೀಪಾತ (Vyatipata)", "ಪರಿವೇಷ (Parivesha)", "ಇಂದ್ರಚಾಪ (Indrachapa)", "ಉಪಕೇತು (Upaketu)"]:
+        sphuta_order = [
+            "ಧೂಮ", "ವ್ಯತೀಪಾತ", "ಪರಿವೇಷ", "ಇಂದ್ರಚಾಪ", "ಉಪಕೇತು",
+            "ಭೃಗು ಬಿಂದು", "ಬೀಜ ಸ್ಫುಟ", "ಕ್ಷೇತ್ರ ಸ್ಫುಟ", "ಯೋಗಿ ಬಿಂದು",
+            "ತ್ರಿಸ್ಫುಟ", "ಚತುಃಸ್ಫುಟ", "ಪಂಚಸ್ಫುಟ",
+            "ಪ್ರಾಣ ಸ್ಫುಟ", "ದೇಹ ಸ್ಫುಟ", "ಮೃತ್ಯು ಸ್ಫುಟ", "ಸೂಕ್ಷ್ಮ ತ್ರಿಸ್ಫುಟ"
+        ]
+        for sp in sphuta_order:
             d = pan['adv_sphutas'][sp]
-            slines.append(f"<tr><td><b>{sp.split(' ')[0]}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{fmt_deg(d)}</td><td style='text-align:right'>{KN_NAK[int(d / 13.333333333) % 27]}-{int((d % 13.333333333) / 3.333333333) + 1}</td></tr>")
+            slines.append(f"<tr><td><b>{sp}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{fmt_deg(d)}</td><td style='text-align:right'>{KN_NAK[int(d / 13.333333333) % 27]}-{int((d % 13.333333333) / 3.333333333) + 1}</td></tr>")
         slines.append("</table></div>")
         st.markdown("".join(slines), unsafe_allow_html=True)
         
@@ -733,7 +785,7 @@ elif st.session_state.page == "dashboard":
 
     with t8:
         st.markdown("<div class='card' style='text-align:center;'>### 🚫 ಜಾಹೀರಾತು-ಮುಕ್ತ<p style='color:#718096; font-weight:600;'>ಜಾಹೀರಾತುಗಳಿಲ್ಲದೆ ನಿರಂತರವಾಗಿ ಆ್ಯಪ್ ಬಳಸಿ.<br></p><br></div>", unsafe_allow_html=True)
-        st.button("Remove Ads (₹99)", type="primary", use_container_width=True)
+        st.button("ಜಾಹೀರಾತು ತೆಗೆಯಿರಿ (₹99)", type="primary", use_container_width=True)
 
     with t9:
         st.markdown("<div class='card'>#### ಭಾರತೀಯಮ್<p style='color:#4A5568; font-size:14px; line-height:1.6;'><b>ಆವೃತ್ತಿ: 1.0.0</b><br><br>ನಿಖರವಾದ ವೈದಿಕ ಜ್ಯೋತಿಷ್ಯ ಲೆಕ್ಕಾಚಾರಗಳಿಗಾಗಿ ವಿನ್ಯಾಸಗೊಳಿಸಲಾಗಿದೆ.</p><br></div>", unsafe_allow_html=True)
