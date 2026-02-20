@@ -92,8 +92,6 @@ st.markdown("""
         border-bottom: 3px solid #047857 !important; 
     }
     
-    /* REMOVED CSS HACKS - WE WILL USE HTML WRAPPERS IN INSTEAD */
-    
     .grid-container { 
         display: grid; 
         grid-template-columns: repeat(4, 1fr); 
@@ -138,7 +136,7 @@ st.markdown("""
         color: #742A2A !important; 
         font-weight: 900; 
         text-align: center; 
-        font-size: 14px; 
+        font-size: 16px; 
         border-radius: 8px;
         border: 2px solid #FFFFFF;
     }
@@ -209,7 +207,7 @@ st.markdown("""
     @media (max-width: 600px) {
         .grid-container { gap: 2px; border-width: 2px; }
         .box { padding: 14px 2px 2px 2px; font-size: 12px; }
-        .center-box { font-size: 12px; }
+        .center-box { font-size: 14px; }
         .lbl { font-size: 9px; top: 1px; left: 2px; }
         .hi, .pl { font-size: 13px; line-height: 1.3; letter-spacing: 0px; }
         .sp { font-size: 12px; line-height: 1.3; letter-spacing: 0px; font-weight: 800;}
@@ -222,20 +220,12 @@ st.markdown("""
 # 3. CORE MATH ENGINE
 # ==========================================
 swe.set_ephe_path(None)
-geolocator = Nominatim(user_agent="bharatheeyam_app_final_texts")
+geolocator = Nominatim(user_agent="bharatheeyam_app_final")
 
 KN_PLANETS = {
     0: "ರವಿ", 1: "ಚಂದ್ರ", 2: "ಬುಧ", 3: "ಶುಕ್ರ", 4: "ಕುಜ", 
     5: "ಗುರು", 6: "ಶನಿ", 101: "ರಾಹು", 102: "ಕೇತು", 
     "Ma": "ಮಾಂದಿ", "Lagna": "ಲಗ್ನ"
-}
-
-# RESTORED: ENGLISH PLANET NAMES FOR BUTTONS
-PLANET_DISPLAY_NAMES = {
-    "ಲಗ್ನ": "ಲಗ್ನ (Lagna)", "ರವಿ": "ರವಿ (Sun)", "ಚಂದ್ರ": "ಚಂದ್ರ (Moon)", 
-    "ಕುಜ": "ಕುಜ (Mars)", "ಬುಧ": "ಬುಧ (Mercury)", "ಗುರು": "ಗುರು (Jupiter)", 
-    "ಶುಕ್ರ": "ಶುಕ್ರ (Venus)", "ಶನಿ": "ಶನಿ (Saturn)", "ರಾಹು": "ರಾಹು (Rahu)", 
-    "ಕೇತು": "ಕೇತು (Ketu)", "ಮಾಂದಿ": "ಮಾಂದಿ (Mandi)"
 }
 
 PLANET_ORDER = ["ಲಗ್ನ", "ರವಿ", "ಚಂದ್ರ", "ಕುಜ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ", "ರಾಹು", "ಕೇತು", "ಮಾಂದಿ"]
@@ -447,7 +437,7 @@ def get_full_calculations(jd_birth, lat, lon, dob_obj, ayan_mode, node_mode):
 # ==========================================
 # 5. DIALOG UI FOR PLANET POPUP
 # ==========================================
-@st.dialog("ಗ್ರಹದ ಸಂಪೂರ್ಣ ವಿವರ (Planet Details)")
+@st.dialog("ಗ್ರಹದ ಸಂಪೂರ್ಣ ವಿವರ")
 def show_planet_popup(p_name, deg, speed, sun_deg):
     is_asta = False
     gathi_str = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
@@ -463,14 +453,27 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     asta_text = "ಹೌದು" if is_asta else "ಇಲ್ಲ"
     if p_name in ["ರವಿ", "ರಾಹು", "ಕೇತು", "ಲಗ್ನ", "ಮಾಂದಿ"]: asta_text = "ಅನ್ವಯಿಸುವುದಿಲ್ಲ"
         
-    d1_idx, dr_val = int(deg/30), deg % 30
+    # Standard Vargas
+    d1_idx = int(deg/30)
+    dr_val = deg % 30
     is_odd = ((d1_idx) % 2 == 0)
     d2_idx = (4 if dr_val < 15 else 3) if is_odd else (3 if dr_val < 15 else 4)
     true_d3_idx = d1_idx if dr_val < 10 else ((d1_idx + 4) % 12 if dr_val < 20 else (d1_idx + 8) % 12)
-    d9_idx = int(((deg * 9) % 360) / 30)
-    d12_idx = (int(deg/30) + int((deg%30)/2.5)) % 12
+    d9_exact = (deg * 9) % 360
+    d9_idx = int(d9_exact / 30)
+    d12_sign_math = (int(deg/30) + int((deg%30)/2.5)) % 12
+    d12_idx = d12_sign_math
     d30_idx = (0 if dr_val < 5 else (10 if dr_val < 10 else (8 if dr_val < 18 else (2 if dr_val < 25 else 6)))) if is_odd else (5 if dr_val < 5 else (2 if dr_val < 12 else (8 if dr_val < 20 else (10 if dr_val < 25 else 0))))
         
+    # --- RESTORED: UPA DREKKANA CALCULATIONS ---
+    # 1. Rashi Drekkana (already true_d3_idx)
+    # 2. Navamsha Drekkana (D3 of exact D9 longitude)
+    d9_rem = d9_exact % 30
+    nav_drek_idx = d9_idx if d9_rem < 10 else ((d9_idx + 4) % 12 if d9_rem < 20 else (d9_idx + 8) % 12)
+    # 3. Dwadashamsha Drekkana (D3 of exact D12 longitude)
+    d12_deg = ((deg % 30) % 2.5) * 12 
+    dwa_drek_idx = d12_idx if d12_deg < 10 else ((d12_idx + 4) % 12 if d12_deg < 20 else (d12_idx + 8) % 12)
+
     h_arr = [
         "<div class='card'><table class='key-val-table'>",
         f"<tr><td class='key'>ಸ್ಫುಟ</td><td>{fmt_deg(deg)}</td></tr>",
@@ -479,18 +482,27 @@ def show_planet_popup(p_name, deg, speed, sun_deg):
     ]
     st.markdown("".join(h_arr), unsafe_allow_html=True)
     
-    # RESTORED: ENGLISH TEXT IN POPUP
-    st.markdown("#### 📊 ವರ್ಗಗಳು (Vargas)")
+    st.markdown("#### 📊 ವರ್ಗಗಳು")
     v_arr = [
         "<div class='card'><table class='key-val-table'>",
-        f"<tr><td class='key'>ರಾಶಿ (Rashi)</td><td>{KN_RASHI[d1_idx]}</td></tr>",
-        f"<tr><td class='key'>ಹೋರಾ (Hora)</td><td>{KN_RASHI[d2_idx]}</td></tr>",
-        f"<tr><td class='key'>ದ್ರೇಕ್ಕಾಣ (Drekkana)</td><td>{KN_RASHI[true_d3_idx]}</td></tr>",
-        f"<tr><td class='key'>ನವಾಂಶ (Navamsha)</td><td>{KN_RASHI[d9_idx]}</td></tr>",
-        f"<tr><td class='key'>ದ್ವಾದಶಾಂಶ (Dwadashamsha)</td><td>{KN_RASHI[d12_idx]}</td></tr>",
-        f"<tr><td class='key'>ತ್ರಿಂಶಾಂಶ (Trimshamsha)</td><td>{KN_RASHI[d30_idx]}</td></tr></table></div>"
+        f"<tr><td class='key'>ರಾಶಿ</td><td>{KN_RASHI[d1_idx]}</td></tr>",
+        f"<tr><td class='key'>ಹೋರಾ</td><td>{KN_RASHI[d2_idx]}</td></tr>",
+        f"<tr><td class='key'>ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[true_d3_idx]}</td></tr>",
+        f"<tr><td class='key'>ನವಾಂಶ</td><td>{KN_RASHI[d9_idx]}</td></tr>",
+        f"<tr><td class='key'>ದ್ವಾದಶಾಂಶ</td><td>{KN_RASHI[d12_idx]}</td></tr>",
+        f"<tr><td class='key'>ತ್ರಿಂಶಾಂಶ</td><td>{KN_RASHI[d30_idx]}</td></tr></table></div>"
     ]
     st.markdown("".join(v_arr), unsafe_allow_html=True)
+
+    # --- RESTORED: UPA DREKKANA DISPLAY ---
+    st.markdown("#### 📊 ಉಪ ದ್ರೇಕ್ಕಾಣ")
+    upa_arr = [
+        "<div class='card'><table class='key-val-table'>",
+        f"<tr><td class='key'>ರಾಶಿ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[true_d3_idx]}</td></tr>",
+        f"<tr><td class='key'>ನವಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[nav_drek_idx]}</td></tr>",
+        f"<tr><td class='key'>ದ್ವಾದಶಾಂಶ ದ್ರೇಕ್ಕಾಣ</td><td>{KN_RASHI[dwa_drek_idx]}</td></tr></table></div>"
+    ]
+    st.markdown("".join(upa_arr), unsafe_allow_html=True)
 
 # ==========================================
 # 6. SESSION STATE & UI
@@ -517,7 +529,7 @@ if st.session_state.page == "input":
     with st.container():
         saved_db = load_db()
         if len(saved_db) > 0:
-            st.markdown("<div class='card'>#### 📂 ಉಳಿಸಿದ ಜಾತಕ (Saved)</div>", unsafe_allow_html=True)
+            st.markdown("<div class='card'>#### 📂 ಉಳಿಸಿದ ಜಾತಕ", unsafe_allow_html=True)
             c_sel, c_btn = st.columns([3, 1])
             sel_n = c_sel.selectbox("ಆಯ್ಕೆಮಾಡಿ", [""] + list(saved_db.keys()), label_visibility="collapsed")
             if c_btn.button("ತೆಗೆಯಿರಿ", use_container_width=True) and sel_n != "":
@@ -528,8 +540,9 @@ if st.session_state.page == "input":
                     "lat": prof['lat'], "lon": prof['lon'], "place_input": prof['p']
                 })
                 st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
         
-        st.markdown("<div class='card'>#### ✨ ಹೊಸ ಜಾತಕ (New Chart)</div>", unsafe_allow_html=True)
+        st.markdown("<div class='card'>#### ✨ ಹೊಸ ಜಾತಕ", unsafe_allow_html=True)
         name = st.text_input("ಹೆಸರು", key="name_input")
         dob = st.date_input("ದಿನಾಂಕ", key="dob_input", min_value=datetime.date(1800, 1, 1), max_value=datetime.date(2100, 12, 31))
         
@@ -569,6 +582,7 @@ if st.session_state.page == "input":
             st.session_state.data = {"pos": p1, "pan": p2, "details": p3, "bhavas": p4, "speeds": p5}
             st.session_state.page = "dashboard"
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.page == "dashboard":
     pos, pan, details, bhavas, speeds = st.session_state.data['pos'], st.session_state.data['pan'], st.session_state.data['details'], st.session_state.data['bhavas'], st.session_state.data['speeds']
@@ -588,24 +602,21 @@ elif st.session_state.page == "dashboard":
     
     with t1:
         c_v, c_b = st.columns(2)
-        
-        # RESTORED: ENGLISH VARGA NAMES IN DROPDOWN
-        d_names = {1: "ರಾಶಿ (Rashi)", 2: "ಹೋರಾ (Hora)", 3: "ದ್ರೇಕ್ಕಾಣ (Drekkana)", 9: "ನವಾಂಶ (Navamsha)", 12: "ದ್ವಾದಶಾಂಶ (Dwadashamsha)", 30: "ತ್ರಿಂಶಾಂಶ (Trimshamsha)"}
+        d_names = {1: "ರಾಶಿ", 2: "ಹೋರಾ", 3: "ದ್ರೇಕ್ಕಾಣ", 9: "ನವಾಂಶ", 12: "ದ್ವಾದಶಾಂಶ", 30: "ತ್ರಿಂಶಾಂಶ"}
         
         with c_v:
-            # HTML Header ensures blue color stays without CSS fighting
-            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:5px;'>ವರ್ಗ (Varga)</div>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:5px;'>ವರ್ಗ</div>", unsafe_allow_html=True)
             v_opt_base = st.selectbox("ವರ್ಗ", [1, 2, 3, 9, 12, 30], format_func=lambda x: d_names[x], label_visibility="collapsed")
             
         with c_b:
-            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:5px;'>ಚಾರ್ಟ್ ವಿಧ (Chart)</div>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-bottom:5px;'>ಚಾರ್ಟ್ ವಿಧ</div>", unsafe_allow_html=True)
             c_mode = st.radio("ಚಾರ್ಟ್ ವಿಧ", ["ರಾಶಿ", "ಭಾವ", "ನವಾಂಶ"], horizontal=True, label_visibility="collapsed")
         
         st.markdown("<hr style='margin: 10px 0px; border-color: #E2E8F0;'>", unsafe_allow_html=True)
         
         c_tog_txt, c_tog_btn = st.columns([3, 1])
         with c_tog_txt:
-            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-top:8px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ (Show Sphutas)</div>", unsafe_allow_html=True)
+            st.markdown("<div style='color:#2B6CB0; font-weight:800; font-size:15px; margin-top:8px;'>ಸ್ಫುಟಗಳನ್ನು ಕುಂಡಲಿಯಲ್ಲಿ ತೋರಿಸಿ</div>", unsafe_allow_html=True)
         with c_tog_btn:
             show_sphutas = st.toggle("Sphutas", value=False, label_visibility="collapsed")
             
@@ -640,9 +651,7 @@ elif st.session_state.page == "dashboard":
                 
             cls = "hi" if n in ["ಲಗ್ನ", "ಮಾಂದಿ"] else ("sp" if n in pan['adv_sphutas'] else "pl")
             
-            # Displays only the Kannada text inside the box to save space
-            display_name = n.split(" ")[0]
-            bxs_list[ri].append((render_items.index(n), f"<div class='{cls}'>{display_name}</div>"))
+            bxs_list[ri].append((render_items.index(n), f"<div class='{cls}'>{n}</div>"))
             
         bxs = {i: "".join([item[1] for item in sorted(bxs_list[i], key=lambda x: x[0])]) for i in range(12)}
         
@@ -652,8 +661,7 @@ elif st.session_state.page == "dashboard":
         for idx in grid:
             if idx is None:
                 if c_count == 0: 
-                    # Displays only the Kannada text in the center to save space
-                    g_txt = ("ಭಾವ" if c_mode == "ಭಾವ" else ("ನವಾಂಶ" if c_mode == "ನವಾಂಶ" else d_names[v_opt].split(" ")[0]))
+                    g_txt = ("ಭಾವ" if c_mode == "ಭಾವ" else ("ನವಾಂಶ" if c_mode == "ನವಾಂಶ" else d_names[v_opt]))
                     glines.append(f"<div class='center-box'>ಭಾರತೀಯಮ್<br>{g_txt}</div>")
                     c_count = 1
             else: 
@@ -661,10 +669,10 @@ elif st.session_state.page == "dashboard":
         glines.append("</div>")
         st.markdown("".join(glines), unsafe_allow_html=True)
         
-        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>🔍 ಗ್ರಹಗಳ ವಿಸ್ತೃತ ವಿವರ (Planet Details)</h4>", unsafe_allow_html=True)
+        st.markdown("<br><h4 style='text-align:center; color:#2B6CB0;'>🔍 ಗ್ರಹಗಳ ವಿಸ್ತೃತ ವಿವರ</h4>", unsafe_allow_html=True)
         btn_cols = st.columns(4)
         for i, p_n in enumerate(PLANET_ORDER):
-            if btn_cols[i % 4].button(PLANET_DISPLAY_NAMES.get(p_n, p_n), key="pop_" + p_n, use_container_width=True):
+            if btn_cols[i % 4].button(p_n, key="pop_" + p_n, use_container_width=True):
                 show_planet_popup(p_n, pos[p_n], speeds.get(p_n, 0), pos["ರವಿ"])
     
     with t2:
@@ -673,22 +681,20 @@ elif st.session_state.page == "dashboard":
             "<tr><th>ಸ್ಫುಟ ಬಿಂದು</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th><th style='text-align:right'>ನಕ್ಷತ್ರ</th></tr>"
         ]
         
-        # RESTORED: ENGLISH NAMES IN SPHUTA TAB
-        sphuta_order_display = {
-            "ಧೂಮ": "ಧೂಮ (Dhooma)", "ವ್ಯತೀಪಾತ": "ವ್ಯತೀಪಾತ (Vyatipata)", "ಪರಿವೇಷ": "ಪರಿವೇಷ (Parivesha)", 
-            "ಇಂದ್ರಚಾಪ": "ಇಂದ್ರಚಾಪ (Indrachapa)", "ಉಪಕೇತು": "ಉಪಕೇತು (Upaketu)",
-            "ಭೃಗು ಬಿ.": "ಭೃಗು ಬಿ. (Bhrigu)", "ಬೀಜ": "ಬೀಜ (Beeja)", "ಕ್ಷೇತ್ರ": "ಕ್ಷೇತ್ರ (Kshetra)", "ಯೋಗಿ": "ಯೋಗಿ (Yogi)",
-            "ತ್ರಿಸ್ಫುಟ": "ತ್ರಿಸ್ಫುಟ (Trisphuta)", "ಚತುಃಸ್ಫುಟ": "ಚತುಃಸ್ಫುಟ (Chatusphuta)", "ಪಂಚಸ್ಫುಟ": "ಪಂಚಸ್ಫುಟ (Panchasphuta)",
-            "ಪ್ರಾಣ": "ಪ್ರಾಣ (Prana)", "ದೇಹ": "ದೇಹ (Deha)", "ಮೃತ್ಯು": "ಮೃತ್ಯು (Mrityu)", "ಸೂಕ್ಷ್ಮ ತ್ರಿ.": "ಸೂಕ್ಷ್ಮ (Sookshma)"
-        }
-        for sp in sphuta_order_display.keys():
+        sphuta_order = [
+            "ಧೂಮ", "ವ್ಯತೀಪಾತ", "ಪರಿವೇಷ", "ಇಂದ್ರಚಾಪ", "ಉಪಕೇತು",
+            "ಭೃಗು ಬಿ.", "ಬೀಜ", "ಕ್ಷೇತ್ರ", "ಯೋಗಿ",
+            "ತ್ರಿಸ್ಫುಟ", "ಚತುಃಸ್ಫುಟ", "ಪಂಚಸ್ಫುಟ",
+            "ಪ್ರಾಣ", "ದೇಹ", "ಮೃತ್ಯು", "ಸೂಕ್ಷ್ಮ ತ್ರಿ."
+        ]
+        for sp in sphuta_order:
             d = pan['adv_sphutas'][sp]
-            slines.append(f"<tr><td><b>{sphuta_order_display[sp]}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{fmt_deg(d)}</td><td style='text-align:right'>{KN_NAK[int(d / 13.333333333) % 27]}-{int((d % 13.333333333) / 3.333333333) + 1}</td></tr>")
+            slines.append(f"<tr><td><b>{sp}</b></td><td>{KN_RASHI[int(d/30)]}</td><td style='text-align:right'>{fmt_deg(d)}</td><td style='text-align:right'>{KN_NAK[int(d / 13.333333333) % 27]}-{int((d % 13.333333333) / 3.333333333) + 1}</td></tr>")
         slines.append("</table></div>")
         st.markdown("".join(slines), unsafe_allow_html=True)
 
     with t3:
-        st.markdown("#### ಆರೂಢ ಚಕ್ರ (Aroodha)")
+        st.markdown("#### ಆರೂಢ ಚಕ್ರ")
         
         c_aro1, c_aro2, c_aro3 = st.columns([2, 2, 1])
         aro_options = ["ಆರೂಢ", "ಉದಯ", "ಲಗ್ನಾಂಶ", "ಛತ್ರ", "ಸ್ಪೃಷ್ಟಾಂಗ", "ಚಂದ್ರ", "ತಾಂಬೂಲ"]
