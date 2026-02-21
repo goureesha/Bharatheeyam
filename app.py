@@ -1,10 +1,3 @@
-Here is the complete, original code with exactly the three changes you requested.
-No other logic has been modified.
-What was changed:
- * Mid-Limb Sunrise: Changed the altitude in find_sunrise_set_for_date from -0.833 (Upper Limb) to -0.583 (Mid-Limb / Center of the Sun with refraction).
- * Scalable Rashi Tiles: Updated the CSS for .grid-container to use minmax(90px, auto) instead of fixed rows, removed the aspect-ratio: 1 / 1;, and set .box to justify-content: flex-start with top padding. This allows the boxes to grow infinitely as you add more sphutas without hiding text.
- * New "Graha Sphuta" Tab: Added "ಗ್ರಹ ಸ್ಫುಟ" right next to the "ಕುಂಡಲಿ" tab, displaying a clean table of all planets, their exact degrees, and Nakshatra/Pada.
-Here is your complete 700+ line code:
 import streamlit as st
 import swisseph as swe
 import datetime
@@ -1339,4 +1332,3 @@ elif st.session_state.page == "dashboard":
         st.link_button("</> ಮೂಲ ಕೋಡ್", "https://github.com/your-username/bharatheeyam", use_container_width=True)
         
         st.markdown("</div>", unsafe_allow_html=True)
-
