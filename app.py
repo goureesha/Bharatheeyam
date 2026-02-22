@@ -276,7 +276,7 @@ KN_NAK = [
     "ಅಶ್ವಿನಿ", "ಭರಣಿ", "ಕೃತಿಕಾ", "ರೋಹಿಣಿ", "ಮೃಗಶಿರ", "ಆರಿದ್ರಾ",
     "ಪುನರ್ವಸು", "ಪುಷ್ಯ", "ಆಶ್ಲೇಷ", "ಮಘ", "ಪೂರ್ವ ಫಾಲ್ಗುಣಿ",
     "ಉತ್ತರ ಫಾಲ್ಗುಣಿ", "ಹಸ್ತ", "ಚಿತ್ತಾ", "ಸ್ವಾತಿ", "ವಿಶಾಖ",
-    "ಅನುರಾಧ", "ಜ್ಯೇಷ್ಠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ",
+    "ಅನುರಾಧ", "ಜ್ಯೇಷষ্ঠ", "ಮೂಲ", "ಪೂರ್ವಾಷಾಢ", "ಉತ್ತರಾಷಾಢ",
     "ಶ್ರವಣ", "ಧನಿಷ್ಠ", "ಶತಭಿಷ", "ಪೂರ್ವಾಭಾದ್ರ", "ಉತ್ತರಾಭಾದ್ರ",
     "ರೇವತಿ"
 ]
@@ -983,8 +983,8 @@ elif st.session_state.page == "dashboard" and st.session_state.data:
             save_db(n_val, prof_data)
             st.success("ಉಳಿಸಲಾಗಿದೆ!")
         
-        tabs = ["ಕುಂಡಲಿ", "ಗ್ರಹ ಸ್ಫುಟ", "ಉಪಗ್ರಹ ಸ್ಫುಟ", "ಆರೂಢ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
-        t1, t_graha, t2, t3, t4, t5, t6, t7, t8, t9, t10 = st.tabs(tabs)
+        tabs = ["ಕುಂಡಲಿ", "ಗ್ರಹ ಸ್ಫುಟ", "ಉಪಗ್ರಹ ಸ್ಫುಟ", "ಆರೂಢ", "ಅಷ್ಟಮಂಗಲ", "ದಶ", "ಪಂಚಾಂಗ", "ಭಾವ", "ಅಷ್ಟಕವರ್ಗ", "ಟಿಪ್ಪಣಿ", "ಚಂದಾದಾರಿಕೆ", "ಬಗ್ಗೆ"]
+        t1, t_graha, t2, t3, t_ashta, t4, t5, t6, t7, t8, t9, t10 = st.tabs(tabs)
         
         with t1:
             c_v, c_b = st.columns(2)
@@ -1207,6 +1207,44 @@ elif st.session_state.page == "dashboard" and st.session_state.data:
             alines.append("</div>")
             st.markdown("".join(alines), unsafe_allow_html=True)
 
+        with t_ashta:
+            st.markdown("<h4 style='text-align:center; color:#2B6CB0;'>✨ ಅಷ್ಟಮಂಗಲ ಪ್ರಶ್ನೆ</h4>", unsafe_allow_html=True)
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            
+            st.markdown("##### ಪ್ರಶ್ನೆ ಮಾಹಿತಿಗಳು (Prasna Inputs)")
+            col_a1, col_a2 = st.columns(2)
+            kavadi_num = col_a1.number_input("ಕವಡೆ ಸಂಖ್ಯೆ (Kavadi Num)", min_value=1, max_value=108, value=1)
+            tamboola_num = col_a2.number_input("ತಾಂಬೂಲ (Tamboola)", min_value=1, max_value=108, value=1)
+            
+            col_a3, col_a4 = st.columns(2)
+            swarna_aroodha = col_a3.selectbox("ಸ್ವರ್ಣ ಆರೂಢ (Gold Placement)", KN_RASHI)
+            sprishtanga = col_a4.selectbox("ಸ್ಪೃಷ್ಟಾಂಗ (Sprishtanga)", KN_RASHI)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            st.markdown("<div class='card'>", unsafe_allow_html=True)
+            st.markdown("##### ಅಷ್ಟಮಂಗಲ ಸ್ಫುಟ ವಿವರಗಳು (Ashtamangala Sphutas)")
+            
+            if st.button("ಸ್ಫುಟ ಲೆಕ್ಕಾಚಾರ ಮಾಡಿ (Calculate Sphutas)", type="primary", use_container_width=True):
+                # Placeholder for your Ashtamangala calculation logic later
+                st.success("ಅಷ್ಟಮಂಗಲ ಸ್ಫುಟಗಳನ್ನು ಇಲ್ಲಿ ಅಳವಡಿಸಲಾಗುತ್ತದೆ (Logic to be added by user)")
+                
+                a_lines = []
+                a_lines.append("<table class='key-val-table' style='width:100%;'>")
+                a_lines.append("<tr><th>ಅಷ್ಟಮಂಗಲ ಸ್ಫುಟ</th><th>ರಾಶಿ</th><th style='text-align:right'>ಅಂಶ</th></tr>")
+                
+                # These are placeholder rows for the specific Ashtamangala Sphutas
+                placeholder_sphutas = ["ತಾಂಬೂಲ ಸ್ಫುಟ (Tamboola)", "ಜೀವ ಸ್ಫುಟ (Jeeva)", "ರೋಗ ಸ್ಫುಟ (Roga)", "ಮೃತ್ಯು ಸ್ಫುಟ (Mrityu)"]
+                for ps in placeholder_sphutas:
+                    a_lines.append("<tr><td><b>" + ps + "</b></td>")
+                    a_lines.append("<td>-</td>")
+                    a_lines.append("<td style='text-align:right'>-</td></tr>")
+                    
+                a_lines.append("</table>")
+                st.markdown("".join(a_lines), unsafe_allow_html=True)
+                
+            st.markdown("</div>", unsafe_allow_html=True)
+
         with t4:
             lord_b = pan.get('lord_bal', '')
             d_b = pan.get('d_bal', '')
@@ -1389,4 +1427,3 @@ elif st.session_state.page == "dashboard" and st.session_state.data:
         if st.button("ಹಿಂದಕ್ಕೆ ಹೋಗಿ"):
             st.session_state.page = "input"
             st.rerun()
-
